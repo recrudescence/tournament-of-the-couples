@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS games (
+  game_id TEXT PRIMARY KEY,
+  started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  ended_at DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS rounds (
+  round_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  game_id TEXT NOT NULL,
+  round_number INTEGER NOT NULL,
+  question TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (game_id) REFERENCES games(game_id)
+);
+
+CREATE TABLE IF NOT EXISTS answers (
+  answer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  round_id INTEGER NOT NULL,
+  player_name TEXT NOT NULL,
+  team_id TEXT NOT NULL,
+  answer_text TEXT NOT NULL,
+  FOREIGN KEY (round_id) REFERENCES rounds(round_id)
+);

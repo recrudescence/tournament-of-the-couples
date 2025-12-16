@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament of the Couples</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Tournament of the Couples</h1>
+    
+    <!-- New Player Form (shown in lobby) -->
+    <div id="newPlayerForm" class="hidden">
+      <h2>Join Game</h2>
+      <div class="form-group">
+        <label for="playerName">Your Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name" />
+      </div>
+      <button class="primary" id="joinPlayerBtn">Join as Player</button>
+      <button class="secondary" id="joinHostBtn">Join as Host</button>
+      <div id="error" class="error hidden"></div>
+    </div>
+
+    <!-- Reconnect Form (shown during game) -->
+    <div id="reconnectForm" class="hidden">
+      <div class="info">Game in progress. Select your name to reconnect:</div>
+      <h2>Reconnect</h2>
+      <ul id="reconnectList" class="reconnect-list"></ul>
+      <div id="reconnectError" class="error hidden"></div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading">
+      <p>Connecting...</p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/join.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lobby - Tournament of the Couples</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Lobby</h1>
+    <div class="info" id="statusMessage">Waiting for players to join...</div>
+    
+    <h2>Players</h2>
+    <div id="playersList"></div>
+    
+    <div id="hostControls" class="hidden">
+      <button class="primary" id="startGameBtn" disabled>Start Game</button>
+      <p class="info" id="hostMessage"></p>
+    </div>
+    
+    <div id="error" class="error hidden"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/lobby.js"></script>
+</body>
+</html>
