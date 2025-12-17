@@ -22,14 +22,14 @@ const statusMessage = document.getElementById('statusMessage');
 // Request initial lobby state and rejoin if needed
 socket.on('connect', () => {
   console.log('Connected to lobby');
-  
+
   // If we have player info, rejoin the game
   if (playerInfo.name) {
     console.log('Rejoining as:', playerInfo.name);
-    socket.emit('joinGame', { 
-      name: playerInfo.name, 
-      isHost: playerInfo.isHost || false, 
-      isReconnect: true 
+    socket.emit('joinGame', {
+      name: playerInfo.name,
+      isHost: playerInfo.isHost || false,
+      isReconnect: false  // Use false to let server's smart logic handle it
     });
   } else {
     // No player info, just get lobby state
@@ -92,8 +92,9 @@ socket.on('gameStarted', (state) => {
 function renderLobby() {
   if (!gameState) return;
   
-  // Update status message
-  const playerCount = gameState.players.length;
+  // Update status message (only count connected players)
+  const connectedPlayers = gameState.players.filter(p => p.connected);
+  const playerCount = connectedPlayers.length;
   const teamCount = gameState.teams.length;
   statusMessage.textContent = `${playerCount} player${playerCount !== 1 ? 's' : ''} connected, ${teamCount} team${teamCount !== 1 ? 's' : ''} formed`;
   
@@ -143,9 +144,12 @@ function renderLobby() {
     renderedPlayers.add(player2.socketId);
   });
   
-  // Render unpaired players
+  // Render unpaired players (excluding disconnected players)
   gameState.players.forEach(player => {
     if (renderedPlayers.has(player.socketId)) return;
+
+    // Skip disconnected players - they can't be paired with
+    if (!player.connected) return;
     
     const playerCard = document.createElement('div');
     const isCurrentPlayer = currentPlayer && player.name === currentPlayer.name;

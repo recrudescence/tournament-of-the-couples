@@ -84,8 +84,31 @@ function reconnectPlayer(name, newSocketId) {
     throw new Error('Player not found');
   }
 
+  const oldSocketId = player.socketId;
   player.socketId = newSocketId;
   player.connected = true;
+
+  // Update partner's reference to this player
+  if (player.partnerId) {
+    const partner = gameState.players.find(p => p.socketId === player.partnerId);
+    if (partner && partner.partnerId === oldSocketId) {
+      partner.partnerId = newSocketId;
+    }
+  }
+
+  // Update team references
+  if (player.teamId) {
+    const team = gameState.teams.find(t => t.teamId === player.teamId);
+    if (team) {
+      if (team.player1Id === oldSocketId) {
+        team.player1Id = newSocketId;
+      }
+      if (team.player2Id === oldSocketId) {
+        team.player2Id = newSocketId;
+      }
+    }
+  }
+
   console.log(`Player reconnected: ${name}`);
   return player;
 }
