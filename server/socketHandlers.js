@@ -27,15 +27,31 @@ function setupSocketHandlers(io) {
           });
           io.emit('lobbyUpdate', state);
         } else {
+          // Check if this is the host reconnecting
+          if (isHost && state.host && state.host.name === name) {
+            // Update host socket ID
+            state.host.socketId = socket.id;
+            console.log(`Host reconnected: ${name}`);
+            socket.emit('joinSuccess', {
+              socketId: socket.id,
+              name,
+              isHost: true,
+              reconnected: true,
+              gameState: state
+            });
+            io.emit('lobbyUpdate', state);
+            return;
+          }
+
           // Check if player with this name already exists (might be disconnected)
           const existingPlayer = state.players.find(p => p.name === name);
-          
+
           if (existingPlayer) {
             // If disconnected, reconnect them
             if (!existingPlayer.connected) {
               const player = gameState.reconnectPlayer(name, socket.id);
-              socket.emit('joinSuccess', { 
-                player, 
+              socket.emit('joinSuccess', {
+                player,
                 gameState: state,
                 reconnected: true,
                 isHost: false
@@ -48,7 +64,7 @@ function setupSocketHandlers(io) {
               return;
             }
           }
-          
+
           // New player joining
           if (!gameState.canJoinAsNew()) {
             socket.emit('error', { message: 'Cannot join game in progress' });
@@ -57,12 +73,12 @@ function setupSocketHandlers(io) {
 
           gameState.addPlayer(socket.id, name, isHost);
           state = gameState.getGameState();
-          
-          socket.emit('joinSuccess', { 
+
+          socket.emit('joinSuccess', {
             socketId: socket.id,
             name,
             isHost,
-            gameState: state 
+            gameState: state
           });
           io.emit('lobbyUpdate', state);
         }

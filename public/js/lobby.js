@@ -178,15 +178,18 @@ function renderLobby() {
   // Show host controls if user is host
   if (currentPlayer && currentPlayer.isHost) {
     hostControls.classList.remove('hidden');
-    
-    // Enable start button only if all non-host players are paired
-    const nonHostPlayers = gameState.players.filter(p => p.name !== gameState.host?.name);
-    const allPaired = nonHostPlayers.length > 0 && nonHostPlayers.length === gameState.teams.length * 2;
-    
+
+    // Enable start button only if all CONNECTED non-host players are paired
+    const connectedNonHostPlayers = gameState.players.filter(p =>
+      p.name !== gameState.host?.name && p.connected
+    );
+    const allPaired = connectedNonHostPlayers.length > 0 &&
+                      connectedNonHostPlayers.length === gameState.teams.length * 2;
+
     startGameBtn.disabled = !allPaired;
-    
+
     if (!allPaired) {
-      hostMessage.textContent = 'All players must be paired before starting the game.';
+      hostMessage.textContent = 'All connected players must be paired before starting the game.';
     } else {
       hostMessage.textContent = 'Ready to start!';
     }
