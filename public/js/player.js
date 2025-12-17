@@ -153,10 +153,25 @@ socket.on('readyForNextRound', (data) => {
   showSection('waiting');
 });
 
-socket.on('returnedToAnswering', () => {
-  console.log('Returned to answering phase');
-  gameState.hasSubmitted = false;
-  answerInput.value = '';
+socket.on('returnedToAnswering', (data) => {
+  console.log('Returned to answering phase', data);
+
+  // Pre-fill answer input if player had previously submitted
+  if (data && data.currentRound && data.currentRound.answers) {
+    const previousAnswer = data.currentRound.answers[gameState.mySocketId];
+    if (previousAnswer) {
+      answerInput.value = previousAnswer;
+      gameState.hasSubmitted = false; // Allow re-submission
+      console.log('Pre-filled previous answer:', previousAnswer);
+    } else {
+      answerInput.value = '';
+      gameState.hasSubmitted = false;
+    }
+  } else {
+    answerInput.value = '';
+    gameState.hasSubmitted = false;
+  }
+
   showSection('answering');
 });
 
