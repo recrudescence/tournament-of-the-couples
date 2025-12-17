@@ -69,7 +69,7 @@ function disconnectPlayer(socketId) {
   const player = gameState.players.find(p => p.socketId === socketId);
   if (player) {
     player.connected = false;
-    console.log(`Player disconnected: ${player.name}`);
+    console.log(`<${player.name}> disconnected`);
   }
 }
 
@@ -109,7 +109,7 @@ function reconnectPlayer(name, newSocketId) {
     }
   }
 
-  console.log(`Player reconnected: ${name}`);
+  console.log(`<${name}> rejoined`);
   return player;
 }
 

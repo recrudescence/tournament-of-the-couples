@@ -3,8 +3,6 @@ const database = require('./database');
 
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
     // Join game (new player or reconnect)
     socket.on('joinGame', async ({ name, isHost, isReconnect }) => {
       try {
@@ -267,8 +265,6 @@ function setupSocketHandlers(io) {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
-      
       const state = gameState.getGameState();
       if (state) {
         // Always mark as disconnected (don't remove from lobby)
