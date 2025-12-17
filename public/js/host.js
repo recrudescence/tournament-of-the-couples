@@ -130,7 +130,8 @@ socket.on('roundStarted', (data) => {
 socket.on('answerSubmitted', (data) => {
   console.log('Answer submitted:', data);
   console.log('Current answers before update:', Object.keys(gameState.answers));
-  gameState.answers[data.socketId] = data.answer;
+  // Track answers by player name (stable across reconnections)
+  gameState.answers[data.playerName] = data.answer;
   console.log('Current answers after update:', Object.keys(gameState.answers));
   console.log('Calling updateAnswerStatus');
   updateAnswerStatus();
@@ -203,12 +204,14 @@ startScoringBtn.addEventListener('click', () => {
 
 revealAnswer1Btn.addEventListener('click', () => {
   const team = gameState.teams[gameState.currentTeamIndex];
-  socket.emit('revealAnswer', { socketId: team.player1Id });
+  const player1 = gameState.players.find(p => p.socketId === team.player1Id);
+  socket.emit('revealAnswer', { playerName: player1.name });
 });
 
 revealAnswer2Btn.addEventListener('click', () => {
   const team = gameState.teams[gameState.currentTeamIndex];
-  socket.emit('revealAnswer', { socketId: team.player2Id });
+  const player2 = gameState.players.find(p => p.socketId === team.player2Id);
+  socket.emit('revealAnswer', { playerName: player2.name });
 });
 
 awardPointBtn.addEventListener('click', () => {
@@ -272,8 +275,9 @@ function updateAnswerStatus() {
   playerStatusList.innerHTML = '';
   gameState.players.forEach(player => {
     const li = document.createElement('li');
-    const hasAnswered = gameState.answers.hasOwnProperty(player.socketId);
-    console.log(`Player ${player.name} (${player.socketId}): hasAnswered=${hasAnswered}`);
+    // Check by player name (stable across reconnections)
+    const hasAnswered = gameState.answers.hasOwnProperty(player.name);
+    console.log(`Player ${player.name}: hasAnswered=${hasAnswered}`);
     li.textContent = `${player.name} ${hasAnswered ? '✅' : '⏳'}`;
     li.className = hasAnswered ? 'answered' : 'waiting';
     playerStatusList.appendChild(li);

@@ -102,7 +102,7 @@ The SQLite database (`game.db`) is automatically initialized on server startup u
 
 1. **Single Game Instance**: Only one game can run at a time. Server restart = new game.
 
-2. **Socket ID as Player Identity**: Players are identified by `socket.id` during gameplay, but reconnect by name. On reconnect, `gameState.reconnectPlayer()` updates all socket ID references.
+2. **Socket ID as Player Identity**: Players are identified by `socket.id` for real-time connections (teams, partnerships), but reconnect by name. On reconnect, `gameState.reconnectPlayer()` updates all socket ID references. **Answers are keyed by player name** to avoid migration issues on reconnect.
 
 3. **Phase Management**: Game has distinct phases (lobby → playing → scoring) controlled by `gameState.status` and `currentRound.status`. Clients show/hide sections based on phase.
 
@@ -189,9 +189,9 @@ Understanding the in-memory game state structure is critical for working with th
     roundId: null,                    // Database ID (set after persistence)
     question: "What's your partner's favorite color?",
     status: "answering" | "complete",
-    answers: {                        // Map of socketId → answer text
-      "socketId1": "Blue",
-      "socketId2": "Red"
+    answers: {                        // Map of PLAYER NAME → answer text (stable across reconnections)
+      "Alice": "Blue",
+      "Bob": "Red"
     }
   }
 }
@@ -201,6 +201,6 @@ Understanding the in-memory game state structure is critical for working with th
 - `player.partnerId` ↔ other `player.socketId`
 - `player.teamId` ↔ `team.teamId`
 - `team.player1Id` & `team.player2Id` ↔ `player.socketId`
-- `currentRound.answers[socketId]` ↔ `player.socketId`
+- `currentRound.answers[playerName]` ↔ `player.name`
 
-All socket ID references must be updated together when a player reconnects.
+**Important:** Socket ID references (`partnerId`, `player1Id`, `player2Id`) must be updated when a player reconnects. However, `currentRound.answers` is keyed by player name (not socket ID), so answers automatically persist across reconnections without migration.

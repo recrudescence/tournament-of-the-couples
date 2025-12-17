@@ -173,10 +173,10 @@ function setupSocketHandlers(io) {
       try {
         gameState.submitAnswer(socket.id, answer);
         const state = gameState.getGameState();
-        
+
         // Get player info for database
         const player = state.players.find(p => p.socketId === socket.id);
-        
+
         // Persist answer to database
         if (state.currentRound.roundId) {
           await database.saveAnswer(
@@ -186,13 +186,14 @@ function setupSocketHandlers(io) {
             answer
           );
         }
-        
+
         // Notify ALL clients (including host) that answer was submitted
+        // Use player name as key (stable across reconnections)
         io.emit('answerSubmitted', {
-          socketId: socket.id,
+          playerName: player.name,
           answer: answer
         });
-        
+
         // Check if round is complete
         if (gameState.isRoundComplete()) {
           gameState.completeRound();
@@ -206,16 +207,16 @@ function setupSocketHandlers(io) {
     });
 
     // Host reveals an answer
-    socket.on('revealAnswer', ({ socketId }) => {
+    socket.on('revealAnswer', ({ playerName }) => {
       try {
         const state = gameState.getGameState();
-        const answer = state.currentRound.answers[socketId];
-        const player = state.players.find(p => p.socketId === socketId);
-        
-        io.emit('answerRevealed', { 
-          socketId, 
-          playerName: player.name,
-          answer 
+        const answer = state.currentRound.answers[playerName];
+        const player = state.players.find(p => p.name === playerName);
+
+        io.emit('answerRevealed', {
+          socketId: player.socketId,  // Still send socketId for client compatibility
+          playerName: playerName,
+          answer
         });
       } catch (err) {
         console.error('Reveal answer error:', err);

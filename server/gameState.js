@@ -109,6 +109,8 @@ function reconnectPlayer(name, newSocketId) {
     }
   }
 
+  // No need to migrate answers anymore - they're keyed by player name which doesn't change!
+
   console.log(`<${name}> rejoined`);
   return player;
 }
@@ -234,8 +236,15 @@ function submitAnswer(socketId, answer) {
     throw new Error('Round not accepting answers');
   }
 
-  gameState.currentRound.answers[socketId] = answer;
-  console.log(`Answer submitted by ${socketId}`);
+  // Find the player submitting this answer
+  const player = gameState.players.find(p => p.socketId === socketId);
+  if (!player) {
+    throw new Error('Player not found');
+  }
+
+  // Store answer by player name (stable across reconnections)
+  gameState.currentRound.answers[player.name] = answer;
+  console.log(`Answer submitted by ${player.name}`);
 }
 
 // Check if round is complete (all players answered)
@@ -243,7 +252,11 @@ function isRoundComplete() {
   if (!gameState || !gameState.currentRound) return false;
 
   const connectedPlayers = gameState.players.filter(p => p.connected);
-  const answeredCount = Object.keys(gameState.currentRound.answers).length;
+
+  // Count only answers from connected players (by player name)
+  const answeredCount = connectedPlayers.filter(p =>
+    gameState.currentRound.answers[p.name]
+  ).length;
 
   return answeredCount === connectedPlayers.length;
 }
@@ -293,12 +306,12 @@ function getPlayerTeams() {
       player1: {
         socketId: player1.socketId,
         name: player1.name,
-        answer: gameState.currentRound?.answers[player1.socketId] || null
+        answer: gameState.currentRound?.answers[player1.name] || null
       },
       player2: {
         socketId: player2.socketId,
         name: player2.name,
-        answer: gameState.currentRound?.answers[player2.socketId] || null
+        answer: gameState.currentRound?.answers[player2.name] || null
       }
     };
   });

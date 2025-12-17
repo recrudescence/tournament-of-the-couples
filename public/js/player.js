@@ -83,20 +83,25 @@ socket.on('joinSuccess', (data) => {
     roundNumberEl.textContent = state.currentRound.roundNumber;
     questionTextEl.textContent = state.currentRound.question;
 
-    // Check if we've already submitted an answer
-    const hasSubmitted = state.currentRound.answers && state.currentRound.answers[mySocketId];
-    gameState.hasSubmitted = !!hasSubmitted;
+    // Check for answer by player name (stable across reconnections)
+    const previousAnswer = state.currentRound.answers && state.currentRound.answers[playerData.name];
 
     // Restore to correct section based on round status
     if (state.status === 'scoring' || state.currentRound.status === 'complete') {
       // Host is scoring
+      if (previousAnswer) {
+        submittedAnswerText.textContent = previousAnswer;
+      }
       showSection('scoring');
-    } else if (hasSubmitted) {
-      // We already submitted, show submitted section
-      submittedAnswerText.textContent = state.currentRound.answers[mySocketId];
-      showSection('submitted');
     } else if (state.currentRound.status === 'answering') {
-      // Round is active, we haven't submitted yet
+      // Round is active, show answering section with pre-filled answer (if exists)
+      if (previousAnswer) {
+        answerInput.value = previousAnswer;
+        console.log('Pre-filled previous answer on reconnect:', previousAnswer);
+      } else {
+        answerInput.value = '';
+      }
+      gameState.hasSubmitted = false; // Allow (re)submission during answering phase
       showSection('answering');
     } else {
       showSection('waiting');
@@ -121,7 +126,8 @@ socket.on('roundStarted', (data) => {
 
 socket.on('answerSubmitted', (data) => {
   console.log('Answer confirmed:', data);
-  if (data.socketId === gameState.mySocketId) {
+  // Check by player name (stable across reconnections)
+  if (data.playerName === playerData.name) {
     gameState.hasSubmitted = true;
     submittedAnswerText.textContent = data.answer;
     showSection('submitted');
@@ -157,8 +163,9 @@ socket.on('returnedToAnswering', (data) => {
   console.log('Returned to answering phase', data);
 
   // Pre-fill answer input if player had previously submitted
+  // Check by player name (stable across reconnections)
   if (data && data.currentRound && data.currentRound.answers) {
-    const previousAnswer = data.currentRound.answers[gameState.mySocketId];
+    const previousAnswer = data.currentRound.answers[playerData.name];
     if (previousAnswer) {
       answerInput.value = previousAnswer;
       gameState.hasSubmitted = false; // Allow re-submission
