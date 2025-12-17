@@ -23,6 +23,7 @@ const totalPlayersEl = document.getElementById('totalPlayers');
 const playerStatusList = document.getElementById('playerStatusList');
 const allAnswersNotification = document.getElementById('allAnswersNotification');
 const startScoringBtn = document.getElementById('startScoringBtn');
+const backToAnsweringBtn = document.getElementById('backToAnsweringBtn');
 
 const currentTeamNumEl = document.getElementById('currentTeamNum');
 const totalTeamsEl = document.getElementById('totalTeams');
@@ -128,7 +129,10 @@ socket.on('roundStarted', (data) => {
 
 socket.on('answerSubmitted', (data) => {
   console.log('Answer submitted:', data);
+  console.log('Current answers before update:', Object.keys(gameState.answers));
   gameState.answers[data.socketId] = data.answer;
+  console.log('Current answers after update:', Object.keys(gameState.answers));
+  console.log('Calling updateAnswerStatus');
   updateAnswerStatus();
 });
 
@@ -162,6 +166,18 @@ socket.on('readyForNextRound', (data) => {
   gameStatusEl.textContent = 'Setting Up';
   questionInput.value = '';
   showPhase('roundSetup');
+});
+
+socket.on('returnedToAnswering', (data) => {
+  console.log('Returned to answering phase', data);
+  // Restore answers from server state
+  if (data && data.currentRound && data.currentRound.answers) {
+    gameState.answers = data.currentRound.answers;
+    console.log('Restored answers from server:', gameState.answers);
+  }
+  gameStatusEl.textContent = 'Answering';
+  updateAnswerStatus();
+  showPhase('answering');
 });
 
 socket.on('error', (data) => {
@@ -213,6 +229,18 @@ finishRoundBtn.addEventListener('click', () => {
   socket.emit('nextRound');
 });
 
+if (backToAnsweringBtn) {
+  backToAnsweringBtn.addEventListener('click', () => {
+    console.log('Back to answering clicked');
+    console.log('Socket connected:', socket.connected);
+    console.log('Socket ID:', socket.id);
+    socket.emit('backToAnswering');
+    console.log('backToAnswering event emitted');
+  });
+} else {
+  console.error('backToAnsweringBtn not found!');
+}
+
 // Helper Functions
 
 function showPhase(phase) {
@@ -234,15 +262,18 @@ function showPhase(phase) {
 function updateAnswerStatus() {
   const answeredCount = Object.keys(gameState.answers).length;
   const totalCount = gameState.players.length;
-  
+
+  console.log('updateAnswerStatus called:', {answeredCount, totalCount, answers: gameState.answers});
+
   answersCountEl.textContent = answeredCount;
   totalPlayersEl.textContent = totalCount;
-  
+
   // Update player status list
   playerStatusList.innerHTML = '';
   gameState.players.forEach(player => {
     const li = document.createElement('li');
     const hasAnswered = gameState.answers.hasOwnProperty(player.socketId);
+    console.log(`Player ${player.name} (${player.socketId}): hasAnswered=${hasAnswered}`);
     li.textContent = `${player.name} ${hasAnswered ? '✅' : '⏳'}`;
     li.className = hasAnswered ? 'answered' : 'waiting';
     playerStatusList.appendChild(li);

@@ -189,10 +189,10 @@ function setupSocketHandlers(io) {
           );
         }
         
-        // Notify that answer was submitted
-        socket.emit('answerSubmitted', { 
+        // Notify ALL clients (including host) that answer was submitted
+        io.emit('answerSubmitted', {
           socketId: socket.id,
-          answer: answer 
+          answer: answer
         });
         
         // Check if round is complete
@@ -247,6 +247,20 @@ function setupSocketHandlers(io) {
         io.emit('readyForNextRound', state);
       } catch (err) {
         console.error('Next round error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host returns to answering phase
+    socket.on('backToAnswering', () => {
+      console.log('backToAnswering event received');
+      try {
+        gameState.returnToAnswering();
+        const state = gameState.getGameState();
+        console.log('Emitting returnedToAnswering to all clients');
+        io.emit('returnedToAnswering', state);
+      } catch (err) {
+        console.error('Back to answering error:', err);
         socket.emit('error', { message: err.message });
       }
     });

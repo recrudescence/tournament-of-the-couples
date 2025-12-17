@@ -318,6 +318,25 @@ function returnToPlaying() {
   }
 }
 
+// Return to answering phase (from scoring)
+function returnToAnswering() {
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (!gameState.currentRound) {
+    throw new Error('No active round');
+  }
+
+  // Return game status to playing
+  gameState.status = 'playing';
+
+  // Return round status to answering
+  gameState.currentRound.status = 'answering';
+
+  console.log('Returned to answering phase');
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -337,5 +356,6 @@ module.exports = {
   getGameState,
   getPlayerTeams,
   setCurrentRoundId,
-  returnToPlaying
+  returnToPlaying,
+  returnToAnswering
 };

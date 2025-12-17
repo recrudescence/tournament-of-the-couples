@@ -153,6 +153,13 @@ socket.on('readyForNextRound', (data) => {
   showSection('waiting');
 });
 
+socket.on('returnedToAnswering', () => {
+  console.log('Returned to answering phase');
+  gameState.hasSubmitted = false;
+  answerInput.value = '';
+  showSection('answering');
+});
+
 socket.on('error', (data) => {
   alert('Error: ' + data.message);
   
