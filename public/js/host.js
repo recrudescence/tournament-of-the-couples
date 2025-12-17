@@ -48,6 +48,7 @@ let gameState = {
   teams: [],
   players: [],
   answers: {},
+  submittedInCurrentPhase: new Set(), // Track who has submitted in current answering session
   currentTeamIndex: 0,
   revealedAnswers: new Set()
 };
@@ -117,12 +118,13 @@ socket.on('roundStarted', (data) => {
   gameState.roundNumber = data.roundNumber;
   gameState.currentQuestion = data.question;
   gameState.answers = {};
+  gameState.submittedInCurrentPhase.clear();
   gameState.revealedAnswers.clear();
-  
+
   roundNumberEl.textContent = gameState.roundNumber;
   currentQuestionEl.textContent = data.question;
   gameStatusEl.textContent = 'Answering';
-  
+
   updateAnswerStatus();
   showPhase('answering');
 });
@@ -132,7 +134,10 @@ socket.on('answerSubmitted', (data) => {
   console.log('Current answers before update:', Object.keys(gameState.answers));
   // Track answers by player name (stable across reconnections)
   gameState.answers[data.playerName] = data.answer;
+  // Mark player as submitted in current phase
+  gameState.submittedInCurrentPhase.add(data.playerName);
   console.log('Current answers after update:', Object.keys(gameState.answers));
+  console.log('Submitted in current phase:', Array.from(gameState.submittedInCurrentPhase));
   console.log('Calling updateAnswerStatus');
   updateAnswerStatus();
 });
@@ -171,11 +176,14 @@ socket.on('readyForNextRound', (data) => {
 
 socket.on('returnedToAnswering', (data) => {
   console.log('Returned to answering phase', data);
-  // Restore answers from server state
+  // Restore answers from server state (for pre-filling)
   if (data && data.currentRound && data.currentRound.answers) {
     gameState.answers = data.currentRound.answers;
     console.log('Restored answers from server:', gameState.answers);
   }
+  // Clear submission tracking - players must submit again
+  gameState.submittedInCurrentPhase.clear();
+  console.log('Cleared submission tracking - waiting for new submissions');
   gameStatusEl.textContent = 'Answering';
   updateAnswerStatus();
   showPhase('answering');
@@ -263,23 +271,29 @@ function showPhase(phase) {
 }
 
 function updateAnswerStatus() {
-  const answeredCount = Object.keys(gameState.answers).length;
+  // Count only players who have submitted in the CURRENT answering phase
+  const submittedCount = gameState.submittedInCurrentPhase.size;
   const totalCount = gameState.players.length;
 
-  console.log('updateAnswerStatus called:', {answeredCount, totalCount, answers: gameState.answers});
+  console.log('updateAnswerStatus called:', {
+    submittedCount,
+    totalCount,
+    answers: gameState.answers,
+    submittedInPhase: Array.from(gameState.submittedInCurrentPhase)
+  });
 
-  answersCountEl.textContent = answeredCount;
+  answersCountEl.textContent = submittedCount;
   totalPlayersEl.textContent = totalCount;
 
   // Update player status list
   playerStatusList.innerHTML = '';
   gameState.players.forEach(player => {
     const li = document.createElement('li');
-    // Check by player name (stable across reconnections)
-    const hasAnswered = gameState.answers.hasOwnProperty(player.name);
-    console.log(`Player ${player.name}: hasAnswered=${hasAnswered}`);
-    li.textContent = `${player.name} ${hasAnswered ? '✅' : '⏳'}`;
-    li.className = hasAnswered ? 'answered' : 'waiting';
+    // Check if player has submitted in current phase (not just if answer exists)
+    const hasSubmitted = gameState.submittedInCurrentPhase.has(player.name);
+    console.log(`Player ${player.name}: hasSubmitted=${hasSubmitted}`);
+    li.textContent = `${player.name} ${hasSubmitted ? '✅' : '⏳'}`;
+    li.className = hasSubmitted ? 'answered' : 'waiting';
     playerStatusList.appendChild(li);
   });
 }

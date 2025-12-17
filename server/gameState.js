@@ -220,7 +220,8 @@ function startRound(question) {
     roundId: null, // Will be set after DB persistence
     question,
     status: 'answering',
-    answers: {}
+    answers: {},
+    submittedInCurrentPhase: new Set() // Track who has submitted in THIS answering session
   };
 
   console.log(`Round ${roundNumber} started: ${question}`);
@@ -244,6 +245,10 @@ function submitAnswer(socketId, answer) {
 
   // Store answer by player name (stable across reconnections)
   gameState.currentRound.answers[player.name] = answer;
+
+  // Mark player as having submitted in the current answering phase
+  gameState.currentRound.submittedInCurrentPhase.add(player.name);
+
   console.log(`Answer submitted by ${player.name}`);
 }
 
@@ -253,12 +258,12 @@ function isRoundComplete() {
 
   const connectedPlayers = gameState.players.filter(p => p.connected);
 
-  // Count only answers from connected players (by player name)
-  const answeredCount = connectedPlayers.filter(p =>
-    gameState.currentRound.answers[p.name]
+  // Check if all connected players have submitted in the CURRENT answering phase
+  const submittedCount = connectedPlayers.filter(p =>
+    gameState.currentRound.submittedInCurrentPhase.has(p.name)
   ).length;
 
-  return answeredCount === connectedPlayers.length;
+  return submittedCount === connectedPlayers.length;
 }
 
 // Mark round as complete
@@ -347,7 +352,11 @@ function returnToAnswering() {
   // Return round status to answering
   gameState.currentRound.status = 'answering';
 
-  console.log('Returned to answering phase');
+  // Clear submission tracking - players must submit again to complete the round
+  // (but keep their previous answers for pre-filling)
+  gameState.currentRound.submittedInCurrentPhase.clear();
+
+  console.log('Returned to answering phase - submission tracking reset');
 }
 
 module.exports = {

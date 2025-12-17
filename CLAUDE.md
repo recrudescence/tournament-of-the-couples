@@ -106,7 +106,7 @@ The SQLite database (`game.db`) is automatically initialized on server startup u
 
 3. **Phase Management**: Game has distinct phases (lobby → playing → scoring) controlled by `gameState.status` and `currentRound.status`. Clients show/hide sections based on phase.
 
-4. **Answer State Restoration**: When host clicks "Back to Answering", the `returnToAnswering()` function preserves existing answers in `gameState.currentRound.answers`, allowing players to modify submissions.
+4. **Answer State Restoration**: When host clicks "Back to Answering", the `returnToAnswering()` function preserves existing answers in `gameState.currentRound.answers` (for pre-filling), but clears `submittedInCurrentPhase` tracking. This means players must actively submit again for the round to complete, even though their previous answers are pre-filled in the input box.
 
 5. **Team References**: Teams store `player1Id` and `player2Id` (socket IDs), players store `partnerId` and `teamId`. On reconnect, both must be updated (see `gameState.reconnectPlayer()`).
 
@@ -192,7 +192,10 @@ Understanding the in-memory game state structure is critical for working with th
     answers: {                        // Map of PLAYER NAME → answer text (stable across reconnections)
       "Alice": "Blue",
       "Bob": "Red"
-    }
+    },
+    submittedInCurrentPhase: Set<string> // Set of player names who submitted in THIS answering session
+                                         // Cleared when returning to answering from scoring
+                                         // Used to determine round completion
   }
 }
 ```
