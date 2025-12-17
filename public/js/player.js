@@ -46,31 +46,37 @@ socket.emit('joinGame', {
 
 socket.on('joinSuccess', (data) => {
   console.log('Player joined successfully:', data);
-  gameState.mySocketId = data.socketId;
-  
+
+  // Extract gameState (might be nested or direct)
+  const state = data.gameState || data;
+  const mySocketId = data.socketId || data.player?.socketId;
+  gameState.mySocketId = mySocketId;
+
   // Find my player data
-  const me = data.players.find(p => p.socketId === data.socketId);
-  if (me && me.teamId) {
-    gameState.myTeamId = me.teamId;
-    
-    // Find my team
-    const myTeam = data.teams.find(t => t.teamId === me.teamId);
-    if (myTeam) {
-      // Find partner
-      gameState.partnerId = myTeam.player1Id === data.socketId 
-        ? myTeam.player2Id 
-        : myTeam.player1Id;
-      
-      const partner = data.players.find(p => p.socketId === gameState.partnerId);
-      if (partner) {
-        partnerNameEl.textContent = partner.name;
+  if (state.players) {
+    const me = state.players.find(p => p.socketId === mySocketId);
+    if (me && me.teamId) {
+      gameState.myTeamId = me.teamId;
+
+      // Find my team
+      const myTeam = state.teams.find(t => t.teamId === me.teamId);
+      if (myTeam) {
+        // Find partner
+        gameState.partnerId = myTeam.player1Id === mySocketId
+          ? myTeam.player2Id
+          : myTeam.player1Id;
+
+        const partner = state.players.find(p => p.socketId === gameState.partnerId);
+        if (partner) {
+          partnerNameEl.textContent = partner.name;
+        }
+
+        // Update score
+        teamScoreEl.textContent = myTeam.score;
       }
-      
-      // Update score
-      teamScoreEl.textContent = myTeam.score;
     }
   }
-  
+
   // Show waiting section initially
   showSection('waiting');
 });

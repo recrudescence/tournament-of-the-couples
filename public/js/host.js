@@ -67,8 +67,10 @@ socket.emit('joinGame', {
 
 socket.on('joinSuccess', (data) => {
   console.log('Host joined successfully:', data);
-  gameState.players = data.players || [];
-  gameState.teams = data.teams || [];
+  // Extract gameState (might be nested or direct)
+  const state = data.gameState || data;
+  gameState.players = state.players || [];
+  gameState.teams = state.teams || [];
   updateScoreboard();
 });
 
