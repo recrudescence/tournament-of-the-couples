@@ -46,7 +46,16 @@ async function initializeDatabase() {
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
     
-    await run(schema);
+    // Split schema by semicolons and execute each statement
+    const statements = schema
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    for (const statement of statements) {
+      await run(statement);
+    }
+    
     console.log('Database tables initialized');
   } catch (err) {
     console.error('Error initializing database:', err.message);
@@ -132,10 +141,8 @@ async function getGameRounds(gameId) {
   }
 }
 
-// Initialize on module load
-initializeDatabase();
-
 module.exports = {
+  init: initializeDatabase,
   createGame,
   endGame,
   saveRound,

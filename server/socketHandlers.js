@@ -122,6 +122,7 @@ function setupSocketHandlers(io) {
       try {
         gameState.startGame();
         const state = gameState.getGameState();
+        console.log('Emitting gameStarted to all clients. Players:', state.players.map(p => p.name));
         io.emit('gameStarted', state);
       } catch (err) {
         console.error('Start game error:', err);
@@ -173,7 +174,10 @@ function setupSocketHandlers(io) {
         }
         
         // Notify that answer was submitted
-        socket.emit('answerSubmitted', { success: true });
+        socket.emit('answerSubmitted', { 
+          socketId: socket.id,
+          answer: answer 
+        });
         
         // Check if round is complete
         if (gameState.isRoundComplete()) {

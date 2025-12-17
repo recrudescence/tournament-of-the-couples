@@ -1,6 +1,12 @@
 // Get player info from sessionStorage
 const playerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
 
+// Guard: Redirect to join page if no player info exists
+if (!playerInfo || !playerInfo.name) {
+  console.log('No player info found, redirecting to join page');
+  window.location.href = '/';
+}
+
 const socket = io();
 
 let currentPlayer = playerInfo;
@@ -169,9 +175,9 @@ function renderLobby() {
   if (currentPlayer && currentPlayer.isHost) {
     hostControls.classList.remove('hidden');
     
-    // Enable start button only if all players are paired
-    const allPaired = gameState.players.length > 0 && 
-                      gameState.players.length === gameState.teams.length * 2;
+    // Enable start button only if all non-host players are paired
+    const nonHostPlayers = gameState.players.filter(p => p.name !== gameState.host?.name);
+    const allPaired = nonHostPlayers.length > 0 && nonHostPlayers.length === gameState.teams.length * 2;
     
     startGameBtn.disabled = !allPaired;
     

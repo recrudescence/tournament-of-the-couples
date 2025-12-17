@@ -3,8 +3,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const gameState = require('./gameState');
-const database = require('./database');
+const db = require('./database');
 const { setupSocketHandlers } = require('./socketHandlers');
+
+db.init().catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+});
 
 const app = express();
 const server = http.createServer(app);
