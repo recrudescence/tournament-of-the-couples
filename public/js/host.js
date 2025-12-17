@@ -72,6 +72,35 @@ socket.on('joinSuccess', (data) => {
   gameState.players = state.players || [];
   gameState.teams = state.teams || [];
   updateScoreboard();
+
+  // Restore round state if there's an active round
+  if (state.currentRound) {
+    gameState.roundNumber = state.currentRound.roundNumber;
+    gameState.currentQuestion = state.currentRound.question;
+    gameState.answers = state.currentRound.answers || {};
+
+    roundNumberEl.textContent = gameState.roundNumber;
+    currentQuestionEl.textContent = state.currentRound.question;
+    gameStatusEl.textContent = state.status === 'scoring' ? 'Scoring' : 'Playing';
+
+    // Restore to correct phase based on round status
+    if (state.status === 'scoring' || state.currentRound.status === 'complete') {
+      // Show scoring phase
+      gameState.currentTeamIndex = 0;
+      gameStatusEl.textContent = 'Scoring';
+      showPhase('scoring');
+      // Initialize team display once DOM is ready
+      setTimeout(() => showTeam(0), 0);
+    } else if (state.currentRound.status === 'answering') {
+      // Show answering phase
+      updateAnswerStatus();
+      showPhase('answering');
+    }
+  } else if (state.status === 'playing') {
+    // Game started but no round yet
+    gameStatusEl.textContent = 'Playing';
+    showPhase('roundSetup');
+  }
 });
 
 socket.on('gameStarted', (data) => {

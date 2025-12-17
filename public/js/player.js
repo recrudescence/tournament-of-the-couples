@@ -77,8 +77,34 @@ socket.on('joinSuccess', (data) => {
     }
   }
 
-  // Show waiting section initially
-  showSection('waiting');
+  // Restore round state if there's an active round
+  if (state.currentRound) {
+    gameState.currentRoundNumber = state.currentRound.roundNumber;
+    roundNumberEl.textContent = state.currentRound.roundNumber;
+    questionTextEl.textContent = state.currentRound.question;
+
+    // Check if we've already submitted an answer
+    const hasSubmitted = state.currentRound.answers && state.currentRound.answers[mySocketId];
+    gameState.hasSubmitted = !!hasSubmitted;
+
+    // Restore to correct section based on round status
+    if (state.status === 'scoring' || state.currentRound.status === 'complete') {
+      // Host is scoring
+      showSection('scoring');
+    } else if (hasSubmitted) {
+      // We already submitted, show submitted section
+      submittedAnswerText.textContent = state.currentRound.answers[mySocketId];
+      showSection('submitted');
+    } else if (state.currentRound.status === 'answering') {
+      // Round is active, we haven't submitted yet
+      showSection('answering');
+    } else {
+      showSection('waiting');
+    }
+  } else {
+    // No active round, show waiting section
+    showSection('waiting');
+  }
 });
 
 socket.on('roundStarted', (data) => {
