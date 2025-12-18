@@ -158,7 +158,7 @@ button:disabled {
 }
 
 .team-card.collapsed .team-card-header {
-  margin-bottom: 0;
+  margin-bottom: 5px;
 }
 
 .team-card-title {
@@ -170,7 +170,14 @@ button:disabled {
 .team-card-score {
   font-size: 1.1em;
   font-weight: bold;
+}
+
+.team-card-score.points-awarded {
   color: #28a745;
+}
+
+.team-card-score.points-none {
+  color: #dc3545;
 }
 
 /* Team Card Content (hidden when collapsed) */

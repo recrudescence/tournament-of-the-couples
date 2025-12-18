@@ -158,14 +158,8 @@ socket.on('scoreUpdated', (data) => {
     team.score = data.newScore;
   }
 
-  // Update the score in the team card
-  const teamCard = teamCardsContainer.querySelector(`[data-team-id="${data.teamId}"]`);
-  if (teamCard) {
-    const scoreEl = teamCard.querySelector('.team-card-score');
-    if (scoreEl) {
-      scoreEl.textContent = `${data.newScore} pts`;
-    }
-  }
+  // Don't update the team card score here - it shows round points, not total
+  // The scoreboard below will show the updated total
 
   updateScoreboard();
 });
@@ -312,7 +306,7 @@ function createTeamCards() {
     card.innerHTML = `
       <div class="team-card-header">
         <div class="team-card-title">${player1?.name || '?'} & ${player2?.name || '?'}</div>
-        <div class="team-card-score">${team.score} pts</div>
+        <div class="team-card-score"></div>
       </div>
       <div class="team-card-content">
         <div class="player-answer">
@@ -346,18 +340,30 @@ function createTeamCards() {
     const awardBtn = card.querySelector('.award-btn');
     awardBtn.addEventListener('click', () => {
       socket.emit('awardPoint', { teamId: team.teamId });
-      collapseCardAndMoveNext(card, index);
+      collapseCardAndMoveNext(card, index, 1); // Awarded 1 point
     });
 
     const skipBtn = card.querySelector('.skip-btn');
     skipBtn.addEventListener('click', () => {
-      collapseCardAndMoveNext(card, index);
+      collapseCardAndMoveNext(card, index, 0); // Awarded 0 points
     });
   });
 }
 
 // Collapse current card and expand next one
-function collapseCardAndMoveNext(card, currentIndex) {
+function collapseCardAndMoveNext(card, currentIndex, pointsAwarded) {
+  // Display round points in the score area
+  const scoreEl = card.querySelector('.team-card-score');
+  if (scoreEl) {
+    if (pointsAwarded > 0) {
+      scoreEl.textContent = `+${pointsAwarded} point${pointsAwarded > 1 ? 's' : ''}! 🎉`;
+      scoreEl.className = 'team-card-score points-awarded';
+    } else {
+      scoreEl.textContent = '0 points 😔';
+      scoreEl.className = 'team-card-score points-none';
+    }
+  }
+
   card.classList.remove('expanded');
   card.classList.add('collapsed');
 
