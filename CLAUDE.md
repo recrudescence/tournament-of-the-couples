@@ -107,8 +107,10 @@ The SQLite database (`game.db`) is automatically initialized on server startup u
 3. **Phase Management**: Game has distinct phases (lobby → playing → scoring) controlled by `gameState.status` and `currentRound.status`. Clients show/hide sections based on phase.
 
 4. **Two-step Answer Reopening**:
-   - **"Back to Answering" button**: Host-only UI navigation - returns host to answering view without changing server state or notifying players. Shows "Re-open Answering" button.
-   - **"Re-open Answering" button**: Emits `backToAnswering` event to server, which calls `returnToAnswering()`. This preserves existing answers in `gameState.currentRound.answers` (for pre-filling), clears `submittedInCurrentPhase` tracking, and notifies all players to return to answering phase. Players must actively submit again for the round to complete.
+   - When all answers are in, both "Begin Scoring" and "Re-open Answering" buttons appear
+   - **"Begin Scoring" button**: Navigate to scoring view (no server state change)
+   - **"Back to Answering" button** (in scoring): Host-only UI navigation back to answering view, like browser back button. Server state unchanged, players unaffected. Both buttons remain visible.
+   - **"Re-open Answering" button**: Emits `backToAnswering` event to server, which calls `returnToAnswering()`. This preserves existing answers in `gameState.currentRound.answers` (for pre-filling), clears `submittedInCurrentPhase` tracking, and notifies all players to return to answering phase. Hides both buttons and notification. Players must actively submit again for the round to complete.
 
 5. **Team References**: Teams store `player1Id` and `player2Id` (socket IDs), players store `partnerId` and `teamId`. On reconnect, both must be updated (see `gameState.reconnectPlayer()`).
 

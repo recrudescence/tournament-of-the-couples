@@ -115,8 +115,10 @@ socket.on('roundStarted', (data) => {
   currentQuestionEl.textContent = data.question;
   gameStatusEl.textContent = 'Answering';
 
-  // Hide reopen button at start of new round
+  // Hide both buttons at start of new round
+  startScoringBtn.classList.add('hidden');
   reopenAnsweringBtn.classList.add('hidden');
+  allAnswersNotification.classList.add('hidden');
 
   updateAnswerStatus();
   showPhase('answering');
@@ -139,8 +141,8 @@ socket.on('allAnswersIn', () => {
   console.log('All answers in!');
   allAnswersNotification.classList.remove('hidden');
   startScoringBtn.classList.remove('hidden');
-  // Hide reopen button when round first completes
-  reopenAnsweringBtn.classList.add('hidden');
+  // Show reopen button when round completes
+  reopenAnsweringBtn.classList.remove('hidden');
   gameStatusEl.textContent = 'All Answers In';
 });
 
@@ -174,7 +176,7 @@ socket.on('readyForNextRound', (data) => {
 });
 
 socket.on('returnedToAnswering', (data) => {
-  console.log('Returned to answering phase', data);
+  console.log('Returned to answering phase - round reopened for players', data);
   // Restore answers from server state (for pre-filling)
   if (data && data.currentRound && data.currentRound.answers) {
     gameState.answers = data.currentRound.answers;
@@ -183,11 +185,15 @@ socket.on('returnedToAnswering', (data) => {
   // Clear submission tracking - players must submit again
   gameState.submittedInCurrentPhase.clear();
   console.log('Cleared submission tracking - waiting for new submissions');
-  gameStatusEl.textContent = 'Answering';
+
+  // Hide buttons/notification BEFORE updating status so it shows 0/2
+  startScoringBtn.classList.add('hidden');
+  reopenAnsweringBtn.classList.add('hidden');
+  allAnswersNotification.classList.add('hidden');
+
+  gameStatusEl.textContent = 'Answering - Reopened';
   updateAnswerStatus();
   showPhase('answering');
-  // Hide the reopen button since round is now open
-  reopenAnsweringBtn.classList.add('hidden');
 });
 
 socket.on('error', (data) => {
@@ -207,8 +213,6 @@ startRoundForm.addEventListener('submit', (e) => {
 startScoringBtn.addEventListener('click', () => {
   gameState.currentTeamIndex = 0;
   gameStatusEl.textContent = 'Scoring';
-  // Hide reopen button when entering scoring
-  reopenAnsweringBtn.classList.add('hidden');
   createTeamCards();
   showPhase('scoring');
 });
@@ -220,11 +224,13 @@ finishRoundBtn.addEventListener('click', () => {
 // Back to Answering - just navigates HOST view, doesn't change server state
 if (backToAnsweringBtn) {
   backToAnsweringBtn.addEventListener('click', () => {
-    console.log('Back to answering view (host only)');
-    gameStatusEl.textContent = 'Answering';
+    console.log('Back to answering view (host only - like browser back)');
+    gameStatusEl.textContent = 'All Answers In';
     updateAnswerStatus();
     showPhase('answering');
-    // Show the reopen button so host can actually reopen the round if needed
+    // Show both buttons again - restoring the "all answers in" state
+    allAnswersNotification.classList.remove('hidden');
+    startScoringBtn.classList.remove('hidden');
     reopenAnsweringBtn.classList.remove('hidden');
   });
 } else {
@@ -262,13 +268,25 @@ function showPhase(phase) {
 }
 
 function updateAnswerStatus() {
-  // Count only players who have submitted in the CURRENT answering phase
-  const submittedCount = gameState.submittedInCurrentPhase.size;
   const totalCount = gameState.players.length;
+
+  // If "all answers in" notification is visible, we're in the completed state
+  // Show actual answer count, not submission tracking
+  const isCompleteState = !allAnswersNotification.classList.contains('hidden');
+
+  let submittedCount;
+  if (isCompleteState) {
+    // Round completed but not reopened - count actual answers
+    submittedCount = Object.keys(gameState.answers).length;
+  } else {
+    // Active answering phase - count current phase submissions
+    submittedCount = gameState.submittedInCurrentPhase.size;
+  }
 
   console.log('updateAnswerStatus called:', {
     submittedCount,
     totalCount,
+    isCompleteState,
     answers: gameState.answers,
     submittedInPhase: Array.from(gameState.submittedInCurrentPhase)
   });
@@ -280,8 +298,15 @@ function updateAnswerStatus() {
   playerStatusList.innerHTML = '';
   gameState.players.forEach(player => {
     const li = document.createElement('li');
-    // Check if player has submitted in current phase (not just if answer exists)
-    const hasSubmitted = gameState.submittedInCurrentPhase.has(player.name);
+
+    // Check based on current state
+    let hasSubmitted;
+    if (isCompleteState) {
+      hasSubmitted = gameState.answers.hasOwnProperty(player.name);
+    } else {
+      hasSubmitted = gameState.submittedInCurrentPhase.has(player.name);
+    }
+
     console.log(`Player ${player.name}: hasSubmitted=${hasSubmitted}`);
     li.textContent = `${player.name} ${hasSubmitted ? '✅' : '⏳'}`;
     li.className = hasSubmitted ? 'answered' : 'waiting';
