@@ -120,3 +120,98 @@ button:disabled {
 .reconnect-list li:hover {
   background-color: #e9ecef;
 }
+
+/* Team Cards Container */
+#teamCardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Individual Team Card */
+.team-card {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.team-card.collapsed {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-color: #28a745;
+}
+
+.team-card.expanded {
+  border-color: #007bff;
+  box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+}
+
+/* Team Card Header */
+.team-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.team-card.collapsed .team-card-header {
+  margin-bottom: 0;
+}
+
+.team-card-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+}
+
+.team-card-score {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* Team Card Content (hidden when collapsed) */
+.team-card-content {
+  display: block;
+}
+
+.team-card.collapsed .team-card-content {
+  display: none;
+}
+
+/* Player Answer Sections */
+.player-answer {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.player-answer h4 {
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.answer-display {
+  margin-top: 10px;
+  padding: 12px;
+  background: white;
+  border: 2px solid #28a745;
+  border-radius: 4px;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+/* Scoring Actions */
+.scoring-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.scoring-actions button {
+  flex: 1;
+}

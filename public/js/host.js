@@ -25,18 +25,7 @@ const allAnswersNotification = document.getElementById('allAnswersNotification')
 const startScoringBtn = document.getElementById('startScoringBtn');
 const backToAnsweringBtn = document.getElementById('backToAnsweringBtn');
 
-const currentTeamNumEl = document.getElementById('currentTeamNum');
-const totalTeamsEl = document.getElementById('totalTeams');
-const teamNameEl = document.getElementById('teamName');
-const player1NameEl = document.getElementById('player1Name');
-const player2NameEl = document.getElementById('player2Name');
-const revealAnswer1Btn = document.getElementById('revealAnswer1Btn');
-const revealAnswer2Btn = document.getElementById('revealAnswer2Btn');
-const answer1Display = document.getElementById('answer1Display');
-const answer2Display = document.getElementById('answer2Display');
-const awardPointBtn = document.getElementById('awardPointBtn');
-const skipPointBtn = document.getElementById('skipPointBtn');
-const nextTeamBtn = document.getElementById('nextTeamBtn');
+const teamCardsContainer = document.getElementById('teamCardsContainer');
 const finishRoundBtn = document.getElementById('finishRoundBtn');
 
 const scoreboardList = document.getElementById('scoreboardList');
@@ -91,8 +80,8 @@ socket.on('joinSuccess', (data) => {
       gameState.currentTeamIndex = 0;
       gameStatusEl.textContent = 'Scoring';
       showPhase('scoring');
-      // Initialize team display once DOM is ready
-      setTimeout(() => showTeam(0), 0);
+      // Create team cards once DOM is ready
+      setTimeout(() => createTeamCards(), 0);
     } else if (state.currentRound.status === 'answering') {
       // Show answering phase
       updateAnswerStatus();
@@ -151,8 +140,8 @@ socket.on('allAnswersIn', () => {
 
 socket.on('answerRevealed', (data) => {
   console.log('Answer revealed:', data);
-  gameState.revealedAnswers.add(data.socketId);
-  displayRevealedAnswer(data.socketId, data.answer);
+  gameState.revealedAnswers.add(data.playerName);
+  displayRevealedAnswer(data.playerName, data.answer);
 });
 
 socket.on('scoreUpdated', (data) => {
@@ -162,6 +151,16 @@ socket.on('scoreUpdated', (data) => {
   if (team) {
     team.score = data.newScore;
   }
+
+  // Update the score in the team card
+  const teamCard = teamCardsContainer.querySelector(`[data-team-id="${data.teamId}"]`);
+  if (teamCard) {
+    const scoreEl = teamCard.querySelector('.team-card-score');
+    if (scoreEl) {
+      scoreEl.textContent = `${data.newScore} pts`;
+    }
+  }
+
   updateScoreboard();
 });
 
@@ -206,34 +205,8 @@ startRoundForm.addEventListener('submit', (e) => {
 startScoringBtn.addEventListener('click', () => {
   gameState.currentTeamIndex = 0;
   gameStatusEl.textContent = 'Scoring';
-  showTeam(0);
+  createTeamCards();
   showPhase('scoring');
-});
-
-revealAnswer1Btn.addEventListener('click', () => {
-  const team = gameState.teams[gameState.currentTeamIndex];
-  const player1 = gameState.players.find(p => p.socketId === team.player1Id);
-  socket.emit('revealAnswer', { playerName: player1.name });
-});
-
-revealAnswer2Btn.addEventListener('click', () => {
-  const team = gameState.teams[gameState.currentTeamIndex];
-  const player2 = gameState.players.find(p => p.socketId === team.player2Id);
-  socket.emit('revealAnswer', { playerName: player2.name });
-});
-
-awardPointBtn.addEventListener('click', () => {
-  const team = gameState.teams[gameState.currentTeamIndex];
-  socket.emit('awardPoint', { teamId: team.teamId });
-  moveToNextTeam();
-});
-
-skipPointBtn.addEventListener('click', () => {
-  moveToNextTeam();
-});
-
-nextTeamBtn.addEventListener('click', () => {
-  moveToNextTeam();
 });
 
 finishRoundBtn.addEventListener('click', () => {
@@ -298,58 +271,102 @@ function updateAnswerStatus() {
   });
 }
 
-function showTeam(teamIndex) {
-  gameState.currentTeamIndex = teamIndex;
-  const team = gameState.teams[teamIndex];
-  
-  if (!team) return;
-  
-  const player1 = gameState.players.find(p => p.socketId === team.player1Id);
-  const player2 = gameState.players.find(p => p.socketId === team.player2Id);
-  
-  currentTeamNumEl.textContent = teamIndex + 1;
-  totalTeamsEl.textContent = gameState.teams.length;
-  teamNameEl.textContent = `${player1?.name || 'Player 1'} & ${player2?.name || 'Player 2'}`;
-  player1NameEl.textContent = player1?.name || 'Player 1';
-  player2NameEl.textContent = player2?.name || 'Player 2';
-  
-  // Reset reveal state
-  revealAnswer1Btn.classList.remove('hidden');
-  revealAnswer2Btn.classList.remove('hidden');
-  answer1Display.classList.add('hidden');
-  answer2Display.classList.add('hidden');
-  answer1Display.textContent = '';
-  answer2Display.textContent = '';
-  
-  // Hide next team button initially
-  nextTeamBtn.classList.add('hidden');
+// Create all team cards when entering scoring phase
+function createTeamCards() {
+  teamCardsContainer.innerHTML = '';
   finishRoundBtn.classList.add('hidden');
+
+  gameState.teams.forEach((team, index) => {
+    const player1 = gameState.players.find(p => p.socketId === team.player1Id);
+    const player2 = gameState.players.find(p => p.socketId === team.player2Id);
+
+    const card = document.createElement('div');
+    card.className = `team-card ${index === 0 ? 'expanded' : 'collapsed'}`;
+    card.dataset.teamId = team.teamId;
+    card.dataset.teamIndex = index;
+
+    card.innerHTML = `
+      <div class="team-card-header">
+        <div class="team-card-title">${player1?.name || '?'} & ${player2?.name || '?'}</div>
+        <div class="team-card-score">${team.score} pts</div>
+      </div>
+      <div class="team-card-content">
+        <div class="player-answer">
+          <h4>${player1?.name || 'Player 1'}</h4>
+          <button class="btn btn-secondary reveal-btn" data-player-name="${player1?.name}">Reveal Answer</button>
+          <div class="answer-display hidden" data-player-name="${player1?.name}"></div>
+        </div>
+        <div class="player-answer">
+          <h4>${player2?.name || 'Player 2'}</h4>
+          <button class="btn btn-secondary reveal-btn" data-player-name="${player2?.name}">Reveal Answer</button>
+          <div class="answer-display hidden" data-player-name="${player2?.name}"></div>
+        </div>
+        <div class="scoring-actions">
+          <button class="btn btn-success award-btn" data-team-id="${team.teamId}">Award Point ⭐</button>
+          <button class="btn btn-neutral skip-btn">No Point</button>
+        </div>
+      </div>
+    `;
+
+    teamCardsContainer.appendChild(card);
+
+    // Add event listeners for this card
+    const revealBtns = card.querySelectorAll('.reveal-btn');
+    revealBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const playerName = btn.dataset.playerName;
+        socket.emit('revealAnswer', { playerName });
+      });
+    });
+
+    const awardBtn = card.querySelector('.award-btn');
+    awardBtn.addEventListener('click', () => {
+      socket.emit('awardPoint', { teamId: team.teamId });
+      collapseCardAndMoveNext(card, index);
+    });
+
+    const skipBtn = card.querySelector('.skip-btn');
+    skipBtn.addEventListener('click', () => {
+      collapseCardAndMoveNext(card, index);
+    });
+  });
 }
 
-function displayRevealedAnswer(socketId, answer) {
-  const team = gameState.teams[gameState.currentTeamIndex];
-  
-  if (socketId === team.player1Id) {
-    revealAnswer1Btn.classList.add('hidden');
-    answer1Display.textContent = answer;
-    answer1Display.classList.remove('hidden');
-  } else if (socketId === team.player2Id) {
-    revealAnswer2Btn.classList.add('hidden');
-    answer2Display.textContent = answer;
-    answer2Display.classList.remove('hidden');
+// Collapse current card and expand next one
+function collapseCardAndMoveNext(card, currentIndex) {
+  card.classList.remove('expanded');
+  card.classList.add('collapsed');
+
+  const nextIndex = currentIndex + 1;
+  if (nextIndex < gameState.teams.length) {
+    // Expand next card
+    const nextCard = teamCardsContainer.querySelector(`[data-team-index="${nextIndex}"]`);
+    if (nextCard) {
+      nextCard.classList.remove('collapsed');
+      nextCard.classList.add('expanded');
+    }
+  } else {
+    // All teams done - show finish button
+    finishRoundBtn.classList.remove('hidden');
+    console.log('All teams scored - showing finish round button');
   }
 }
 
-function moveToNextTeam() {
-  const nextIndex = gameState.currentTeamIndex + 1;
-  
-  if (nextIndex < gameState.teams.length) {
-    // More teams to review
-    showTeam(nextIndex);
+// Handle answer reveal from server
+function displayRevealedAnswer(playerName, answer) {
+  console.log('displayRevealedAnswer called:', { playerName, answer });
+
+  // Find the answer display for this player across all cards
+  const answerDisplay = teamCardsContainer.querySelector(`.answer-display[data-player-name="${playerName}"]`);
+  const revealBtn = teamCardsContainer.querySelector(`.reveal-btn[data-player-name="${playerName}"]`);
+
+  if (answerDisplay && revealBtn) {
+    revealBtn.classList.add('hidden');
+    answerDisplay.textContent = answer;
+    answerDisplay.classList.remove('hidden');
+    console.log('Revealed answer for', playerName);
   } else {
-    // All teams reviewed - show finish button
-    nextTeamBtn.classList.add('hidden');
-    finishRoundBtn.classList.remove('hidden');
+    console.error('Could not find answer display for player:', playerName);
   }
 }
 

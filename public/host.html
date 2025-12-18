@@ -26,7 +26,7 @@
           <label for="questionInput">Enter Question:</label>
           <textarea 
             id="questionInput" 
-            rows="3" 
+            rows="6"
             placeholder="What's your partner's favorite movie?"
             required
           ></textarea>
@@ -64,33 +64,10 @@
         <button id="backToAnsweringBtn" class="btn btn-warning">← Back to Answering</button>
       </div>
 
-      <div class="team-progress">
-        <p>Team <span id="currentTeamNum">1</span> of <span id="totalTeams">0</span></p>
-      </div>
-
-      <div id="teamReviewCard" class="team-card">
-        <h3 id="teamName">Team Name</h3>
-        
-        <div class="player-answer">
-          <h4 id="player1Name">Player 1</h4>
-          <button id="revealAnswer1Btn" class="btn btn-secondary">Reveal Answer</button>
-          <div id="answer1Display" class="answer-display hidden"></div>
-        </div>
-
-        <div class="player-answer">
-          <h4 id="player2Name">Player 2</h4>
-          <button id="revealAnswer2Btn" class="btn btn-secondary">Reveal Answer</button>
-          <div id="answer2Display" class="answer-display hidden"></div>
-        </div>
-
-        <div class="scoring-actions">
-          <button id="awardPointBtn" class="btn btn-success">Award Point ⭐</button>
-          <button id="skipPointBtn" class="btn btn-neutral">No Point</button>
-        </div>
-      </div>
+      <!-- All team cards will be rendered here -->
+      <div id="teamCardsContainer"></div>
 
       <div class="navigation-actions">
-        <button id="nextTeamBtn" class="btn btn-primary hidden">Next Team →</button>
         <button id="finishRoundBtn" class="btn btn-primary hidden">Finish Round</button>
       </div>
     </div>
