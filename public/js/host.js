@@ -23,6 +23,7 @@ const totalPlayersEl = document.getElementById('totalPlayers');
 const playerStatusList = document.getElementById('playerStatusList');
 const allAnswersNotification = document.getElementById('allAnswersNotification');
 const startScoringBtn = document.getElementById('startScoringBtn');
+const reopenAnsweringBtn = document.getElementById('reopenAnsweringBtn');
 const backToAnsweringBtn = document.getElementById('backToAnsweringBtn');
 
 const teamCardsContainer = document.getElementById('teamCardsContainer');
@@ -114,6 +115,9 @@ socket.on('roundStarted', (data) => {
   currentQuestionEl.textContent = data.question;
   gameStatusEl.textContent = 'Answering';
 
+  // Hide reopen button at start of new round
+  reopenAnsweringBtn.classList.add('hidden');
+
   updateAnswerStatus();
   showPhase('answering');
 });
@@ -135,6 +139,8 @@ socket.on('allAnswersIn', () => {
   console.log('All answers in!');
   allAnswersNotification.classList.remove('hidden');
   startScoringBtn.classList.remove('hidden');
+  // Hide reopen button when round first completes
+  reopenAnsweringBtn.classList.add('hidden');
   gameStatusEl.textContent = 'All Answers In';
 });
 
@@ -186,6 +192,8 @@ socket.on('returnedToAnswering', (data) => {
   gameStatusEl.textContent = 'Answering';
   updateAnswerStatus();
   showPhase('answering');
+  // Hide the reopen button since round is now open
+  reopenAnsweringBtn.classList.add('hidden');
 });
 
 socket.on('error', (data) => {
@@ -205,6 +213,8 @@ startRoundForm.addEventListener('submit', (e) => {
 startScoringBtn.addEventListener('click', () => {
   gameState.currentTeamIndex = 0;
   gameStatusEl.textContent = 'Scoring';
+  // Hide reopen button when entering scoring
+  reopenAnsweringBtn.classList.add('hidden');
   createTeamCards();
   showPhase('scoring');
 });
@@ -213,16 +223,30 @@ finishRoundBtn.addEventListener('click', () => {
   socket.emit('nextRound');
 });
 
+// Back to Answering - just navigates HOST view, doesn't change server state
 if (backToAnsweringBtn) {
   backToAnsweringBtn.addEventListener('click', () => {
-    console.log('Back to answering clicked');
-    console.log('Socket connected:', socket.connected);
-    console.log('Socket ID:', socket.id);
-    socket.emit('backToAnswering');
-    console.log('backToAnswering event emitted');
+    console.log('Back to answering view (host only)');
+    gameStatusEl.textContent = 'Answering';
+    updateAnswerStatus();
+    showPhase('answering');
+    // Show the reopen button so host can actually reopen the round if needed
+    reopenAnsweringBtn.classList.remove('hidden');
   });
 } else {
   console.error('backToAnsweringBtn not found!');
+}
+
+// Re-open Answering - emits to server to actually reopen the round for players
+if (reopenAnsweringBtn) {
+  reopenAnsweringBtn.addEventListener('click', () => {
+    console.log('Re-opening answering round');
+    socket.emit('backToAnswering');
+    // Hide this button after clicking
+    reopenAnsweringBtn.classList.add('hidden');
+  });
+} else {
+  console.error('reopenAnsweringBtn not found!');
 }
 
 // Helper Functions

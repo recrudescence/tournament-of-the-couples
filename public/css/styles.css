@@ -205,6 +205,17 @@ button:disabled {
   font-weight: bold;
 }
 
+/* Answering Actions */
+.answering-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.answering-actions button {
+  flex: 1;
+}
+
 /* Scoring Actions */
 .scoring-actions {
   display: flex;
