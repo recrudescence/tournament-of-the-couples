@@ -1,5 +1,6 @@
 const gameState = require('./gameState');
 const database = require('./database');
+const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
@@ -7,79 +8,38 @@ function setupSocketHandlers(io) {
     socket.on('joinGame', async ({ name, isHost, isReconnect }) => {
       try {
         let state = gameState.getGameState();
-        
+
         // Initialize game if it doesn't exist
         if (!state) {
           state = gameState.initializeGame();
           await database.createGame(state.gameId);
         }
 
-        if (isReconnect) {
-          // Reconnect existing player
-          const player = gameState.reconnectPlayer(name, socket.id);
-          socket.emit('joinSuccess', { 
-            player, 
-            gameState: state,
-            reconnected: true,
-            isHost: false
-          });
-          io.emit('lobbyUpdate', state);
+        let result;
+
+        // Route to appropriate handler based on join type
+        if (isHost) {
+          result = handleHostJoin(socket, name, state);
+        } else if (isReconnect) {
+          result = handlePlayerReconnect(socket, name, state);
         } else {
-          // Check if this is the host reconnecting
-          if (isHost && state.host && state.host.name === name) {
-            // Update host socket ID
-            state.host.socketId = socket.id;
-            console.log(`Host reconnected: ${name}`);
-            socket.emit('joinSuccess', {
-              socketId: socket.id,
-              name,
-              isHost: true,
-              reconnected: true,
-              gameState: state
-            });
-            io.emit('lobbyUpdate', state);
-            return;
-          }
-
-          // Check if player with this name already exists (might be disconnected)
+          // Check for implicit reconnect (disconnected player joining without isReconnect flag)
           const existingPlayer = state.players.find(p => p.name === name);
-
-          if (existingPlayer) {
-            // If disconnected, reconnect them
-            if (!existingPlayer.connected) {
-              const player = gameState.reconnectPlayer(name, socket.id);
-              socket.emit('joinSuccess', {
-                player,
-                gameState: state,
-                reconnected: true,
-                isHost: false
-              });
-              io.emit('lobbyUpdate', state);
-              return;
-            } else {
-              // Player with same name is already connected
-              socket.emit('error', { message: 'Player name already exists' });
-              return;
-            }
+          if (existingPlayer && !existingPlayer.connected) {
+            result = handlePlayerReconnect(socket, name, state);
+          } else {
+            result = handleNewPlayerJoin(socket, name, isHost, state);
           }
-
-          // New player joining
-          if (!gameState.canJoinAsNew()) {
-            socket.emit('error', { message: 'Cannot join game in progress' });
-            return;
-          }
-
-          gameState.addPlayer(socket.id, name, isHost);
-          state = gameState.getGameState();
-
-          socket.emit('joinSuccess', {
-            socketId: socket.id,
-            name,
-            isHost,
-            gameState: state
-          });
-          io.emit('lobbyUpdate', state);
         }
+
+        // Handle result
+        if (result.success) {
+          socket.emit('joinSuccess', result.data);
+          io.emit('lobbyUpdate', gameState.getGameState());
+        } else {
+          socket.emit('error', { message: result.error });
+        }
+
       } catch (err) {
         console.error('Join error:', err);
         socket.emit('error', { message: err.message });
