@@ -43,6 +43,7 @@ socket.on('joinSuccess', ({ roomCode, gameState: state }) => {
 
   // Display room code
   document.getElementById('roomCodeDisplay').textContent = roomCode.toUpperCase();
+  document.getElementById('hostDisplay').textContent = state.host.name;
 
   // Update current player reference
   if (playerInfo.name) {

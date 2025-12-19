@@ -10,6 +10,21 @@ body {
   padding: 20px;
 }
 
+.header-info {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.header-info p {
+  margin: 0;
+}
+
 .container {
   max-width: 600px;
   margin: 0 auto;

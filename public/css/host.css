@@ -1,19 +1,5 @@
 /* Host Page Styles */
 
-.host-info {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.host-info p {
-  margin: 0;
-}
-
 .phase-section {
   margin: 2rem 0;
   padding: 2rem;

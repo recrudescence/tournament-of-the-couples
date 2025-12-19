@@ -51,6 +51,7 @@ socket.on('joinSuccess', (data) => {
 
   // Display room code
   document.getElementById('roomCodeDisplay').textContent = data.roomCode.toUpperCase();
+  document.getElementById('hostDisplay').textContent = data.gameState.host.name;
 
   // Extract gameState (might be nested or direct)
   const state = data.gameState || data;
