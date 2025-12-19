@@ -16,12 +16,16 @@ the following is a list of todo items i want to implement.
 	- when players submit their answers, we should track their response time in milliseconds.
 		- on the player view, they should see a timer (starts at 0.00s, increments upwards). when they submit, this timer should freeze. that value should be stored with their answer. 
 		- on the Scoring phase, teams are ordered by their total response time (player1 + player2 response time). players within the team are ordered by their individual response time, in increasing order. when their answer is revealed, we also see their response time, but unveiled with a slight delay to give emphasis to the time. 
+		- in the case that the host re-opens the answering round, the response times should reset.
 
 - game ux
 	- clicking on the header on any page should send the user to the / page, which then would (or is supposed to, under existing logic) redirect the user to the correct page based on game/player state (/host, /player, /). for example, if the game is already started and the host loads /lobby, redirect to /host.
 	- generally, the front end client display should be optimized to be responsive layouts. something to keep in mind is that most players will view the game on a mobile device, while the host will usually (but not always) be on a desktop.
+	- the /lobby page for a player should display the host's name alongside the game code - "welcome to CODE. your host is XXX!"
+	- when a player has submitted their answer, their "answer submitted" view should show their partner's submission status
 
 - hosting
 	- the host should be able to see a "end game" button, which asks the host to confirm before resetting game state and all players, returning everyone to the main page
 	- the host should have a debug sidebar that shows all players for the game, along with their connection state. this sidebar should exist in the /lobby and the /host pages if the user is a host. the data for the data for the debug panel should solely rely on client socket data received by host, to minimize additional code throughout the codebase. 
+	- when the host scores a team, the minimized team view should have a button to re-open scoring for that team (with the already-awared score taken off)
 
