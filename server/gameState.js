@@ -221,7 +221,7 @@ function startRound(question) {
     question,
     status: 'answering',
     answers: {},
-    submittedInCurrentPhase: new Set() // Track who has submitted in THIS answering session
+    submittedInCurrentPhase: [] // Track who has submitted in THIS answering session
   };
 
   console.log(`Round ${roundNumber} started: ${question}`);
@@ -247,7 +247,9 @@ function submitAnswer(socketId, answer) {
   gameState.currentRound.answers[player.name] = answer;
 
   // Mark player as having submitted in the current answering phase
-  gameState.currentRound.submittedInCurrentPhase.add(player.name);
+  if (!gameState.currentRound.submittedInCurrentPhase.includes(player.name)) {
+    gameState.currentRound.submittedInCurrentPhase.push(player.name);
+  }
 
   console.log(`Answer submitted by ${player.name}`);
 }
@@ -260,7 +262,7 @@ function isRoundComplete() {
 
   // Check if all connected players have submitted in the CURRENT answering phase
   const submittedCount = connectedPlayers.filter(p =>
-    gameState.currentRound.submittedInCurrentPhase.has(p.name)
+    gameState.currentRound.submittedInCurrentPhase.includes(p.name)
   ).length;
 
   return submittedCount === connectedPlayers.length;
@@ -354,7 +356,7 @@ function returnToAnswering() {
 
   // Clear submission tracking - players must submit again to complete the round
   // (but keep their previous answers for pre-filling)
-  gameState.currentRound.submittedInCurrentPhase.clear();
+  gameState.currentRound.submittedInCurrentPhase = [];
 
   console.log('Returned to answering phase - submission tracking reset');
 }

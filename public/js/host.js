@@ -38,7 +38,7 @@ let gameState = {
   teams: [],
   players: [],
   answers: {},
-  submittedInCurrentPhase: new Set(), // Track who has submitted in current answering session
+  submittedInCurrentPhase: [], // Track who has submitted in current answering session
   currentTeamIndex: 0,
   revealedAnswers: new Set()
 };
@@ -108,7 +108,7 @@ socket.on('roundStarted', (data) => {
   gameState.roundNumber = data.roundNumber;
   gameState.currentQuestion = data.question;
   gameState.answers = {};
-  gameState.submittedInCurrentPhase.clear();
+  gameState.submittedInCurrentPhase = [];
   gameState.revealedAnswers.clear();
 
   roundNumberEl.textContent = gameState.roundNumber;
@@ -129,10 +129,10 @@ socket.on('answerSubmitted', (data) => {
   console.log('Current answers before update:', Object.keys(gameState.answers));
   // Track answers by player name (stable across reconnections)
   gameState.answers[data.playerName] = data.answer;
-  // Mark player as submitted in current phase
-  gameState.submittedInCurrentPhase.add(data.playerName);
+  // Server sends the full array - use it as single source of truth
+  gameState.submittedInCurrentPhase = data.submittedInCurrentPhase;
   console.log('Current answers after update:', Object.keys(gameState.answers));
-  console.log('Submitted in current phase:', Array.from(gameState.submittedInCurrentPhase));
+  console.log('Submitted in current phase:', gameState.submittedInCurrentPhase);
   console.log('Calling updateAnswerStatus');
   updateAnswerStatus();
 });
@@ -183,7 +183,7 @@ socket.on('returnedToAnswering', (data) => {
     console.log('Restored answers from server:', gameState.answers);
   }
   // Clear submission tracking - players must submit again
-  gameState.submittedInCurrentPhase.clear();
+  gameState.submittedInCurrentPhase = [];
   console.log('Cleared submission tracking - waiting for new submissions');
 
   // Hide buttons/notification BEFORE updating status so it shows 0/2
@@ -280,7 +280,7 @@ function updateAnswerStatus() {
     submittedCount = Object.keys(gameState.answers).length;
   } else {
     // Active answering phase - count current phase submissions
-    submittedCount = gameState.submittedInCurrentPhase.size;
+    submittedCount = gameState.submittedInCurrentPhase.length;
   }
 
   console.log('updateAnswerStatus called:', {
@@ -288,7 +288,7 @@ function updateAnswerStatus() {
     totalCount,
     isCompleteState,
     answers: gameState.answers,
-    submittedInPhase: Array.from(gameState.submittedInCurrentPhase)
+    submittedInPhase: gameState.submittedInCurrentPhase
   });
 
   answersCountEl.textContent = submittedCount;
@@ -304,7 +304,7 @@ function updateAnswerStatus() {
     if (isCompleteState) {
       hasSubmitted = gameState.answers.hasOwnProperty(player.name);
     } else {
-      hasSubmitted = gameState.submittedInCurrentPhase.has(player.name);
+      hasSubmitted = gameState.submittedInCurrentPhase.includes(player.name);
     }
 
     console.log(`Player ${player.name}: hasSubmitted=${hasSubmitted}`);

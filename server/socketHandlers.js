@@ -191,7 +191,8 @@ function setupSocketHandlers(io) {
         // Use player name as key (stable across reconnections)
         io.emit('answerSubmitted', {
           playerName: player.name,
-          answer: answer
+          answer: answer,
+          submittedInCurrentPhase: state.currentRound.submittedInCurrentPhase
         });
 
         // Check if round is complete
