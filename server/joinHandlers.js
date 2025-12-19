@@ -2,12 +2,13 @@ const gameState = require('./gameState');
 
 /**
  * Handle host joining (new or reconnect)
+ * @param {string} roomCode - Room code
  * @param {Object} socket - Socket.io socket instance
  * @param {string} name - Host name
  * @param {Object} state - Current game state
  * @returns {Object} - Response object with { success, data?, error? }
  */
-function handleHostJoin(socket, name, state) {
+function handleHostJoin(roomCode, socket, name, state) {
   // Check if this is the host reconnecting
   if (state.host && state.host.name === name) {
     // Update host socket ID
@@ -26,18 +27,37 @@ function handleHostJoin(socket, name, state) {
     };
   }
 
-  // Not a valid host reconnection
+  // NEW: Initial host creation (FIXES THE BUG!)
+  if (!state.host) {
+    gameState.addPlayer(roomCode, socket.id, name, true);
+    const updatedState = gameState.getGameState(roomCode);
+    console.log(`Host created: ${name}`);
+
+    return {
+      success: true,
+      data: {
+        socketId: socket.id,
+        name,
+        isHost: true,
+        reconnected: false,
+        gameState: updatedState
+      }
+    };
+  }
+
+  // Invalid: host exists but name doesn't match
   return { success: false, error: 'Host name does not match' };
 }
 
 /**
  * Handle player reconnection (by name)
+ * @param {string} roomCode - Room code
  * @param {Object} socket - Socket.io socket instance
  * @param {string} name - Player name
  * @param {Object} state - Current game state
  * @returns {Object} - Response object with { success, data?, error? }
  */
-function handlePlayerReconnect(socket, name, state) {
+function handlePlayerReconnect(roomCode, socket, name, state) {
   // Try to find existing player with this name
   const existingPlayer = state.players.find(p => p.name === name);
 
@@ -51,7 +71,7 @@ function handlePlayerReconnect(socket, name, state) {
   }
 
   // Reconnect the player
-  const player = gameState.reconnectPlayer(name, socket.id);
+  const player = gameState.reconnectPlayer(roomCode, name, socket.id);
 
   return {
     success: true,
@@ -66,15 +86,16 @@ function handlePlayerReconnect(socket, name, state) {
 
 /**
  * Handle new player joining
+ * @param {string} roomCode - Room code
  * @param {Object} socket - Socket.io socket instance
  * @param {string} name - Player name
  * @param {boolean} isHost - Whether joining as host
  * @param {Object} state - Current game state
  * @returns {Object} - Response object with { success, data?, error? }
  */
-function handleNewPlayerJoin(socket, name, isHost, state) {
+function handleNewPlayerJoin(roomCode, socket, name, isHost, state) {
   // Check if new players can join (must be in lobby)
-  if (!gameState.canJoinAsNew()) {
+  if (!gameState.canJoinAsNew(roomCode)) {
     return { success: false, error: 'Cannot join game in progress' };
   }
 
@@ -85,8 +106,8 @@ function handleNewPlayerJoin(socket, name, isHost, state) {
   }
 
   // Add the new player
-  gameState.addPlayer(socket.id, name, isHost);
-  const updatedState = gameState.getGameState();
+  gameState.addPlayer(roomCode, socket.id, name, isHost);
+  const updatedState = gameState.getGameState(roomCode);
 
   return {
     success: true,

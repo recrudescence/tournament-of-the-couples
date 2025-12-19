@@ -1,6 +1,6 @@
 // Load session data
 const playerData = JSON.parse(sessionStorage.getItem('playerInfo'));
-if (!playerData || playerData.isHost) {
+if (!playerData || playerData.isHost || !playerData.roomCode) {
   alert('You must join as a player first!');
   window.location.href = '/';
 }
@@ -37,15 +37,20 @@ playerNameEl.textContent = playerData.name;
 const socket = io();
 
 // Join as player
-socket.emit('joinGame', { 
-  name: playerData.name, 
-  isHost: false 
+socket.emit('joinGame', {
+  name: playerData.name,
+  isHost: false,
+  isReconnect: false,
+  roomCode: playerData.roomCode
 });
 
 // Socket Listeners
 
 socket.on('joinSuccess', (data) => {
   console.log('Player joined successfully:', data);
+
+  // Display room code
+  document.getElementById('roomCodeDisplay').textContent = data.roomCode.toUpperCase();
 
   // Extract gameState (might be nested or direct)
   const state = data.gameState || data;

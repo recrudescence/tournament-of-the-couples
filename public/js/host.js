@@ -1,6 +1,6 @@
 // Load session data
 const hostData = JSON.parse(sessionStorage.getItem('playerInfo'));
-if (!hostData || !hostData.isHost) {
+if (!hostData || !hostData.isHost || !hostData.roomCode) {
   alert('You must join as host first!');
   window.location.href = '/';
 }
@@ -58,15 +58,21 @@ hostNameEl.textContent = hostData.name;
 const socket = io();
 
 // Join as host
-socket.emit('joinGame', { 
-  name: hostData.name, 
-  isHost: true 
+socket.emit('joinGame', {
+  name: hostData.name,
+  isHost: true,
+  isReconnect: false,
+  roomCode: hostData.roomCode
 });
 
 // Socket Listeners
 
 socket.on('joinSuccess', (data) => {
   console.log('Host joined successfully:', data);
+
+  // Display room code
+  document.getElementById('roomCodeDisplay').textContent = data.roomCode.toUpperCase();
+
   // Extract gameState (might be nested or direct)
   const state = data.gameState || data;
   gameState.players = state.players || [];
@@ -112,6 +118,10 @@ socket.on('gameStarted', (data) => {
   gameState.roundNumber = 1;
   roundNumberEl.textContent = gameState.roundNumber;
   showPhase('roundSetup');
+  if (data.players) {
+    gameState.players = data.players;
+    gameState.teams = data.teams || [];
+  }
 });
 
 socket.on('roundStarted', (data) => {
@@ -210,6 +220,14 @@ socket.on('returnedToAnswering', (data) => {
   gameStatusEl.textContent = 'Answering - Reopened';
   updateAnswerStatus();
   showPhase('answering');
+});
+
+socket.on('lobbyUpdate', (data) => {
+  console.log('Lobby update:', data);
+  const state = data.gameState || data;
+  gameState.players = state.players || [];
+  gameState.teams = state.teams || [];
+  updateScoreboard();
 });
 
 socket.on('error', (data) => {
@@ -445,19 +463,19 @@ function displayRevealedAnswer(playerName, answer) {
 
 function updateScoreboard() {
   scoreboardList.innerHTML = '';
-  
+
   if (gameState.teams.length === 0) {
     scoreboardList.innerHTML = '<p>No teams yet</p>';
     return;
   }
-  
+
   // Sort teams by score (descending)
   const sortedTeams = [...gameState.teams].sort((a, b) => b.score - a.score);
-  
+
   sortedTeams.forEach(team => {
     const player1 = gameState.players.find(p => p.socketId === team.player1Id);
     const player2 = gameState.players.find(p => p.socketId === team.player2Id);
-    
+
     const teamDiv = document.createElement('div');
     teamDiv.className = 'team-score';
     teamDiv.innerHTML = `

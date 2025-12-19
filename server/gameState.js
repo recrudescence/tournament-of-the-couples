@@ -1,24 +1,28 @@
-const { v4: uuidv4 } = require('uuid');
+const roomCodeGenerator = require('./roomCodeGenerator');
 
-// In-memory game state
-let gameState = null;
+// In-memory game states - Map of roomCode -> gameState
+const gameStates = new Map();
 
 // Initialize a new game
-function initializeGame() {
-  gameState = {
-    gameId: uuidv4(),
+function initializeGame(roomCode) {
+  const gameState = {
+    roomCode,
+    gameId: roomCode,  // For database compatibility
     status: 'lobby', // 'lobby' | 'playing' | 'scoring' | 'ended'
     host: null,
     players: [],
     teams: [],
     currentRound: null
   };
-  console.log('Game initialized:', gameState.gameId);
+
+  gameStates.set(roomCode, gameState);
+  console.log('Game initialized:', roomCode);
   return gameState;
 }
 
 // Add a player or host
-function addPlayer(socketId, name, isHost = false) {
+function addPlayer(roomCode, socketId, name, isHost = false) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -45,17 +49,18 @@ function addPlayer(socketId, name, isHost = false) {
 }
 
 // Remove a player (only used in lobby)
-function removePlayer(socketId) {
+function removePlayer(roomCode, socketId) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) return;
 
   const playerIndex = gameState.players.findIndex(p => p.socketId === socketId);
   if (playerIndex === -1) return;
 
   const player = gameState.players[playerIndex];
-  
+
   // If player was paired, unpair them first
   if (player.partnerId) {
-    unpairPlayers(socketId);
+    unpairPlayers(roomCode, socketId);
   }
 
   gameState.players.splice(playerIndex, 1);
@@ -63,7 +68,8 @@ function removePlayer(socketId) {
 }
 
 // Mark player as disconnected (during game)
-function disconnectPlayer(socketId) {
+function disconnectPlayer(roomCode, socketId) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) return;
 
   const player = gameState.players.find(p => p.socketId === socketId);
@@ -74,7 +80,8 @@ function disconnectPlayer(socketId) {
 }
 
 // Reconnect a player
-function reconnectPlayer(name, newSocketId) {
+function reconnectPlayer(roomCode, name, newSocketId) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -116,7 +123,8 @@ function reconnectPlayer(name, newSocketId) {
 }
 
 // Get list of disconnected players
-function getDisconnectedPlayers() {
+function getDisconnectedPlayers(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) return [];
   return gameState.players
     .filter(p => !p.connected)
@@ -124,12 +132,14 @@ function getDisconnectedPlayers() {
 }
 
 // Check if new players can join
-function canJoinAsNew() {
+function canJoinAsNew(roomCode) {
+  const gameState = gameStates.get(roomCode);
   return gameState && gameState.status === 'lobby';
 }
 
 // Pair two players into a team
-function pairPlayers(socketId1, socketId2) {
+function pairPlayers(roomCode, socketId1, socketId2) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -145,8 +155,7 @@ function pairPlayers(socketId1, socketId2) {
     throw new Error('One or both players already paired');
   }
 
-  // Create team
-  const teamId = uuidv4();
+  const teamId = roomCodeGenerator.generateTeamCode();
   player1.partnerId = socketId2;
   player1.teamId = teamId;
   player2.partnerId = socketId1;
@@ -163,7 +172,8 @@ function pairPlayers(socketId1, socketId2) {
 }
 
 // Unpair players (break up a team)
-function unpairPlayers(socketId) {
+function unpairPlayers(roomCode, socketId) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) return;
 
   const player = gameState.players.find(p => p.socketId === socketId);
@@ -190,7 +200,8 @@ function unpairPlayers(socketId) {
 }
 
 // Start the game (move from lobby to playing)
-function startGame() {
+function startGame(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -208,7 +219,8 @@ function startGame() {
 }
 
 // Start a new round
-function startRound(question) {
+function startRound(roomCode, question) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -228,7 +240,8 @@ function startRound(question) {
 }
 
 // Submit an answer
-function submitAnswer(socketId, answer) {
+function submitAnswer(roomCode, socketId, answer) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) {
     throw new Error('No active round');
   }
@@ -255,7 +268,8 @@ function submitAnswer(socketId, answer) {
 }
 
 // Check if round is complete (all players answered)
-function isRoundComplete() {
+function isRoundComplete(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return false;
 
   const connectedPlayers = gameState.players.filter(p => p.connected);
@@ -269,7 +283,8 @@ function isRoundComplete() {
 }
 
 // Mark round as complete
-function completeRound() {
+function completeRound(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) {
     throw new Error('No active round');
   }
@@ -280,7 +295,8 @@ function completeRound() {
 }
 
 // Update team score
-function updateTeamScore(teamId, points) {
+function updateTeamScore(roomCode, teamId, points) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -295,12 +311,13 @@ function updateTeamScore(teamId, points) {
 }
 
 // Get current game state
-function getGameState() {
-  return gameState;
+function getGameState(roomCode) {
+  return gameStates.get(roomCode);
 }
 
 // Get player teams with full info for scoring UI
-function getPlayerTeams() {
+function getPlayerTeams(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) return [];
 
   return gameState.teams.map(team => {
@@ -325,21 +342,24 @@ function getPlayerTeams() {
 }
 
 // Set round ID after DB persistence
-function setCurrentRoundId(roundId) {
+function setCurrentRoundId(roomCode, roundId) {
+  const gameState = gameStates.get(roomCode);
   if (gameState && gameState.currentRound) {
     gameState.currentRound.roundId = roundId;
   }
 }
 
 // Reset to playing status (after scoring)
-function returnToPlaying() {
+function returnToPlaying(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (gameState) {
     gameState.status = 'playing';
   }
 }
 
 // Return to answering phase (from scoring)
-function returnToAnswering() {
+function returnToAnswering(roomCode) {
+  const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
   }
@@ -359,6 +379,21 @@ function returnToAnswering() {
   gameState.currentRound.submittedInCurrentPhase = [];
 
   console.log('Returned to answering phase - submission tracking reset');
+}
+
+// Room management functions
+function hasRoom(roomCode) {
+  return gameStates.has(roomCode);
+}
+
+function deleteRoom(roomCode) {
+  gameStates.delete(roomCode);
+  roomCodeGenerator.markRoomInactive(roomCode);
+  console.log(`Room deleted: ${roomCode}`);
+}
+
+function getRoomCodes() {
+  return Array.from(gameStates.keys());
 }
 
 module.exports = {
@@ -381,5 +416,8 @@ module.exports = {
   getPlayerTeams,
   setCurrentRoundId,
   returnToPlaying,
-  returnToAnswering
+  returnToAnswering,
+  hasRoom,
+  deleteRoom,
+  getRoomCodes
 };

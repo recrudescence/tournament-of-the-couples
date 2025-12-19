@@ -1,18 +1,23 @@
-// Mock uuid before requiring modules
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9))
+// Mock roomCodeGenerator before requiring modules
+jest.mock('../roomCodeGenerator', () => ({
+  generateRoomCode: jest.fn(() => 'test'),
+  generateTeamCode: jest.fn(() => 'team'),
+  validateRoomCode: jest.fn(() => true),
+  markRoomInactive: jest.fn(),
+  isRoomActive: jest.fn(() => true)
 }));
 
 const gameState = require('../gameState');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('../joinHandlers');
 
 describe('Join Handlers', () => {
+  const roomCode = 'test';
   let mockSocket;
   let mockState;
 
   beforeEach(() => {
-    // Reset game state
-    gameState.initializeGame();
+    // Reset game state with room code
+    gameState.initializeGame(roomCode);
 
     // Mock socket
     mockSocket = {
@@ -21,7 +26,7 @@ describe('Join Handlers', () => {
     };
 
     // Get fresh state
-    mockState = gameState.getGameState();
+    mockState = gameState.getGameState(roomCode);
   });
 
   describe('handleHostJoin', () => {
@@ -29,7 +34,7 @@ describe('Join Handlers', () => {
       // Set up existing host
       mockState.host = { socketId: 'old-socket-id', name: 'HostName' };
 
-      const result = handleHostJoin(mockSocket, 'HostName', mockState);
+      const result = handleHostJoin(roomCode, mockSocket, 'HostName', mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.isHost).toBe(true);
@@ -42,25 +47,29 @@ describe('Join Handlers', () => {
       // Set up existing host with different name
       mockState.host = { socketId: 'old-socket-id', name: 'OriginalHost' };
 
-      const result = handleHostJoin(mockSocket, 'DifferentHost', mockState);
+      const result = handleHostJoin(roomCode, mockSocket, 'DifferentHost', mockState);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Host name does not match');
     });
 
-    test('returns error when no host exists', () => {
+    test('successfully creates new host when none exists', () => {
       mockState.host = null;
 
-      const result = handleHostJoin(mockSocket, 'NewHost', mockState);
+      const result = handleHostJoin(roomCode, mockSocket, 'NewHost', mockState);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Host name does not match');
+      expect(result.success).toBe(true);
+      expect(result.data.isHost).toBe(true);
+      expect(result.data.reconnected).toBe(false);
+      const updatedState = gameState.getGameState(roomCode);
+      expect(updatedState.host).toBeDefined();
+      expect(updatedState.host.name).toBe('NewHost');
     });
 
     test('includes full gameState in response', () => {
       mockState.host = { socketId: 'old-socket-id', name: 'HostName' };
 
-      const result = handleHostJoin(mockSocket, 'HostName', mockState);
+      const result = handleHostJoin(roomCode, mockSocket, 'HostName', mockState);
 
       expect(result.data.gameState).toBeDefined();
       expect(result.data.gameState).toBe(mockState);
@@ -70,17 +79,17 @@ describe('Join Handlers', () => {
   describe('handlePlayerReconnect', () => {
     beforeEach(() => {
       // Add some players
-      gameState.addPlayer('socket-1', 'Alice', false);
-      gameState.addPlayer('socket-2', 'Bob', false);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
 
       // Disconnect Alice
-      gameState.disconnectPlayer('socket-1');
+      gameState.disconnectPlayer(roomCode, 'socket-1');
 
-      mockState = gameState.getGameState();
+      mockState = gameState.getGameState(roomCode);
     });
 
     test('successfully reconnects disconnected player', () => {
-      const result = handlePlayerReconnect(mockSocket, 'Alice', mockState);
+      const result = handlePlayerReconnect(roomCode, mockSocket, 'Alice', mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.reconnected).toBe(true);
@@ -94,21 +103,21 @@ describe('Join Handlers', () => {
     });
 
     test('returns error when player not found', () => {
-      const result = handlePlayerReconnect(mockSocket, 'NonExistent', mockState);
+      const result = handlePlayerReconnect(roomCode, mockSocket, 'NonExistent', mockState);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Player not found');
     });
 
     test('returns error when player is already connected', () => {
-      const result = handlePlayerReconnect(mockSocket, 'Bob', mockState);
+      const result = handlePlayerReconnect(roomCode, mockSocket, 'Bob', mockState);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Player name already exists');
     });
 
     test('includes gameState in response', () => {
-      const result = handlePlayerReconnect(mockSocket, 'Alice', mockState);
+      const result = handlePlayerReconnect(roomCode, mockSocket, 'Alice', mockState);
 
       expect(result.data.gameState).toBeDefined();
       expect(result.data.gameState).toBe(mockState);
@@ -120,7 +129,7 @@ describe('Join Handlers', () => {
       // Game is in lobby by default
       expect(mockState.status).toBe('lobby');
 
-      const result = handleNewPlayerJoin(mockSocket, 'NewPlayer', false, mockState);
+      const result = handleNewPlayerJoin(roomCode, mockSocket, 'NewPlayer', false, mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.socketId).toBe('socket-123');
@@ -128,7 +137,7 @@ describe('Join Handlers', () => {
       expect(result.data.isHost).toBe(false);
 
       // Verify player was added
-      const updatedState = gameState.getGameState();
+      const updatedState = gameState.getGameState(roomCode);
       const newPlayer = updatedState.players.find(p => p.name === 'NewPlayer');
       expect(newPlayer).toBeDefined();
       expect(newPlayer.socketId).toBe('socket-123');
@@ -136,38 +145,38 @@ describe('Join Handlers', () => {
 
     test('returns error when game is in progress', () => {
       // Start the game
-      gameState.addPlayer('socket-1', 'Alice', false);
-      gameState.addPlayer('socket-2', 'Bob', false);
-      gameState.pairPlayers('socket-1', 'socket-2');
-      gameState.startGame();
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
 
-      mockState = gameState.getGameState();
+      mockState = gameState.getGameState(roomCode);
 
-      const result = handleNewPlayerJoin(mockSocket, 'NewPlayer', false, mockState);
+      const result = handleNewPlayerJoin(roomCode, mockSocket, 'NewPlayer', false, mockState);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Cannot join game in progress');
     });
 
     test('returns error when player name already exists', () => {
-      gameState.addPlayer('socket-1', 'Alice', false);
-      mockState = gameState.getGameState();
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      mockState = gameState.getGameState(roomCode);
 
-      const result = handleNewPlayerJoin(mockSocket, 'Alice', false, mockState);
+      const result = handleNewPlayerJoin(roomCode, mockSocket, 'Alice', false, mockState);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Player name already exists');
     });
 
     test('supports joining as host (for initial setup)', () => {
-      const result = handleNewPlayerJoin(mockSocket, 'HostPlayer', true, mockState);
+      const result = handleNewPlayerJoin(roomCode, mockSocket, 'HostPlayer', true, mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.isHost).toBe(true);
     });
 
     test('returns updated gameState after adding player', () => {
-      const result = handleNewPlayerJoin(mockSocket, 'NewPlayer', false, mockState);
+      const result = handleNewPlayerJoin(roomCode, mockSocket, 'NewPlayer', false, mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.gameState).toBeDefined();
@@ -179,31 +188,31 @@ describe('Join Handlers', () => {
     test('Scenario: Host joins, then players join, then one player disconnects and reconnects', () => {
       // 1. Host joins
       let hostSocket = { id: 'host-socket-1' };
-      gameState.addPlayer(hostSocket.id, 'Host', true);
-      let state = gameState.getGameState();
+      gameState.addPlayer(roomCode, hostSocket.id, 'Host', true);
+      let state = gameState.getGameState(roomCode);
 
       expect(state.host.name).toBe('Host');
 
       // 2. Players join
       let player1Socket = { id: 'player-socket-1' };
-      let result1 = handleNewPlayerJoin(player1Socket, 'Alice', false, state);
+      let result1 = handleNewPlayerJoin(roomCode, player1Socket, 'Alice', false, state);
       expect(result1.success).toBe(true);
 
       let player2Socket = { id: 'player-socket-2' };
-      state = gameState.getGameState();
-      let result2 = handleNewPlayerJoin(player2Socket, 'Bob', false, state);
+      state = gameState.getGameState(roomCode);
+      let result2 = handleNewPlayerJoin(roomCode, player2Socket, 'Bob', false, state);
       expect(result2.success).toBe(true);
 
       // 3. Alice disconnects
-      gameState.disconnectPlayer('player-socket-1');
-      state = gameState.getGameState();
+      gameState.disconnectPlayer(roomCode, 'player-socket-1');
+      state = gameState.getGameState(roomCode);
 
       const alice = state.players.find(p => p.name === 'Alice');
       expect(alice.connected).toBe(false);
 
       // 4. Alice reconnects with new socket
       let newAliceSocket = { id: 'player-socket-3' };
-      let reconnectResult = handlePlayerReconnect(newAliceSocket, 'Alice', state);
+      let reconnectResult = handlePlayerReconnect(roomCode, newAliceSocket, 'Alice', state);
 
       expect(reconnectResult.success).toBe(true);
       expect(reconnectResult.data.player.socketId).toBe('player-socket-3');
@@ -217,7 +226,7 @@ describe('Join Handlers', () => {
       // Host navigates to new page, gets new socket ID
       let newHostSocket = { id: 'new-host-socket' };
 
-      const result = handleHostJoin(newHostSocket, 'Host', mockState);
+      const result = handleHostJoin(roomCode, newHostSocket, 'Host', mockState);
 
       expect(result.success).toBe(true);
       expect(result.data.reconnected).toBe(true);
@@ -226,16 +235,16 @@ describe('Join Handlers', () => {
 
     test('Scenario: Player tries to join with existing name during game', () => {
       // Set up game in progress
-      gameState.addPlayer('socket-1', 'Alice', false);
-      gameState.addPlayer('socket-2', 'Bob', false);
-      gameState.pairPlayers('socket-1', 'socket-2');
-      gameState.startGame();
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
 
-      const state = gameState.getGameState();
+      const state = gameState.getGameState(roomCode);
 
       // New player tries to join with existing name during game
       let duplicateSocket = { id: 'socket-3' };
-      const result = handleNewPlayerJoin(duplicateSocket, 'Alice', false, state);
+      const result = handleNewPlayerJoin(roomCode, duplicateSocket, 'Alice', false, state);
 
       expect(result.success).toBe(false);
       // Game in progress check takes priority over duplicate name check
@@ -244,10 +253,10 @@ describe('Join Handlers', () => {
 
     test('Scenario: Implicit reconnect (player joins without isReconnect flag)', () => {
       // Set up: Alice was connected, then disconnected
-      gameState.addPlayer('socket-1', 'Alice', false);
-      gameState.disconnectPlayer('socket-1');
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.disconnectPlayer(roomCode, 'socket-1');
 
-      const state = gameState.getGameState();
+      const state = gameState.getGameState(roomCode);
 
       // In socketHandlers, this would be detected and routed to handlePlayerReconnect
       const existingPlayer = state.players.find(p => p.name === 'Alice');
@@ -256,7 +265,7 @@ describe('Join Handlers', () => {
 
       // Reconnect via handlePlayerReconnect (implicit)
       let newSocket = { id: 'socket-2' };
-      const result = handlePlayerReconnect(newSocket, 'Alice', state);
+      const result = handlePlayerReconnect(roomCode, newSocket, 'Alice', state);
 
       expect(result.success).toBe(true);
       expect(result.data.reconnected).toBe(true);
@@ -272,7 +281,7 @@ describe('Join Handlers', () => {
       });
 
       expect(() => {
-        handleNewPlayerJoin(mockSocket, 'TestPlayer', false, mockState);
+        handleNewPlayerJoin(roomCode, mockSocket, 'TestPlayer', false, mockState);
       }).toThrow('Database error');
 
       // Restore
@@ -280,8 +289,10 @@ describe('Join Handlers', () => {
     });
 
     test('returns consistent error format', () => {
-      const error1 = handleHostJoin(mockSocket, 'Wrong', mockState);
-      const error2 = handlePlayerReconnect(mockSocket, 'NotFound', mockState);
+      // Set up existing host to create error condition
+      mockState.host = { socketId: 'existing-socket', name: 'ExistingHost' };
+      const error1 = handleHostJoin(roomCode, mockSocket, 'Wrong', mockState);
+      const error2 = handlePlayerReconnect(roomCode, mockSocket, 'NotFound', mockState);
 
       expect(error1).toHaveProperty('success', false);
       expect(error1).toHaveProperty('error');

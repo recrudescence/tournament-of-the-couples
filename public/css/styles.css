@@ -233,3 +233,38 @@ button:disabled {
 .scoring-actions button {
   flex: 1;
 }
+
+/* Join flow - disconnected players */
+.info-text {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+#disconnectedPlayersList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.player-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.player-button:hover {
+  background-color: #0056b3;
+}
+
+.player-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

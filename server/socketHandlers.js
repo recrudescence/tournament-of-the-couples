@@ -1,41 +1,82 @@
 const gameState = require('./gameState');
 const database = require('./database');
+const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
-    // Join game (new player or reconnect)
-    socket.on('joinGame', async ({ name, isHost, isReconnect }) => {
-      try {
-        let state = gameState.getGameState();
 
-        // Initialize game if it doesn't exist
-        if (!state) {
-          state = gameState.initializeGame();
-          await database.createGame(state.gameId);
+    // Create a new game (host only)
+    socket.on('createGame', async ({ name }) => {
+      try {
+        // Generate room code
+        const roomCode = roomCodeGenerator.generateRoomCode();
+
+        // Initialize game state
+        const state = gameState.initializeGame(roomCode);
+        await database.createGame(roomCode);
+
+        // Join the Socket.io room
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
+
+        // Create the host
+        const result = handleHostJoin(roomCode, socket, name, state);
+
+        if (result.success) {
+          socket.emit('gameCreated', { roomCode, ...result.data });
+        } else {
+          socket.emit('error', { message: result.error });
         }
+
+      } catch (err) {
+        console.error('Create game error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Join existing game (new player or reconnect)
+    socket.on('joinGame', async ({ name, isHost, isReconnect, roomCode }) => {
+      try {
+        // Validate room code
+        if (!roomCode || !roomCodeGenerator.validateRoomCode(roomCode)) {
+          socket.emit('error', { message: 'Invalid room code' });
+          return;
+        }
+
+        // Check if room exists
+        if (!gameState.hasRoom(roomCode)) {
+          socket.emit('error', { message: 'Room not found' });
+          return;
+        }
+
+        const state = gameState.getGameState(roomCode);
+
+        // Join the Socket.io room
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
 
         let result;
 
         // Route to appropriate handler based on join type
         if (isHost) {
-          result = handleHostJoin(socket, name, state);
+          result = handleHostJoin(roomCode, socket, name, state);
         } else if (isReconnect) {
-          result = handlePlayerReconnect(socket, name, state);
+          result = handlePlayerReconnect(roomCode, socket, name, state);
         } else {
           // Check for implicit reconnect (disconnected player joining without isReconnect flag)
           const existingPlayer = state.players.find(p => p.name === name);
           if (existingPlayer && !existingPlayer.connected) {
-            result = handlePlayerReconnect(socket, name, state);
+            result = handlePlayerReconnect(roomCode, socket, name, state);
           } else {
-            result = handleNewPlayerJoin(socket, name, isHost, state);
+            result = handleNewPlayerJoin(roomCode, socket, name, isHost, state);
           }
         }
 
         // Handle result
         if (result.success) {
-          socket.emit('joinSuccess', result.data);
-          io.emit('lobbyUpdate', gameState.getGameState());
+          socket.emit('joinSuccess', { roomCode, ...result.data });
+          io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
         } else {
           socket.emit('error', { message: result.error });
         }
@@ -45,13 +86,19 @@ function setupSocketHandlers(io) {
         socket.emit('error', { message: err.message });
       }
     });
-    
+
     // Request to pair with another player
     socket.on('requestPair', ({ targetSocketId }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.pairPlayers(socket.id, targetSocketId);
-        const state = gameState.getGameState();
-        io.emit('lobbyUpdate', state);
+        gameState.pairPlayers(roomCode, socket.id, targetSocketId);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('lobbyUpdate', state);
       } catch (err) {
         console.error('Pair error:', err);
         socket.emit('error', { message: err.message });
@@ -60,10 +107,16 @@ function setupSocketHandlers(io) {
 
     // Unpair from partner
     socket.on('unpair', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.unpairPlayers(socket.id);
-        const state = gameState.getGameState();
-        io.emit('lobbyUpdate', state);
+        gameState.unpairPlayers(roomCode, socket.id);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('lobbyUpdate', state);
       } catch (err) {
         console.error('Unpair error:', err);
         socket.emit('error', { message: err.message });
@@ -72,32 +125,71 @@ function setupSocketHandlers(io) {
 
     // Get lobby state
     socket.on('getLobbyState', () => {
-      const state = gameState.getGameState();
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
       socket.emit('lobbyUpdate', state);
     });
 
-    // Get disconnected players (for reconnection UI)
+    // Get disconnected players (for reconnection UI) - DEPRECATED but kept for compatibility
     socket.on('getDisconnectedPlayers', () => {
-        const state = gameState.getGameState();
-        
-        // If no game exists yet, allow joining as new
-        if (!state) {
-            socket.emit('disconnectedPlayers', { players: [], canJoinAsNew: true });
-            return;
-        }
-        
-        const disconnected = gameState.getDisconnectedPlayers();
-        const canJoin = gameState.canJoinAsNew();
-        socket.emit('disconnectedPlayers', { players: disconnected, canJoinAsNew: canJoin });
+      // This is now only used when no room code is known (initial connection)
+      // Return empty list to show join form
+      socket.emit('disconnectedPlayers', { players: [], canJoinAsNew: true });
+    });
+
+    // Check room status for join flow
+    socket.on('checkRoomStatus', ({ roomCode }) => {
+      if (!roomCode || !roomCodeGenerator.validateRoomCode(roomCode.toLowerCase())) {
+        socket.emit('roomStatus', {
+          found: false,
+          error: 'Invalid room code format'
+        });
+        return;
+      }
+
+      const normalizedCode = roomCode.toLowerCase();
+
+      if (!gameState.hasRoom(normalizedCode)) {
+        socket.emit('roomStatus', {
+          found: false,
+          error: 'Room not found'
+        });
+        return;
+      }
+
+      const state = gameState.getGameState(normalizedCode);
+      const disconnectedPlayers = state.players
+        .filter(p => !p.connected && !p.isHost)
+        .map(p => ({ name: p.name, socketId: p.socketId }));
+
+      socket.emit('roomStatus', {
+        found: true,
+        roomCode: normalizedCode,
+        status: state.status,
+        inProgress: state.status === 'playing' || state.status === 'scoring',
+        disconnectedPlayers,
+        canJoinAsNew: state.status === 'lobby'
+      });
     });
 
     // Host starts the game
     socket.on('startGame', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.startGame();
-        const state = gameState.getGameState();
-        console.log('Emitting gameStarted to all clients. Players:', state.players.map(p => p.name));
-        io.emit('gameStarted', state);
+        gameState.startGame(roomCode);
+        const state = gameState.getGameState(roomCode);
+        console.log('Emitting gameStarted to room', roomCode, '. Players:', state.players.map(p => p.name));
+        io.to(roomCode).emit('gameStarted', state);
       } catch (err) {
         console.error('Start game error:', err);
         socket.emit('error', { message: err.message });
@@ -106,21 +198,27 @@ function setupSocketHandlers(io) {
 
     // Host starts a new round
     socket.on('startRound', async ({ question }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.startRound(question);
-        const state = gameState.getGameState();
-        
+        gameState.startRound(roomCode, question);
+        const state = gameState.getGameState(roomCode);
+
         // Persist round to database
         const roundId = await database.saveRound(
-          state.gameId,
+          roomCode,  // gameId is now roomCode
           state.currentRound.roundNumber,
           question
         );
-        gameState.setCurrentRoundId(roundId);
-        
-        io.emit('roundStarted', { 
+        gameState.setCurrentRoundId(roomCode, roundId);
+
+        io.to(roomCode).emit('roundStarted', {
           roundNumber: state.currentRound.roundNumber,
-          question 
+          question
         });
       } catch (err) {
         console.error('Start round error:', err);
@@ -130,9 +228,15 @@ function setupSocketHandlers(io) {
 
     // Player submits an answer
     socket.on('submitAnswer', async ({ answer }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.submitAnswer(socket.id, answer);
-        const state = gameState.getGameState();
+        gameState.submitAnswer(roomCode, socket.id, answer);
+        const state = gameState.getGameState(roomCode);
 
         // Get player info for database
         const player = state.players.find(p => p.socketId === socket.id);
@@ -147,19 +251,19 @@ function setupSocketHandlers(io) {
           );
         }
 
-        // Notify ALL clients (including host) that answer was submitted
+        // Notify ALL clients in the room (including host) that answer was submitted
         // Use player name as key (stable across reconnections)
-        io.emit('answerSubmitted', {
+        io.to(roomCode).emit('answerSubmitted', {
           playerName: player.name,
           answer: answer,
           submittedInCurrentPhase: state.currentRound.submittedInCurrentPhase
         });
 
         // Check if round is complete
-        if (gameState.isRoundComplete()) {
-          gameState.completeRound();
-          const teams = gameState.getPlayerTeams();
-          io.emit('allAnswersIn', { teams });
+        if (gameState.isRoundComplete(roomCode)) {
+          gameState.completeRound(roomCode);
+          const teams = gameState.getPlayerTeams(roomCode);
+          io.to(roomCode).emit('allAnswersIn', { teams });
         }
       } catch (err) {
         console.error('Submit answer error:', err);
@@ -169,12 +273,18 @@ function setupSocketHandlers(io) {
 
     // Host reveals an answer
     socket.on('revealAnswer', ({ playerName }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        const state = gameState.getGameState();
+        const state = gameState.getGameState(roomCode);
         const answer = state.currentRound.answers[playerName];
         const player = state.players.find(p => p.name === playerName);
 
-        io.emit('answerRevealed', {
+        io.to(roomCode).emit('answerRevealed', {
           socketId: player.socketId,  // Still send socketId for client compatibility
           playerName: playerName,
           answer
@@ -187,12 +297,18 @@ function setupSocketHandlers(io) {
 
     // Host awards point to team
     socket.on('awardPoint', ({ teamId }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.updateTeamScore(teamId, 1);
-        const state = gameState.getGameState();
+        gameState.updateTeamScore(roomCode, teamId, 1);
+        const state = gameState.getGameState(roomCode);
         const team = state.teams.find(t => t.teamId === teamId);
-        
-        io.emit('scoreUpdated', { teamId, newScore: team.score });
+
+        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score });
       } catch (err) {
         console.error('Award point error:', err);
         socket.emit('error', { message: err.message });
@@ -201,10 +317,16 @@ function setupSocketHandlers(io) {
 
     // Host moves to next round
     socket.on('nextRound', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
       try {
-        gameState.returnToPlaying();
-        const state = gameState.getGameState();
-        io.emit('readyForNextRound', state);
+        gameState.returnToPlaying(roomCode);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('readyForNextRound', state);
       } catch (err) {
         console.error('Next round error:', err);
         socket.emit('error', { message: err.message });
@@ -213,12 +335,18 @@ function setupSocketHandlers(io) {
 
     // Host returns to answering phase
     socket.on('backToAnswering', () => {
-      console.log('backToAnswering event received');
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      console.log('backToAnswering event received for room', roomCode);
       try {
-        gameState.returnToAnswering();
-        const state = gameState.getGameState();
-        console.log('Emitting returnedToAnswering to all clients');
-        io.emit('returnedToAnswering', state);
+        gameState.returnToAnswering(roomCode);
+        const state = gameState.getGameState(roomCode);
+        console.log('Emitting returnedToAnswering to room', roomCode);
+        io.to(roomCode).emit('returnedToAnswering', state);
       } catch (err) {
         console.error('Back to answering error:', err);
         socket.emit('error', { message: err.message });
@@ -227,16 +355,19 @@ function setupSocketHandlers(io) {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      const state = gameState.getGameState();
+      const roomCode = socket.roomCode;
+      if (!roomCode) return;
+
+      const state = gameState.getGameState(roomCode);
       if (state) {
         // Always mark as disconnected (don't remove from lobby)
         // This allows for seamless reconnection on page transitions
-        gameState.disconnectPlayer(socket.id);
-        
+        gameState.disconnectPlayer(roomCode, socket.id);
+
         if (state.status === 'lobby') {
-          io.emit('lobbyUpdate', gameState.getGameState());
+          io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
         } else {
-          io.emit('playerDisconnected', { socketId: socket.id });
+          io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
         }
       }
     });

@@ -1,9 +1,10 @@
 // Get player info from sessionStorage
 const playerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+console.log('Found player info: ', playerInfo);
 
-// Guard: Redirect to join page if no player info exists
-if (!playerInfo || !playerInfo.name) {
-  console.log('No player info found, redirecting to join page');
+// Guard: Redirect to join page if no player info or room code exists
+if (!playerInfo || !playerInfo.name || !playerInfo.roomCode) {
+  console.log('No player info or room code found, redirecting to join page');
   window.location.href = '/';
 }
 
@@ -24,24 +25,25 @@ socket.on('connect', () => {
   console.log('Connected to lobby');
 
   // If we have player info, rejoin the game
-  if (playerInfo.name) {
-    console.log('Rejoining as:', playerInfo.name);
+  if (playerInfo.name && playerInfo.roomCode) {
+    console.log('Rejoining room', playerInfo.roomCode, 'as:', playerInfo.name);
     socket.emit('joinGame', {
       name: playerInfo.name,
       isHost: playerInfo.isHost || false,
-      isReconnect: false  // Use false to let server's smart logic handle it
+      isReconnect: false,  // Use false to let server's smart logic handle it
+      roomCode: playerInfo.roomCode
     });
-  } else {
-    // No player info, just get lobby state
-    socket.emit('getLobbyState');
   }
 });
 
 // Handle rejoin success
-socket.on('joinSuccess', ({ gameState: state }) => {
-  console.log('Rejoined successfully');
+socket.on('joinSuccess', ({ roomCode, gameState: state }) => {
+  console.log('Rejoined successfully to room:', roomCode);
   gameState = state;
-  
+
+  // Display room code
+  document.getElementById('roomCodeDisplay').textContent = roomCode.toUpperCase();
+
   // Update current player reference
   if (playerInfo.name) {
     if (playerInfo.isHost && state.host && state.host.name === playerInfo.name) {
@@ -53,7 +55,7 @@ socket.on('joinSuccess', ({ gameState: state }) => {
       }
     }
   }
-  
+
   renderLobby();
 });
 

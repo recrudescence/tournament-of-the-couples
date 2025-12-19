@@ -1,169 +1,267 @@
 const socket = io();
 
+// Get DOM elements
 const loading = document.getElementById('loading');
-const newPlayerForm = document.getElementById('newPlayerForm');
-const reconnectForm = document.getElementById('reconnectForm');
-const playerNameInput = document.getElementById('playerName');
-const joinPlayerBtn = document.getElementById('joinPlayerBtn');
-const joinHostBtn = document.getElementById('joinHostBtn');
+const mainMenu = document.getElementById('mainMenu');
+const gameCreatedSection = document.getElementById('gameCreatedSection');
 const errorDiv = document.getElementById('error');
-const reconnectList = document.getElementById('reconnectList');
-const reconnectError = document.getElementById('reconnectError');
 
-// On connection, always check game state first
+// Create game elements
+const hostNameInput = document.getElementById('hostName');
+const createGameBtn = document.getElementById('createGameBtn');
+
+// Join game elements - Step 1: Room code
+const roomCodeStep = document.getElementById('roomCodeStep');
+const joinRoomCodeInput = document.getElementById('joinRoomCode');
+const checkRoomBtn = document.getElementById('checkRoomBtn');
+
+// Join game elements - Step 2a: Name input (for lobby)
+const nameInputStep = document.getElementById('nameInputStep');
+const joinPlayerNameInput = document.getElementById('joinPlayerName');
+const joinGameBtn = document.getElementById('joinGameBtn');
+const backToRoomCodeBtn = document.getElementById('backToRoomCodeBtn');
+
+// Join game elements - Step 2b: Reconnect (for game in progress)
+const reconnectStep = document.getElementById('reconnectStep');
+const disconnectedPlayersList = document.getElementById('disconnectedPlayersList');
+const backToRoomCodeBtn2 = document.getElementById('backToRoomCodeBtn2');
+
+// Game created elements
+const displayRoomCodeEl = document.getElementById('displayRoomCode');
+const continueToLobbyBtn = document.getElementById('continueToLobbyBtn');
+
+// State for join flow
+let currentRoomCode = null;
+
+// On connection, show main menu
 socket.on('connect', () => {
   console.log('Connected to server');
-
-  // Always get game state before deciding whether to auto-rejoin
-  // This allows smart detection based on whether game is in lobby or playing
-  socket.emit('getDisconnectedPlayers');
-});
-
-// Handle disconnected players response with smart auto-rejoin logic
-socket.on('disconnectedPlayers', ({ players, canJoinAsNew }) => {
   loading.classList.add('hidden');
-
-  // Check if we have stored player info
-  const storedInfo = sessionStorage.getItem('playerInfo');
-  const hasStoredPlayer = storedInfo !== null;
-
-  if (canJoinAsNew) {
-    // Game in lobby state: ALWAYS show join form (ignore sessionStorage)
-    // This allows fresh joins and testing even with stored credentials
-    console.log('Game in lobby, showing join form');
-    newPlayerForm.classList.remove('hidden');
-    reconnectForm.classList.add('hidden');
-  } else if (hasStoredPlayer) {
-    // Game in progress + we have stored credentials: AUTO-REJOIN
-    try {
-      const { name, isHost } = JSON.parse(storedInfo);
-      console.log('Game in progress, auto-rejoining as:', name);
-      socket.emit('joinGame', { name, isHost, isReconnect: true });
-      // Keep loading state visible while rejoining
-      loading.classList.remove('hidden');
-    } catch (e) {
-      console.error('Failed to parse stored player info:', e);
-      sessionStorage.removeItem('playerInfo');
-      // Fall back to showing reconnect form
-      if (players.length > 0) {
-        reconnectForm.classList.remove('hidden');
-        newPlayerForm.classList.add('hidden');
-        reconnectList.innerHTML = '';
-        players.forEach(player => {
-          const li = document.createElement('li');
-          li.textContent = player.name;
-          li.onclick = () => reconnectAsPlayer(player.name);
-          reconnectList.appendChild(li);
-        });
-      } else {
-        reconnectError.textContent = 'Game in progress. No available players to reconnect as.';
-        reconnectError.classList.remove('hidden');
-        reconnectForm.classList.remove('hidden');
-      }
-    }
-  } else if (players.length > 0) {
-    // Game in progress, no stored credentials: Show reconnect form
-    console.log('Game in progress, showing reconnect options');
-    reconnectForm.classList.remove('hidden');
-    newPlayerForm.classList.add('hidden');
-
-    // Populate reconnect list
-    reconnectList.innerHTML = '';
-    players.forEach(player => {
-      const li = document.createElement('li');
-      li.textContent = player.name;
-      li.onclick = () => reconnectAsPlayer(player.name);
-      reconnectList.appendChild(li);
-    });
-  } else {
-    // Game in progress, no available players to reconnect as
-    console.log('Game in progress, no available players');
-    reconnectError.textContent = 'Game in progress. No available players to reconnect as.';
-    reconnectError.classList.remove('hidden');
-    reconnectForm.classList.remove('hidden');
-  }
+  mainMenu.classList.remove('hidden');
 });
 
-// Join as new player
-joinPlayerBtn.onclick = () => {
-  const name = playerNameInput.value.trim();
+// Create Game Flow
+createGameBtn.onclick = () => {
+  const name = hostNameInput.value.trim();
+
   if (!name) {
     showError('Please enter your name');
     return;
   }
-  
-  joinPlayerBtn.disabled = true;
-  joinHostBtn.disabled = true;
-  
-  socket.emit('joinGame', { name, isHost: false, isReconnect: false });
+
+  createGameBtn.disabled = true;
+  socket.emit('createGame', { name });
 };
 
-// Join as host
-joinHostBtn.onclick = () => {
-  const name = playerNameInput.value.trim();
-  if (!name) {
-    showError('Please enter your name');
-    return;
-  }
-  
-  joinPlayerBtn.disabled = true;
-  joinHostBtn.disabled = true;
-  
-  socket.emit('joinGame', { name, isHost: true, isReconnect: false });
-};
+// Handle game created event
+socket.on('gameCreated', ({ roomCode, name, isHost, gameState }) => {
+  console.log('Game created:', roomCode);
 
-// Reconnect as existing player
-function reconnectAsPlayer(name) {
-  socket.emit('joinGame', { name, isHost: false, isReconnect: true });
-}
-
-// Handle successful join
-socket.on('joinSuccess', ({ isHost, reconnected, name, socketId }) => {
-  console.log('Join successful', { isHost, reconnected });
-
-  // Store player info in sessionStorage so it persists across page loads
+  // Store player info in sessionStorage
   sessionStorage.setItem('playerInfo', JSON.stringify({
-    name: name || document.getElementById('playerName').value.trim(),
-    isHost: isHost
+    name,
+    isHost: true,
+    roomCode
   }));
 
-  // IMPORTANT: Everyone goes to lobby first (including host)
-  // Host will only go to /host.html after clicking "Start Game" in lobby
+  // Show room code to user
+  displayRoomCodeEl.textContent = roomCode.toUpperCase();
+  mainMenu.classList.add('hidden');
+  gameCreatedSection.classList.remove('hidden');
+});
+
+// Continue to lobby button
+continueToLobbyBtn.onclick = () => {
   window.location.href = '/lobby';
+};
+
+// Join Game Flow - Step 1: Check room code
+checkRoomBtn.onclick = () => {
+  const roomCode = joinRoomCodeInput.value.trim().toLowerCase();
+
+  if (!roomCode) {
+    showError('Please enter a room code');
+    return;
+  }
+
+  if (!validateRoomCode(roomCode)) {
+    showError('Room code must be 4 letters');
+    return;
+  }
+
+  currentRoomCode = roomCode;
+  checkRoomBtn.disabled = true;
+  socket.emit('checkRoomStatus', { roomCode });
+};
+
+// Handle room status response
+socket.on('roomStatus', ({ found, error, roomCode, status, inProgress, disconnectedPlayers, canJoinAsNew }) => {
+  checkRoomBtn.disabled = false;
+
+  if (!found) {
+    showError(error || 'Room not found');
+    return;
+  }
+
+  currentRoomCode = roomCode;
+
+  // Hide room code step
+  roomCodeStep.classList.add('hidden');
+
+  if (inProgress) {
+    // Game in progress - show disconnected players for reconnection
+    if (disconnectedPlayers.length === 0) {
+      showError('Cannot join game in progress. No disconnected players available.');
+      roomCodeStep.classList.remove('hidden');
+      return;
+    }
+
+    // Show reconnect step with disconnected players
+    reconnectStep.classList.remove('hidden');
+    renderDisconnectedPlayers(disconnectedPlayers);
+  } else {
+    // Game in lobby - show name input
+    nameInputStep.classList.remove('hidden');
+    joinPlayerNameInput.value = '';
+    joinPlayerNameInput.focus();
+  }
+});
+
+// Render disconnected players list
+function renderDisconnectedPlayers(players) {
+  disconnectedPlayersList.innerHTML = '';
+
+  players.forEach(player => {
+    const button = document.createElement('button');
+    button.className = 'player-button';
+    button.textContent = player.name;
+    button.onclick = () => reconnectAsPlayer(player.name);
+    disconnectedPlayersList.appendChild(button);
+  });
+}
+
+// Reconnect as a disconnected player
+function reconnectAsPlayer(name) {
+  if (!currentRoomCode) {
+    showError('Room code not set');
+    return;
+  }
+
+  // Disable all player buttons
+  const buttons = disconnectedPlayersList.querySelectorAll('.player-button');
+  buttons.forEach(btn => btn.disabled = true);
+
+  socket.emit('joinGame', {
+    name,
+    isHost: false,
+    isReconnect: true,
+    roomCode: currentRoomCode
+  });
+}
+
+// Join as new player in lobby
+joinGameBtn.onclick = () => {
+  const name = joinPlayerNameInput.value.trim();
+
+  if (!name) {
+    showError('Please enter your name');
+    return;
+  }
+
+  if (!currentRoomCode) {
+    showError('Room code not set');
+    return;
+  }
+
+  joinGameBtn.disabled = true;
+  socket.emit('joinGame', {
+    name,
+    isHost: false,
+    isReconnect: false,
+    roomCode: currentRoomCode
+  });
+};
+
+// Back buttons
+backToRoomCodeBtn.onclick = () => {
+  nameInputStep.classList.add('hidden');
+  roomCodeStep.classList.remove('hidden');
+  currentRoomCode = null;
+};
+
+backToRoomCodeBtn2.onclick = () => {
+  reconnectStep.classList.add('hidden');
+  roomCodeStep.classList.remove('hidden');
+  currentRoomCode = null;
+};
+
+// Handle successful join
+socket.on('joinSuccess', ({ roomCode, name, isHost }) => {
+  console.log('Join successful:', { roomCode, name, isHost });
+
+  // Store player info in sessionStorage
+  sessionStorage.setItem('playerInfo', JSON.stringify({
+    name,
+    isHost,
+    roomCode
+  }));
+
+  // Redirect to lobby or appropriate page
+  if (isHost) {
+    window.location.href = '/lobby';
+  } else {
+    // Check if game is in progress
+    window.location.href = '/lobby'; // Will auto-redirect to /player if needed
+  }
 });
 
 // Handle errors
 socket.on('error', ({ message }) => {
   console.error('Socket error:', message);
-
-  // If reconnection failed, clear stored info and show join form
-  if (message.includes('Player not found')) {
-    console.log('Player not found in game state, clearing sessionStorage');
-    sessionStorage.removeItem('playerInfo');
-
-    // Show the join form
-    loading.classList.add('hidden');
-    newPlayerForm.classList.remove('hidden');
-    reconnectForm.classList.add('hidden');
-  }
-
   showError(message);
-  joinPlayerBtn.disabled = false;
-  joinHostBtn.disabled = false;
+
+  // Re-enable buttons
+  createGameBtn.disabled = false;
+  joinGameBtn.disabled = false;
+  checkRoomBtn.disabled = false;
+
+  // Re-enable reconnect buttons if any
+  const buttons = disconnectedPlayersList.querySelectorAll('.player-button');
+  buttons.forEach(btn => btn.disabled = false);
 });
 
+// Utility: Validate room code format
+function validateRoomCode(code) {
+  return code.length === 4 && /^[a-z]+$/.test(code);
+}
+
+// Utility: Show error message
 function showError(message) {
   errorDiv.textContent = message;
   errorDiv.classList.remove('hidden');
-  
+
   setTimeout(() => {
     errorDiv.classList.add('hidden');
   }, 5000);
 }
 
-// Allow Enter key to submit
-playerNameInput.addEventListener('keypress', (e) => {
+// Allow Enter key in create game
+hostNameInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
-    joinPlayerBtn.click();
+    createGameBtn.click();
+  }
+});
+
+// Allow Enter key in room code field
+joinRoomCodeInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    checkRoomBtn.click();
+  }
+});
+
+// Allow Enter key in name field
+joinPlayerNameInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    joinGameBtn.click();
   }
 });
