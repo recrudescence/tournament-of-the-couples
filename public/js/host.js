@@ -5,6 +5,13 @@ if (!hostData || !hostData.isHost) {
   window.location.href = '/';
 }
 
+// Round Phase Enum
+const RoundPhase = {
+  INITIAL: 'initial',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed'
+};
+
 // DOM Elements
 const hostNameEl = document.getElementById('hostName');
 const roundNumberEl = document.getElementById('roundNumber');
@@ -40,7 +47,8 @@ let gameState = {
   answers: {},
   submittedInCurrentPhase: [], // Track who has submitted in current answering session
   currentTeamIndex: 0,
-  revealedAnswers: new Set()
+  revealedAnswers: new Set(),
+  roundPhase: RoundPhase.INITIAL // Explicit state machine for round lifecycle
 };
 
 // Initialize
@@ -78,6 +86,7 @@ socket.on('joinSuccess', (data) => {
     // Restore to correct phase based on round status
     if (state.status === 'scoring' || state.currentRound.status === 'complete') {
       // Show scoring phase
+      gameState.roundPhase = RoundPhase.COMPLETED;
       gameState.currentTeamIndex = 0;
       gameStatusEl.textContent = 'Scoring';
       showPhase('scoring');
@@ -85,11 +94,13 @@ socket.on('joinSuccess', (data) => {
       setTimeout(() => createTeamCards(), 0);
     } else if (state.currentRound.status === 'answering') {
       // Show answering phase
+      gameState.roundPhase = RoundPhase.IN_PROGRESS;
       updateAnswerStatus();
       showPhase('answering');
     }
   } else if (state.status === 'playing') {
     // Game started but no round yet
+    gameState.roundPhase = RoundPhase.INITIAL;
     gameStatusEl.textContent = 'Playing';
     showPhase('roundSetup');
   }
@@ -110,6 +121,7 @@ socket.on('roundStarted', (data) => {
   gameState.answers = {};
   gameState.submittedInCurrentPhase = [];
   gameState.revealedAnswers.clear();
+  gameState.roundPhase = RoundPhase.IN_PROGRESS;
 
   roundNumberEl.textContent = gameState.roundNumber;
   currentQuestionEl.textContent = data.question;
@@ -139,6 +151,7 @@ socket.on('answerSubmitted', (data) => {
 
 socket.on('allAnswersIn', () => {
   console.log('All answers in!');
+  gameState.roundPhase = RoundPhase.COMPLETED;
   allAnswersNotification.classList.remove('hidden');
   startScoringBtn.classList.remove('hidden');
   // Show reopen button when round completes
@@ -168,6 +181,7 @@ socket.on('scoreUpdated', (data) => {
 
 socket.on('readyForNextRound', (data) => {
   console.log('Ready for next round');
+  gameState.roundPhase = RoundPhase.INITIAL;
   gameState.roundNumber = data.nextRoundNumber;
   roundNumberEl.textContent = gameState.roundNumber;
   gameStatusEl.textContent = 'Setting Up';
@@ -177,6 +191,8 @@ socket.on('readyForNextRound', (data) => {
 
 socket.on('returnedToAnswering', (data) => {
   console.log('Returned to answering phase - round reopened for players', data);
+  gameState.roundPhase = RoundPhase.IN_PROGRESS;
+
   // Restore answers from server state (for pre-filling)
   if (data && data.currentRound && data.currentRound.answers) {
     gameState.answers = data.currentRound.answers;
@@ -225,6 +241,8 @@ finishRoundBtn.addEventListener('click', () => {
 if (backToAnsweringBtn) {
   backToAnsweringBtn.addEventListener('click', () => {
     console.log('Back to answering view (host only - like browser back)');
+    // Preserve COMPLETED phase - this is UI navigation only
+    // gameState.roundPhase stays as COMPLETED
     gameStatusEl.textContent = 'All Answers In';
     updateAnswerStatus();
     showPhase('answering');
@@ -270,9 +288,8 @@ function showPhase(phase) {
 function updateAnswerStatus() {
   const totalCount = gameState.players.length;
 
-  // If "all answers in" notification is visible, we're in the completed state
-  // Show actual answer count, not submission tracking
-  const isCompleteState = !allAnswersNotification.classList.contains('hidden');
+  // Use explicit roundPhase state instead of DOM inspection
+  const isCompleteState = (gameState.roundPhase === RoundPhase.COMPLETED);
 
   let submittedCount;
   if (isCompleteState) {
@@ -286,6 +303,7 @@ function updateAnswerStatus() {
   console.log('updateAnswerStatus called:', {
     submittedCount,
     totalCount,
+    roundPhase: gameState.roundPhase,
     isCompleteState,
     answers: gameState.answers,
     submittedInPhase: gameState.submittedInCurrentPhase
