@@ -15,25 +15,43 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Serve static files - use dist folder for production builds, public for legacy
+const fs = require('fs');
+const distPath = path.join(__dirname, '..', 'dist');
+const publicPath = path.join(__dirname, '..', 'public');
 
-// Routes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
+// Check if dist folder exists (production build)
+if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
+  app.use(express.static(distPath));
 
-app.get('/lobby', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'lobby.html'));
-});
+  // SPA fallback - serve index.html for all routes (Express 5 syntax)
+  app.get('/{*path}', (req, res, next) => {
+    // Skip socket.io requests
+    if (req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  // Development fallback - serve legacy public folder
+  app.use(express.static(publicPath));
 
-app.get('/host', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'host.html'));
-});
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
 
-app.get('/player', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'player.html'));
-});
+  app.get('/lobby', (req, res) => {
+    res.sendFile(path.join(publicPath, 'lobby.html'));
+  });
+
+  app.get('/host', (req, res) => {
+    res.sendFile(path.join(publicPath, 'host.html'));
+  });
+
+  app.get('/player', (req, res) => {
+    res.sendFile(path.join(publicPath, 'player.html'));
+  });
+}
 
 // Socket.io connection handling
 setupSocketHandlers(io);

@@ -3,21 +3,87 @@
 
 ### Adding a New Socket Event
 
-1. Add handler in `server/socketHandlers.js` within `setupSocketHandlers()`
-2. Extract roomCode from socket: `const roomCode = socket.roomCode;`
-3. Add guard clause: `if (!roomCode) { socket.emit('error', { message: 'Not in a room' }); return; }`
-4. Update `gameState.js` if state changes are needed (all functions accept roomCode as first parameter)
-5. Emit response event: `socket.emit()` for sender, `io.to(roomCode).emit()` for all in room
-6. Add listener in relevant client JS file(s)
-7. Update UI based on event data
+**Server-side:**
+1. Add event type to `src/types/socket-events.ts` in `ClientToServerEvents` or `ServerToClientEvents` interface
+2. Add handler in `server/socketHandlers.js` within `setupSocketHandlers()`
+3. Extract roomCode from socket: `const roomCode = socket.roomCode;`
+4. Add guard clause: `if (!roomCode) { socket.emit('error', { message: 'Not in a room' }); return; }`
+5. Update `gameState.js` if state changes are needed (all functions accept roomCode as first parameter)
+6. Emit response event: `socket.emit()` for sender, `io.to(roomCode).emit()` for all in room
+
+**Client-side (React):**
+1. Types are already defined in `src/types/socket-events.ts`
+2. Add `useEffect` hook in relevant page component with event listener:
+   ```typescript
+   useEffect(() => {
+     const unsubscribe = on('eventName', (data) => {
+       // Update state via dispatch or setState
+       dispatch({ type: 'ACTION_TYPE', payload: data });
+     });
+     return unsubscribe;
+   }, [on, dispatch]);
+   ```
+3. Use `emit()` from `useSocket` hook to send events:
+   ```typescript
+   const { emit } = useSocket();
+   emit('eventName', { data });
+   ```
 
 ### Adding a New Game Phase
 
+**Server-side:**
 1. Add status value to `gameState.status` or `currentRound.status`
 2. Create transition functions in `gameState.js`
 3. Add socket events in `socketHandlers.js` to trigger transitions
-4. Update client phase detection in `joinSuccess` handlers
-5. Add new section to HTML and `showPhase()`/`showSection()` functions
+
+**Client-side (React):**
+1. Update `RoundPhase` enum in `src/types/game.ts` if needed
+2. Add phase state to relevant page component (e.g., `HostPage`)
+3. Use conditional rendering instead of `.hidden` class:
+   ```typescript
+   {phase === 'newPhase' && <NewPhaseComponent />}
+   ```
+4. Update socket event handlers to set phase state when server broadcasts phase changes
+
+### Component Structure
+
+**Pages** (`src/pages/`):
+- Top-level route components
+- Handle socket connections and events
+- Manage page-level state
+- Contain route guards (redirect if no playerInfo)
+
+**Components** (`src/components/`):
+- Presentational components
+- Receive data via props
+- Emit events via callback props
+
+**Hooks** (`src/hooks/`):
+- `useSocket` - Typed socket emit/on operations
+- `usePlayerInfo` - SessionStorage management
+- `useGameState` - Game state with socket bindings
+
+**Context** (`src/context/`):
+- `SocketContext` - Socket.io connection lifecycle
+- `GameContext` - Global game state with reducer
+
+### State Management Pattern
+
+Use Context API + useReducer for global state:
+
+```typescript
+// In GameContext
+const [state, dispatch] = useReducer(gameReducer, initialState);
+
+// In components
+const { gameState, dispatch } = useGameContext();
+dispatch({ type: 'SET_GAME_STATE', payload: newState });
+```
+
+Local component state for UI-only concerns:
+```typescript
+const [isExpanded, setIsExpanded] = useState(false);
+```
 
 ### Testing Reconnection
 
@@ -25,3 +91,4 @@ Players can reconnect mid-game by name. Key areas to verify:
 - Socket ID references updated in players, teams, and round answers
 - Player UI restores to correct phase (answering/submitted/scoring)
 - Host UI shows correct answer count and player status
+- All state properly synchronized via socket events

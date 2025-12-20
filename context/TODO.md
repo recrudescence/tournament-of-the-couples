@@ -1,7 +1,11 @@
 the following is a list of todo items i want to implement.
 
-- front end framework
-	- we should migrate to React, instead of directly modifying dom elements with js. all new code, refactoring, and optimization should be done with this eventually migration in mind, and ideally make progress towards enabling the migration
+- ✅ **COMPLETED: front end framework**
+	- Successfully migrated to React + TypeScript SPA with Vite build system
+	- See `context/react-migration.md` for full migration details
+	- Architecture: React 19, TypeScript, React Router, Context API + useReducer
+	- All pages converted to React components with proper type safety
+	- Preserves all existing server-side code and Socket.io contracts
 
 - game design
 	- rounds should have _variants_. 
@@ -21,7 +25,6 @@ the following is a list of todo items i want to implement.
 - game ux
 	- clicking on the header on any page should send the user to the / page, which then would (or is supposed to, under existing logic) redirect the user to the correct page based on game/player state (/host, /player, /). for example, if the game is already started and the host loads /lobby, redirect to /host.
 	- generally, the front end client display should be optimized to be responsive layouts. something to keep in mind is that most players will view the game on a mobile device, while the host will usually (but not always) be on a desktop.
-	- the /lobby page for a player should display the host's name alongside the game code - "welcome to CODE. your host is XXX!"
 	- when a player has submitted their answer, their "answer submitted" view should show their partner's submission status
 
 - hosting

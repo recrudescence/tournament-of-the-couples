@@ -38,33 +38,85 @@
 
 ### Client Structure
 
-**Three separate client apps** sharing the Socket.io connection pattern:
+**React Single-Page Application (SPA)** with TypeScript and React Router:
 
-1. **Join Flow** (`public/index.html`, `public/js/join.js`)
-   - Entry point for all users
+**Architecture:**
+- **Entry Point**: `index.html` → `src/main.tsx` → `src/App.tsx`
+- **Build System**: Vite with HMR (dev) and optimized production builds
+- **Routing**: React Router v7 with client-side navigation
+- **State Management**: React Context API + useReducer
+- **Socket Connection**: Single Socket.io instance managed via SocketContext
+
+**Directory Structure:**
+```
+src/
+  types/
+    game.ts           # Game state types and enums
+    socket-events.ts  # Typed socket event interfaces
+  context/
+    SocketContext.tsx # Socket.io connection lifecycle
+    GameContext.tsx   # Global game state with reducer
+  hooks/
+    useSocket.ts      # Typed socket emit/on operations
+    usePlayerInfo.ts  # SessionStorage management
+    useGameState.ts   # Socket event bindings
+  pages/
+    JoinPage.tsx      # Route: /
+    LobbyPage.tsx     # Route: /lobby
+    HostPage.tsx      # Route: /host
+    PlayerPage.tsx    # Route: /player
+  styles/
+    global.css        # Base styles
+    lobby.css         # Lobby-specific styles
+    host.css          # Host-specific styles
+    player.css        # Player-specific styles
+  App.tsx             # Router setup with context providers
+  main.tsx            # React root initialization
+```
+
+**Page Components:**
+
+1. **JoinPage** (`src/pages/JoinPage.tsx`)
+   - Entry point for all users (route: `/`)
    - Two-path interface: "Create Game" or "Join Game"
    - **Create Game**: Host enters name, gets 4-letter room code (e.g., "GAME")
    - **Join Game**: Player enters room code + name to join existing game
-   - Stores player info in `sessionStorage.playerInfo` as `{name: "...", isHost: true|false, roomCode: "..."}`
-   - This sessionStorage data persists across page navigations within the same tab
+   - Stores player info in `sessionStorage.playerInfo` via `usePlayerInfo` hook
+   - Navigates to `/lobby` on successful join
 
-2. **Lobby** (`public/lobby.html`, `public/js/lobby.js`)
-   - Team formation interface
+2. **LobbyPage** (`src/pages/LobbyPage.tsx`)
+   - Team formation interface (route: `/lobby`)
+   - Route guard: redirects to `/` if no playerInfo
    - **Displays room code prominently** in header for sharing
    - Players can pair/unpair before game starts
    - Host can start game when teams are formed
+   - Navigates to `/host` or `/player` on game start
 
-3. **Host UI** (`public/host.html`, `public/js/host.js`)
+3. **HostPage** (`src/pages/HostPage.tsx`)
+   - Host control center (route: `/host`)
+   - Route guard: redirects to `/` if not host
    - Three-phase flow: Round Setup → Answering → Scoring
+   - Uses conditional rendering for phase management
    - **Displays room code in header**
    - Manages question entry, answer tracking, and point awarding
    - Can return to answering phase via "Back to Answering" button
 
-4. **Player UI** (`public/player.html`, `public/js/player.js`)
+4. **PlayerPage** (`src/pages/PlayerPage.tsx`)
+   - Player game interface (route: `/player`)
+   - Route guard: redirects to `/` if host or no playerInfo
    - Four-section flow: Waiting → Answering → Submitted → Scoring
+   - Uses conditional rendering for section management
    - **Displays room code in header**
    - Players see partner name and team score
    - Auto-advances through phases based on server events
+
+**Key React Patterns:**
+- **Route Guards**: Each page checks `playerInfo` in `useEffect`, redirects to `/` if invalid
+- **Socket Management**: Single socket instance created in `SocketContext`, shared via context
+- **Event Handling**: `useEffect` hooks with cleanup for socket listeners
+- **State Synchronization**: Server events trigger `dispatch()` calls to update global state
+- **SessionStorage**: Managed via `usePlayerInfo` hook, persists across page navigations
+- **Conditional Rendering**: Replaces `.hidden` class toggling with `{condition && <Component />}`
 
 ### Data Flow
 
@@ -105,6 +157,6 @@
 
 7. **Disconnection vs Removal**: During gameplay, disconnected players are marked `connected: false` rather than removed, enabling seamless reconnection. Only in lobby phase can players be fully removed.
 
-8. **Page Navigation = New Socket Connection**: Each page transition (join → lobby → host/player) creates a new socket connection with a new socket ID. The client automatically re-joins with stored name and roomCode from sessionStorage, and server updates all references to the new socket ID. This is by design, not a bug.
+8. **Single Socket Connection in SPA**: Unlike the legacy multi-page setup, the React SPA maintains a single Socket.io connection throughout navigation. The connection is established in `SocketContext` on app mount and persists across route changes. When navigating between pages (/, /lobby, /host, /player), the same socket connection is reused. Pages call `emit('joinGame', ...)` on mount to rejoin with stored sessionStorage data, but this does NOT create a new socket connection.
 
 9. **Host vs Player Roles**: Host is stored separately in `gameState.host` but may also appear in the `players` array. Host does not answer questions or score points. When filtering for active players (e.g., checking if round is complete), exclude the host.
