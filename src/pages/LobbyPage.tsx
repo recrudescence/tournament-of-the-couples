@@ -30,8 +30,6 @@ export function LobbyPage() {
       }),
 
       on('gameStarted', (state) => {
-        console.log('LobbyPage received gameStarted:', state);
-        console.log('Players in received state:', state.players);
         // Update game state when game starts (GamePage will handle view transition)
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),

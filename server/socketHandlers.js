@@ -230,7 +230,8 @@ function setupSocketHandlers(io) {
 
         io.to(roomCode).emit('roundStarted', {
           roundNumber: state.currentRound.roundNumber,
-          question
+          question,
+          gameState: state
         });
       } catch (err) {
         console.error('Start round error:', err);

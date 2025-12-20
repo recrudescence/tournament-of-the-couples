@@ -84,7 +84,6 @@ export function HostPage() {
   // Initialize local state from GameContext when HostPage mounts
   useEffect(() => {
     if (gameState) {
-      console.log('HostPage initializing from gameState:', gameState);
       updateFromGameState(gameState);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

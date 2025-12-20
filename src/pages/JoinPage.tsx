@@ -57,7 +57,6 @@ export function JoinPage() {
       }),
 
       on('roomStatus', ({ found, error: roomError, roomCode: code, inProgress, disconnectedPlayers: players }) => {
-        console.log('roomStatus received:', { found, inProgress, disconnectedPlayersCount: players?.length });
         setIsLoading(false);
 
         if (!found) {
@@ -72,7 +71,6 @@ export function JoinPage() {
             showError('Cannot join game in progress. No disconnected players available.');
             return;
           }
-          console.log('Setting disconnected players:', players);
           setDisconnectedPlayers(players);
           setStep('reconnect');
         } else {
@@ -81,7 +79,6 @@ export function JoinPage() {
       }),
 
       on('joinSuccess', ({ roomCode, name, isHost, gameState }) => {
-        console.log('joinSuccess received:', { roomCode, name, isHost });
         savePlayerInfo({ name, isHost, roomCode });
         dispatch({ type: 'SET_GAME_STATE', payload: gameState });
         dispatch({ type: 'SET_PLAYER_INFO', payload: { name, isHost, roomCode } });
@@ -90,7 +87,6 @@ export function JoinPage() {
       }),
 
       on('error', ({ message }) => {
-        console.log('error received:', message);
         showError(message);
         setIsLoading(false);
       }),
@@ -140,7 +136,6 @@ export function JoinPage() {
   };
 
   const handleReconnect = (name: string) => {
-    console.log('handleReconnect', name);
     setIsLoading(true);
     emit('joinGame', {
       name,
@@ -258,16 +253,12 @@ export function JoinPage() {
         <div className="form-section">
           <h2>Reconnect to Game</h2>
           <p className="info-text">Game in progress. Select your name to reconnect:</p>
-          <p className="info-text">DEBUG: {disconnectedPlayers.length} disconnected player(s)</p>
           <div className="disconnected-players-list">
             {disconnectedPlayers.map((player) => (
               <button
                 key={player.socketId}
                 className="player-button"
-                onClick={() => {
-                  console.log('Reconnect button clicked for:', player.name);
-                  handleReconnect(player.name);
-                }}
+                onClick={() => handleReconnect(player.name)}
                 disabled={isLoading}
               >
                 {player.name}

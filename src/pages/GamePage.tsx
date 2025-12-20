@@ -46,7 +46,6 @@ export function GamePage() {
   // Handle joinSuccess to update GameContext when auto-rejoining
   useEffect(() => {
     const unsubscribe = on('joinSuccess', ({ gameState: state }) => {
-      console.log('GamePage received joinSuccess:', state);
       dispatch({ type: 'SET_GAME_STATE', payload: state });
     });
 
@@ -64,7 +63,6 @@ export function GamePage() {
       return;
     }
 
-    console.log('GamePage auto-rejoining:', { name: playerInfo.name, roomCode });
     emit('joinGame', {
       name: playerInfo.name,
       isHost: playerInfo.isHost,
@@ -85,16 +83,11 @@ export function GamePage() {
   }
 
   // Render appropriate view based on game state and player role
-  console.log('GamePage rendering - status:', gameState.status, 'isHost:', playerInfo?.isHost);
-
   if (gameState.status === 'lobby') {
-    console.log('Rendering LobbyPage');
     return <LobbyPage />;
   } else if (playerInfo?.isHost) {
-    console.log('Rendering HostPage');
     return <HostPage />;
   } else {
-    console.log('Rendering PlayerPage');
     return <PlayerPage />;
   }
 }

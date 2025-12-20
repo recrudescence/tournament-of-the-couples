@@ -83,7 +83,6 @@ export function PlayerPage() {
   // Initialize from GameContext when PlayerPage mounts (handles reconnection)
   useEffect(() => {
     if (gameState) {
-      console.log('PlayerPage initializing from gameState:', gameState);
       updateFromGameState(gameState);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
