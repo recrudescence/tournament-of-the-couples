@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -9,6 +9,7 @@ type JoinStep = 'menu' | 'roomCode' | 'nameInput' | 'reconnect' | 'gameCreated';
 
 export function JoinPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isConnected, emit, on } = useSocket();
   const { savePlayerInfo } = usePlayerInfo();
   const { dispatch } = useGameContext();
@@ -31,6 +32,18 @@ export function JoinPage() {
     return code.length === 4 && /^[a-z]+$/.test(code);
   };
 
+  // Handle pre-filled room code from URL query param
+  useEffect(() => {
+    const roomCodeParam = searchParams.get('room');
+    if (roomCodeParam && validateRoomCode(roomCodeParam.toLowerCase())) {
+      const code = roomCodeParam.toLowerCase();
+      setRoomCode(code);
+      setIsLoading(true);
+      // Auto-check room status when room code is pre-filled
+      emit('checkRoomStatus', { roomCode: code });
+    }
+  }, [searchParams, emit]);
+
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
@@ -44,6 +57,7 @@ export function JoinPage() {
       }),
 
       on('roomStatus', ({ found, error: roomError, roomCode: code, inProgress, disconnectedPlayers: players }) => {
+        console.log('roomStatus received:', { found, inProgress, disconnectedPlayersCount: players?.length });
         setIsLoading(false);
 
         if (!found) {
@@ -58,6 +72,7 @@ export function JoinPage() {
             showError('Cannot join game in progress. No disconnected players available.');
             return;
           }
+          console.log('Setting disconnected players:', players);
           setDisconnectedPlayers(players);
           setStep('reconnect');
         } else {
@@ -66,14 +81,16 @@ export function JoinPage() {
       }),
 
       on('joinSuccess', ({ roomCode, name, isHost, gameState }) => {
+        console.log('joinSuccess received:', { roomCode, name, isHost });
         savePlayerInfo({ name, isHost, roomCode });
         dispatch({ type: 'SET_GAME_STATE', payload: gameState });
         dispatch({ type: 'SET_PLAYER_INFO', payload: { name, isHost, roomCode } });
         setIsLoading(false);
-        navigate('/lobby');
+        navigate(`/game?room=${roomCode}`);
       }),
 
       on('error', ({ message }) => {
+        console.log('error received:', message);
         showError(message);
         setIsLoading(false);
       }),
@@ -123,6 +140,7 @@ export function JoinPage() {
   };
 
   const handleReconnect = (name: string) => {
+    console.log('handleReconnect', name);
     setIsLoading(true);
     emit('joinGame', {
       name,
@@ -240,12 +258,16 @@ export function JoinPage() {
         <div className="form-section">
           <h2>Reconnect to Game</h2>
           <p className="info-text">Game in progress. Select your name to reconnect:</p>
+          <p className="info-text">DEBUG: {disconnectedPlayers.length} disconnected player(s)</p>
           <div className="disconnected-players-list">
             {disconnectedPlayers.map((player) => (
               <button
                 key={player.socketId}
                 className="player-button"
-                onClick={() => handleReconnect(player.name)}
+                onClick={() => {
+                  console.log('Reconnect button clicked for:', player.name);
+                  handleReconnect(player.name);
+                }}
                 disabled={isLoading}
               >
                 {player.name}
@@ -273,7 +295,7 @@ export function JoinPage() {
             <h1 className="room-code-large">{createdRoomCode}</h1>
           </div>
           <p>Share this code with players</p>
-          <button className="primary" onClick={() => navigate('/lobby')}>
+          <button className="primary" onClick={() => navigate(`/game?room=${createdRoomCode.toLowerCase()}`)}>
             Continue to Lobby
           </button>
         </div>

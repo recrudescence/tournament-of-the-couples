@@ -9,7 +9,6 @@ import '../styles/player.css';
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
 export function PlayerPage() {
-  const navigate = useNavigate();
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
@@ -22,41 +21,24 @@ export function PlayerPage() {
   const [teamScore, setTeamScore] = useState(0);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [hasJoined, setHasJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const scoreRef = useRef<HTMLElement>(null);
-
-  // Redirect if not a player
-  useEffect(() => {
-    if (!playerInfo?.name || !playerInfo?.roomCode || playerInfo?.isHost) {
-      navigate('/');
-    }
-  }, [playerInfo, navigate]);
-
-  // Join game on connect
-  useEffect(() => {
-    if (!isConnected || !playerInfo || hasJoined) return;
-
-    emit('joinGame', {
-      name: playerInfo.name,
-      isHost: false,
-      isReconnect: false,
-      roomCode: playerInfo.roomCode,
-    });
-    setHasJoined(true);
-  }, [isConnected, playerInfo, hasJoined, emit]);
 
   const updateFromGameState = useCallback(
     (state: GameState, socketId?: string) => {
       dispatch({ type: 'SET_GAME_STATE', payload: state });
 
       // Find my player and team
-      const mySocketId = socketId;
-      if (!mySocketId || !playerInfo) return;
+      // If no socketId provided, try to find player by name (for initialization from GameContext)
+      const me = socketId
+        ? state.players.find((p) => p.socketId === socketId)
+        : state.players.find((p) => p.name === playerInfo?.name);
 
-      const me = state.players.find((p) => p.socketId === mySocketId);
-      if (me?.teamId) {
+      if (!me || !playerInfo) return;
+
+      // Update team score
+      if (me.teamId) {
         const myTeam = state.teams.find((t) => t.teamId === me.teamId);
         if (myTeam) {
           setTeamScore(myTeam.score);
@@ -77,12 +59,17 @@ export function PlayerPage() {
           setSection('scoring');
         } else if (state.currentRound.status === 'answering') {
           if (previousAnswer) {
+            // Player has already submitted - restore submitted state
             setAnswer(previousAnswer);
+            setSubmittedAnswer(previousAnswer);
+            setHasSubmitted(true);
+            setSection('submitted');
           } else {
+            // Player hasn't submitted yet
             setAnswer('');
+            setHasSubmitted(false);
+            setSection('answering');
           }
-          setHasSubmitted(false);
-          setSection('answering');
         } else {
           setSection('waiting');
         }
@@ -92,6 +79,15 @@ export function PlayerPage() {
     },
     [dispatch, playerInfo]
   );
+
+  // Initialize from GameContext when PlayerPage mounts (handles reconnection)
+  useEffect(() => {
+    if (gameState) {
+      console.log('PlayerPage initializing from gameState:', gameState);
+      updateFromGameState(gameState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Socket event handlers
   useEffect(() => {

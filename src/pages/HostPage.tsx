@@ -22,14 +22,12 @@ interface LocalGameState {
 }
 
 export function HostPage() {
-  const navigate = useNavigate();
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
-  const { dispatch } = useGameContext();
+  const { gameState, dispatch } = useGameContext();
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [questionInput, setQuestionInput] = useState('');
-  const [hasJoined, setHasJoined] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [gameStatus, setGameStatus] = useState('Setting Up');
   const [showAllAnswersNotification, setShowAllAnswersNotification] = useState(false);
@@ -49,26 +47,6 @@ export function HostPage() {
     revealedAnswers: new Set(),
     roundPhase: RoundPhase.INITIAL,
   });
-
-  // Redirect if not host
-  useEffect(() => {
-    if (!playerInfo?.name || !playerInfo?.roomCode || !playerInfo?.isHost) {
-      navigate('/');
-    }
-  }, [playerInfo, navigate]);
-
-  // Join game on connect
-  useEffect(() => {
-    if (!isConnected || !playerInfo || hasJoined) return;
-
-    emit('joinGame', {
-      name: playerInfo.name,
-      isHost: true,
-      isReconnect: false,
-      roomCode: playerInfo.roomCode,
-    });
-    setHasJoined(true);
-  }, [isConnected, playerInfo, hasJoined, emit]);
 
   const updateFromGameState = useCallback((state: GameState) => {
     dispatch({ type: 'SET_GAME_STATE', payload: state });
@@ -103,6 +81,20 @@ export function HostPage() {
     }
   }, [dispatch]);
 
+  // Initialize local state from GameContext when HostPage mounts
+  useEffect(() => {
+    if (gameState) {
+      console.log('HostPage initializing from gameState:', gameState);
+      updateFromGameState(gameState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  // Sync local players to GameContext so DebugSidebar reflects disconnections
+  useEffect(() => {
+    dispatch({ type: 'UPDATE_PLAYERS', payload: localState.players });
+  }, [localState.players, dispatch]);
+
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
@@ -111,16 +103,8 @@ export function HostPage() {
         updateFromGameState(state);
       }),
 
-      on('gameStarted', (data) => {
-        setGameStatus('Playing');
-        setLocalState((prev) => ({
-          ...prev,
-          roundNumber: 1,
-          players: data.players || prev.players,
-          teams: data.teams || prev.teams,
-        }));
-        setPhase('roundSetup');
-      }),
+      // Note: gameStarted is handled by LobbyPage which updates GameContext
+      // HostPage reads from GameContext on mount via the initialization effect above
 
       on('roundStarted', ({ roundNumber, question, gameState }) => {
         setLocalState((prev) => ({

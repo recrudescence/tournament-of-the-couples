@@ -1,44 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { DebugSidebar } from '../components/common/DebugSidebar';
 import type { Player, Team } from '../types/game';
 import '../styles/lobby.css';
 
 export function LobbyPage() {
-  const navigate = useNavigate();
-  const { isConnected, emit, on } = useSocket();
+  const { emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
 
   const [error, setError] = useState<string | null>(null);
-  const [hasJoined, setHasJoined] = useState(false);
 
   const showError = useCallback((message: string) => {
     setError(message);
     setTimeout(() => setError(null), 5000);
   }, []);
-
-  // Redirect if no player info
-  useEffect(() => {
-    if (!playerInfo?.name || !playerInfo?.roomCode) {
-      navigate('/');
-    }
-  }, [playerInfo, navigate]);
-
-  // Join game on connect
-  useEffect(() => {
-    if (!isConnected || !playerInfo || hasJoined) return;
-
-    emit('joinGame', {
-      name: playerInfo.name,
-      isHost: playerInfo.isHost,
-      isReconnect: false,
-      roomCode: playerInfo.roomCode,
-    });
-    setHasJoined(true);
-  }, [isConnected, playerInfo, hasJoined, emit]);
 
   // Socket event handlers
   useEffect(() => {
@@ -51,12 +29,11 @@ export function LobbyPage() {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
-      on('gameStarted', () => {
-        if (playerInfo?.isHost) {
-          navigate('/host');
-        } else {
-          navigate('/player');
-        }
+      on('gameStarted', (state) => {
+        console.log('LobbyPage received gameStarted:', state);
+        console.log('Players in received state:', state.players);
+        // Update game state when game starts (GamePage will handle view transition)
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
       on('error', ({ message }) => {
@@ -65,7 +42,7 @@ export function LobbyPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, playerInfo, navigate, showError]);
+  }, [on, dispatch, showError]);
 
   const handlePair = (targetSocketId: string) => {
     emit('requestPair', { targetSocketId });
@@ -170,44 +147,47 @@ export function LobbyPage() {
   };
 
   return (
-    <div className="container">
-      <header>
-        <h1>Lobby</h1>
-        <div className="room-code-header">
-          Welcome to <strong>{gameState.roomCode.toUpperCase()}</strong>, hosted by{' '}
-          <strong>{gameState.host.name}</strong>!
+    <>
+      {playerInfo.isHost && <DebugSidebar />}
+      <div className="container">
+        <header>
+          <h1>Lobby</h1>
+          <div className="room-code-header">
+            Welcome to <strong>{gameState.roomCode.toUpperCase()}</strong>, hosted by{' '}
+            <strong>{gameState.host.name}</strong>!
+          </div>
+        </header>
+
+        <div className="info">
+          {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
+          {teamCount !== 1 ? 's' : ''} formed
         </div>
-      </header>
 
-      <div className="info">
-        {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
-        {teamCount !== 1 ? 's' : ''} formed
-      </div>
-
-      <h2>Players</h2>
-      <div id="playersList">
-        {gameState.teams.map(renderTeamCard)}
-        {gameState.players.map(renderUnpairedPlayer)}
-      </div>
-
-      {playerInfo.isHost && (
-        <div className="host-controls">
-          <button
-            className="primary"
-            onClick={handleStartGame}
-            disabled={!allPaired}
-          >
-            Start Game
-          </button>
-          <p className="info host-message">
-            {allPaired
-              ? 'Ready to start!'
-              : 'All connected players must be paired before starting the game.'}
-          </p>
+        <h2>Players</h2>
+        <div id="playersList">
+          {gameState.teams.map(renderTeamCard)}
+          {gameState.players.map(renderUnpairedPlayer)}
         </div>
-      )}
 
-      {error && <div className="error">{error}</div>}
-    </div>
+        {playerInfo.isHost && (
+          <div className="host-controls">
+            <button
+              className="primary"
+              onClick={handleStartGame}
+              disabled={!allPaired}
+            >
+              Start Game
+            </button>
+            <p className="info host-message">
+              {allPaired
+                ? 'Ready to start!'
+                : 'All connected players must be paired before starting the game.'}
+            </p>
+          </div>
+        )}
+
+        {error && <div className="error">{error}</div>}
+      </div>
+    </>
   );
 }
