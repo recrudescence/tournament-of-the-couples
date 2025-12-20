@@ -13,6 +13,9 @@ const socket = io();
 let currentPlayer = playerInfo;
 let gameState = null;
 
+// Initialize debug sidebar if host
+initDebugSidebar(playerInfo.isHost);
+
 const playersList = document.getElementById('playersList');
 const startGameBtn = document.getElementById('startGameBtn');
 const hostControls = document.getElementById('hostControls');
@@ -64,7 +67,7 @@ socket.on('joinSuccess', ({ roomCode, gameState: state }) => {
 socket.on('lobbyUpdate', (state) => {
   console.log('Lobby update:', state);
   gameState = state;
-  
+
   // Update current player reference from game state
   if (playerInfo.name) {
     if (playerInfo.isHost && state.host && state.host.name === playerInfo.name) {
@@ -93,6 +96,7 @@ socket.on('gameStarted', (state) => {
 
 // Render lobby
 function renderLobby() {
+  updateDebugSidebar(gameState);
   if (!gameState) return;
   
   // Update status message (only count connected players)

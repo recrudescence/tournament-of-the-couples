@@ -26,6 +26,5 @@ the following is a list of todo items i want to implement.
 
 - hosting
 	- the host should be able to see a "end game" button, which asks the host to confirm before resetting game state and all players, returning everyone to the main page
-	- the host should have a debug sidebar that shows all players for the game, along with their connection state. this sidebar should exist in the /lobby and the /host pages if the user is a host. the data for the data for the debug panel should solely rely on client socket data received by host, to minimize additional code throughout the codebase. 
 	- when the host scores a team, the minimized team view should have a button to re-open scoring for that team (with the already-awared score taken off)
 

@@ -54,6 +54,9 @@ let gameState = {
 // Initialize
 hostNameEl.textContent = hostData.name;
 
+// Initialize debug sidebar (always true since this is host.js)
+initDebugSidebar(true);
+
 // Connect to Socket.io
 const socket = io();
 
@@ -77,7 +80,6 @@ socket.on('joinSuccess', (data) => {
   const state = data.gameState || data;
   gameState.players = state.players || [];
   gameState.teams = state.teams || [];
-  updateScoreboard();
 
   // Restore round state if there's an active round
   if (state.currentRound) {
@@ -110,6 +112,9 @@ socket.on('joinSuccess', (data) => {
     gameStatusEl.textContent = 'Playing';
     showPhase('roundSetup');
   }
+
+  updateScoreboard();
+  updateDebugSidebar(data);
 });
 
 socket.on('gameStarted', (data) => {
@@ -122,6 +127,7 @@ socket.on('gameStarted', (data) => {
     gameState.players = data.players;
     gameState.teams = data.teams || [];
   }
+  updateDebugSidebar(data);
 });
 
 socket.on('roundStarted', (data) => {
@@ -144,6 +150,7 @@ socket.on('roundStarted', (data) => {
 
   updateAnswerStatus();
   showPhase('answering');
+  updateDebugSidebar(data);
 });
 
 socket.on('answerSubmitted', (data) => {
@@ -157,6 +164,7 @@ socket.on('answerSubmitted', (data) => {
   console.log('Submitted in current phase:', gameState.submittedInCurrentPhase);
   console.log('Calling updateAnswerStatus');
   updateAnswerStatus();
+  updateDebugSidebar(data);
 });
 
 socket.on('allAnswersIn', () => {
@@ -185,8 +193,8 @@ socket.on('scoreUpdated', (data) => {
 
   // Don't update the team card score here - it shows round points, not total
   // The scoreboard below will show the updated total
-
   updateScoreboard();
+  updateDebugSidebar(data);
 });
 
 socket.on('readyForNextRound', (data) => {
@@ -220,6 +228,7 @@ socket.on('returnedToAnswering', (data) => {
   gameStatusEl.textContent = 'Answering - Reopened';
   updateAnswerStatus();
   showPhase('answering');
+  updateDebugSidebar(data);
 });
 
 socket.on('lobbyUpdate', (data) => {
@@ -228,6 +237,27 @@ socket.on('lobbyUpdate', (data) => {
   gameState.players = state.players || [];
   gameState.teams = state.teams || [];
   updateScoreboard();
+  updateDebugSidebar(data);
+});
+
+socket.on('playerDisconnected', (data) => {
+  console.log('Player disconnected:', data);
+  // Find and mark player as disconnected
+  const player = gameState.players.find(p => p.socketId === data.socketId);
+  if (player) {
+    player.connected = false;
+    console.log(`Player ${player.name} marked as disconnected`);
+
+    // Update UI based on current phase
+    if (gameState.roundPhase === RoundPhase.IN_PROGRESS) {
+      // During answering phase - update player status list
+      updateAnswerStatus();
+    } else if (gameState.roundPhase === RoundPhase.COMPLETED) {
+      // During scoring phase - refresh team cards to show disconnected status
+      createTeamCards();
+    }
+  }
+  updateDebugSidebar(data);
 });
 
 socket.on('error', (data) => {
@@ -343,9 +373,15 @@ function updateAnswerStatus() {
       hasSubmitted = gameState.submittedInCurrentPhase.includes(player.name);
     }
 
-    console.log(`Player ${player.name}: hasSubmitted=${hasSubmitted}`);
-    li.textContent = `${player.name} ${hasSubmitted ? '✅' : '⏳'}`;
-    li.className = hasSubmitted ? 'answered' : 'waiting';
+    // Show disconnected status
+    if (!player.connected) {
+      li.textContent = `${player.name} 🔌 (Disconnected)`;
+      li.className = 'disconnected';
+    } else {
+      console.log(`Player ${player.name}: hasSubmitted=${hasSubmitted}`);
+      li.textContent = `${player.name} ${hasSubmitted ? '✅' : '⏳'}`;
+      li.className = hasSubmitted ? 'answered' : 'waiting';
+    }
     playerStatusList.appendChild(li);
   });
 }
