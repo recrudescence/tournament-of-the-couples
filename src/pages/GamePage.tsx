@@ -6,6 +6,7 @@ import { useGameContext } from '../context/GameContext';
 import { LobbyPage } from './LobbyPage';
 import { HostPage } from './HostPage';
 import { PlayerPage } from './PlayerPage';
+import { FinishGamePage } from './FinishGamePage';
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -43,13 +44,19 @@ export function GamePage() {
     }
   }, [roomCode, playerInfo, navigate]);
 
-  // Handle joinSuccess to update GameContext when auto-rejoining
+  // Handle socket events for GamePage coordination
   useEffect(() => {
-    const unsubscribe = on('joinSuccess', ({ gameState: state }) => {
-      dispatch({ type: 'SET_GAME_STATE', payload: state });
-    });
+    const unsubscribers = [
+      on('joinSuccess', ({ gameState: state }) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+      }),
 
-    return unsubscribe;
+      on('gameEnded', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+      }),
+    ];
+
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, [on, dispatch]);
 
   // Auto-rejoin on mount/refresh (only if we don't have gameState yet)
@@ -83,7 +90,9 @@ export function GamePage() {
   }
 
   // Render appropriate view based on game state and player role
-  if (gameState.status === 'lobby') {
+  if (gameState.status === 'ended') {
+    return <FinishGamePage />;
+  } else if (gameState.status === 'lobby') {
     return <LobbyPage />;
   } else if (playerInfo?.isHost) {
     return <HostPage />;

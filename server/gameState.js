@@ -218,6 +218,25 @@ function startGame(roomCode) {
   console.log('Game started');
 }
 
+// End the game
+function endGame(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (gameState.status === 'lobby') {
+    throw new Error('Cannot end game that has not started');
+  }
+
+  if (gameState.status === 'ended') {
+    throw new Error('Game already ended');
+  }
+
+  gameState.status = 'ended';
+  console.log('Game ended');
+}
+
 // Start a new round
 function startRound(roomCode, question) {
   const gameState = gameStates.get(roomCode);
@@ -407,6 +426,7 @@ module.exports = {
   pairPlayers,
   unpairPlayers,
   startGame,
+  endGame,
   startRound,
   submitAnswer,
   isRoundComplete,

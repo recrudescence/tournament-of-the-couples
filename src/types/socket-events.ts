@@ -19,6 +19,7 @@ export interface ClientToServerEvents {
   skipPoint: (data: { teamId: string }) => void;
   nextRound: () => void;
   backToAnswering: () => void;
+  endGame: () => void;
 }
 
 export interface ServerToClientEvents {
@@ -63,5 +64,6 @@ export interface ServerToClientEvents {
   returnedToAnswering: (data: { currentRound: CurrentRound }) => void;
   playerDisconnected: (data: { socketId: string; name: string }) => void;
   playerReconnected: (data: { name: string; newSocketId: string }) => void;
+  gameEnded: (data: GameState) => void;
   error: (data: { message: string }) => void;
 }

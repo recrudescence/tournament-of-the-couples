@@ -276,7 +276,7 @@ export function PlayerPage() {
       {section === 'scoring' && (
         <div className="player-section">
           <div className="scoring-message">
-            <h2>Round Complete!</h2>
+            <h2>All answers are in!</h2>
             <p>The host is reviewing answers and awarding points...</p>
           </div>
         </div>

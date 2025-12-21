@@ -370,6 +370,26 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host ends the game
+    socket.on('endGame', () => {
+      console.log('[socket] endGame');
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.endGame(roomCode);
+        const state = gameState.getGameState(roomCode);
+        console.log('Game ended, emitting to room', roomCode);
+        io.to(roomCode).emit('gameEnded', state);
+      } catch (err) {
+        console.error('End game error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log('[socket] disconnect');

@@ -267,6 +267,12 @@ export function HostPage() {
     emit('nextRound');
   };
 
+  const handleEndGame = () => {
+    if (window.confirm('Are you sure you want to end the game? This will show the final scores and cannot be undone.')) {
+      emit('endGame');
+    }
+  };
+
   // Computed values
   const submittedCount = useMemo(() => {
     if (localState.roundPhase === RoundPhase.COMPLETED) {
@@ -510,6 +516,20 @@ export function HostPage() {
               );
             })
           )}
+        </div>
+
+        {/* End Game Button */}
+        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={handleEndGame}
+            style={{
+              width: '100%',
+              color: 'white'
+            }}
+          >
+            🏁 End Game
+          </button>
         </div>
       </div>
       </div>
