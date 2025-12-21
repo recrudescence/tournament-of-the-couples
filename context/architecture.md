@@ -59,12 +59,14 @@ src/
   hooks/
     useSocket.ts      # Typed socket emit/on operations
     usePlayerInfo.ts  # SessionStorage management
-    useGameState.ts   # Socket event bindings
+    useGameError.ts   # Standardized error handling
   pages/
-    JoinPage.tsx      # Route: /
-    LobbyPage.tsx     # Route: /lobby
-    HostPage.tsx      # Route: /host
-    PlayerPage.tsx    # Route: /player
+    JoinPage.tsx      # Routes: / and /join (with ?room=CODE support)
+    GamePage.tsx      # Route: /game?room=CODE (router component)
+    LobbyPage.tsx     # Rendered by GamePage when status='lobby'
+    HostPage.tsx      # Rendered by GamePage when playing/scoring + isHost
+    PlayerPage.tsx    # Rendered by GamePage when playing/scoring + !isHost
+    FinishGamePage.tsx # Rendered by GamePage when status='ended'
   styles/
     global.css        # Base styles
     lobby.css         # Lobby-specific styles
@@ -77,38 +79,55 @@ src/
 **Page Components:**
 
 1. **JoinPage** (`src/pages/JoinPage.tsx`)
-   - Entry point for all users (route: `/`)
+   - Entry point for all users (routes: `/` and `/join`)
+   - Supports pre-filled room code via `?room=CODE` query parameter
    - Two-path interface: "Create Game" or "Join Game"
    - **Create Game**: Host enters name, gets room code (e.g., "GAME")
    - **Join Game**: Player enters room code + name to join existing game
+   - **Reconnection**: If game in progress, shows list of disconnected players to reconnect
    - Stores player info in `sessionStorage.playerInfo` via `usePlayerInfo` hook
-   - Navigates to `/lobby` on successful join
+   - Navigates to `/game?room=CODE` on successful join
 
-2. **LobbyPage** (`src/pages/LobbyPage.tsx`)
-   - Team formation interface (route: `/lobby`)
-   - Route guard: redirects to `/` if no playerInfo
+2. **GamePage** (`src/pages/GamePage.tsx`)
+   - **Router component** for all game views (route: `/game?room=CODE`)
+   - Validates room code format and playerInfo
+   - Auto-rejoins on page refresh using sessionStorage data
+   - Handles `joinSuccess` and `gameEnded` socket events
+   - Conditionally renders child pages based on `gameState.status` and `playerInfo.isHost`:
+     - `status='lobby'` → LobbyPage
+     - `status='playing'|'scoring'` + `isHost=true` → HostPage
+     - `status='playing'|'scoring'` + `isHost=false` → PlayerPage
+     - `status='ended'` → FinishGamePage
+
+3. **LobbyPage** (`src/pages/LobbyPage.tsx`)
+   - Team formation interface (rendered by GamePage)
+   - No route guards (GamePage handles this)
    - **Displays room code prominently** in header for sharing
    - Players can pair/unpair before game starts
    - Host can start game when teams are formed
-   - Navigates to `/host` or `/player` on game start
+   - Updates GameContext when game starts (no navigation)
 
-3. **HostPage** (`src/pages/HostPage.tsx`)
-   - Host control center (route: `/host`)
-   - Route guard: redirects to `/` if not host
+4. **HostPage** (`src/pages/HostPage.tsx`)
+   - Host control center (rendered by GamePage)
+   - No route guards (GamePage handles this)
    - Three-phase flow: Round Setup → Answering → Scoring
    - Uses conditional rendering for phase management
-   - **Displays room code in header**
-   - Manages question entry, answer tracking, and point awarding
-   - Can return to answering phase via "Back to Answering" button
+   - Manages question entry, answer tracking, point awarding, return to answering phase, ending game
 
-4. **PlayerPage** (`src/pages/PlayerPage.tsx`)
-   - Player game interface (route: `/player`)
-   - Route guard: redirects to `/` if host or no playerInfo
+5. **PlayerPage** (`src/pages/PlayerPage.tsx`)
+   - Player game interface (rendered by GamePage)
+   - No route guards (GamePage handles this)
    - Four-section flow: Waiting → Answering → Submitted → Scoring
    - Uses conditional rendering for section management
-   - **Displays room code in header**
    - Players see partner name and team score
    - Auto-advances through phases based on server events
+   - Properly restores submission state on reconnection
+
+6. **FinishGamePage** (`src/pages/FinishGamePage.tsx`)
+   - Game completion interface (rendered by GamePage)
+   - Shows winner with trophy/gradient card
+   - Displays final standings sorted by score
+   - "Return to Home" button clears session and navigates to `/`
 
 **Key React Patterns:**
 - **Route Guards**: Each page checks `playerInfo` in `useEffect`, redirects to `/` if invalid
@@ -126,9 +145,10 @@ src/
 - **Join/Reconnect**: `joinGame` (includes roomCode) → `joinSuccess` or `error`
 - **Lobby**: `requestPair`, `unpair` → `lobbyUpdate`
 - **Game Start**: `startGame` → `gameStarted`
-- **Round Lifecycle**: `startRound` → `roundStarted` → `submitAnswer` → `answerSubmitted` → `allAnswersIn`
+- **Round Lifecycle**: `startRound` → `roundStarted` (includes gameState) → `submitAnswer` → `answerSubmitted` → `allAnswersIn`
 - **Scoring**: `revealAnswer` → `answerRevealed`, `awardPoint` → `scoreUpdated`
 - **Phase Transitions**: `nextRound` → `readyForNextRound`, `backToAnswering` → `returnedToAnswering`
+- **Game End**: `endGame` → `gameEnded` (all clients receive final gameState)
 
 **State synchronization:**
 - Server is source of truth
@@ -157,6 +177,16 @@ src/
 
 7. **Disconnection vs Removal**: During gameplay, disconnected players are marked `connected: false` rather than removed, enabling seamless reconnection. Only in lobby phase can players be fully removed.
 
-8. **Single Socket Connection in SPA**: Unlike the legacy multi-page setup, the React SPA maintains a single Socket.io connection throughout navigation. The connection is established in `SocketContext` on app mount and persists across route changes. When navigating between pages (/, /lobby, /host, /player), the same socket connection is reused. Pages call `emit('joinGame', ...)` on mount to rejoin with stored sessionStorage data, but this does NOT create a new socket connection.
+8. **Single Socket Connection in SPA**: Unlike the legacy multi-page setup, the React SPA maintains a single Socket.io connection throughout navigation. The connection is established in `SocketContext` on app mount and persists across route changes. When navigating between views (all rendered via GamePage at `/game?room=CODE`), the same socket connection is reused. GamePage calls `emit('joinGame', ...)` on mount to rejoin with stored sessionStorage data, but this does NOT create a new socket connection.
 
 9. **Host vs Player Roles**: Host is stored separately in `gameState.host` but may also appear in the `players` array. Host does not answer questions or score points. When filtering for active players (e.g., checking if round is complete), exclude the host.
+
+10. **RESTful URL Structure**: The app uses query parameters for room codes:
+   - `/` or `/join` - Entry point (optional `?room=CODE` for pre-fill)
+   - `/game?room=CODE` - All game views (lobby, playing, scoring, ended)
+   - Room code in URL enables shareable links and proper page refresh handling
+   - GamePage validates room code format and redirects if invalid
+
+11. **View-Based Navigation**: Navigation between game phases (lobby → playing → ended) happens via React state changes, not route changes. GamePage stays at `/game?room=CODE` and conditionally renders different child pages based on `gameState.status`. This keeps the room code visible in the URL throughout the game lifecycle.
+
+12. **State Initialization on Mount**: HostPage and PlayerPage initialize their UI state from GameContext when they mount. This ensures proper state restoration on page refresh or when transitioning from other views. The initialization happens via an effect that calls `updateFromGameState()` once on mount.
