@@ -29,7 +29,7 @@ export function JoinPage() {
   }, []);
 
   const validateRoomCode = (code: string) => {
-    return code.length === 4 && /^[a-z]+$/.test(code);
+    return /^[a-z]+$/.test(code);
   };
 
   // Handle pre-filled room code from URL query param
@@ -112,7 +112,7 @@ export function JoinPage() {
       return;
     }
     if (!validateRoomCode(code)) {
-      showError('Room code must be 4 letters');
+      showError('Room code seems wrong');
       return;
     }
     setRoomCode(code);
@@ -197,8 +197,7 @@ export function JoinPage() {
               <input
                 type="text"
                 id="joinRoomCode"
-                placeholder="4 letters"
-                maxLength={4}
+                placeholder="6 letters"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toLowerCase())}
                 onKeyPress={(e) => handleKeyPress(e, handleCheckRoom)}

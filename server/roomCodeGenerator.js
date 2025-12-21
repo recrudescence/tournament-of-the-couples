@@ -4,8 +4,8 @@ const { generate } = require('random-words');
 const activeRooms = new Set();
 
 /**
- * Generate a unique 4-letter room code
- * @returns {string} - Lowercase 4-letter room code
+ * Generate a unique room code
+ * @returns {string} - Lowercase room code
  */
 function generateRoomCode() {
   let code;
@@ -13,8 +13,8 @@ function generateRoomCode() {
   const maxAttempts = 100;
 
   do {
-    // Generate random 4-letter word, lowercase
-    const words = generate({ exactly: 1, maxLength: 4, minLength: 4 });
+    // Generate random word, lowercase
+    const words = generate({ exactly: 1, maxLength: 6, minLength: 6 });
     code = words[0].toLowerCase();
     attempts++;
 
@@ -28,12 +28,12 @@ function generateRoomCode() {
 }
 
 /**
- * Generate a 4-letter team code
+ * Generate a team code
  * Teams don't need global uniqueness tracking, just local uniqueness per game
- * @returns {string} - Lowercase 4-letter team code
+ * @returns {string} - Lowercase team code
  */
 function generateTeamCode() {
-  const words = generate({ exactly: 1, maxLength: 4, minLength: 4 });
+  const words = generate({ exactly: 1, maxLength: 6, minLength: 6 });
   return words[0].toLowerCase();
 }
 
@@ -44,7 +44,6 @@ function generateTeamCode() {
  */
 function validateRoomCode(code) {
   return typeof code === 'string' &&
-         code.length === 4 &&
          /^[a-z]+$/.test(code);
 }
 

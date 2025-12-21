@@ -23,7 +23,7 @@ describe('Room Code Generator', () => {
   });
 
   describe('generateRoomCode', () => {
-    test('generates 4-letter codes', () => {
+    test('generates codes', () => {
       // Re-require to get fresh instance after reset
       const generator = require('../roomCodeGenerator');
       const code = generator.generateRoomCode();
@@ -62,7 +62,7 @@ describe('Room Code Generator', () => {
   });
 
   describe('generateTeamCode', () => {
-    test('generates 4-letter team codes', () => {
+    test('generates team codes', () => {
       const generator = require('../roomCodeGenerator');
       const code = generator.generateTeamCode();
 
@@ -81,7 +81,7 @@ describe('Room Code Generator', () => {
   });
 
   describe('validateRoomCode', () => {
-    test('validates correct 4-letter lowercase codes', () => {
+    test('validates correct lowercase codes', () => {
       const generator = require('../roomCodeGenerator');
 
       expect(generator.validateRoomCode('game')).toBe(true);

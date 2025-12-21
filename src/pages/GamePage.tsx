@@ -19,7 +19,7 @@ export function GamePage() {
   const roomCode = searchParams.get('room');
 
   const validateRoomCode = (code: string | null): code is string => {
-    return code !== null && code.length === 4 && /^[a-z]+$/.test(code);
+    return code !== null && /^[a-z]+$/.test(code);
   };
 
   // Route guards

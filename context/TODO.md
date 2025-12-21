@@ -23,7 +23,6 @@ the following is a list of todo items i want to implement.
 		- in the case that the host re-opens the answering round, the response times should reset.
 
 - game ux
-	- clicking on the header on any page should send the user to the / page, which then would (or is supposed to, under existing logic) redirect the user to the correct page based on game/player state (/host, /player, /). for example, if the game is already started and the host loads /lobby, redirect to /host.
 	- generally, the front end client display should be optimized to be responsive layouts. something to keep in mind is that most players will view the game on a mobile device, while the host will usually (but not always) be on a desktop.
 	- when a player has submitted their answer, their "answer submitted" view should show their partner's submission status
 

@@ -2,8 +2,8 @@
 ## Database Schema
 
 ```sql
-games (game_id, started_at, ended_at)
-rounds (round_id, game_id, round_number, question, created_at)
+games (game_code, started_at, ended_at)
+rounds (round_id, game_code, round_number, question, created_at)
 answers (answer_id, round_id, player_name, team_id, answer_text)
 ```
 
@@ -18,7 +18,7 @@ Understanding the in-memory game state structure is critical for working with th
 **Per-room game state:**
 ```javascript
 {
-  roomCode: "game",                  // 4-letter room code (e.g., "game", "play")
+  roomCode: "game",                  // room code (e.g., "game", "play")
   gameId: "game",                    // Same as roomCode, for DB compatibility
   status: "lobby" | "playing" | "scoring" | "ended",
 
@@ -32,14 +32,14 @@ Understanding the in-memory game state structure is critical for working with th
       socketId: "...",                // Changes on page navigation/reconnect
       name: "...",                    // Stable identifier for reconnection
       partnerId: "..." | null,        // Socket ID of partner (if paired)
-      teamId: "..." | null,           // 4-letter team code (e.g., "team")
+      teamId: "..." | null,           // team code (e.g., "team")
       connected: true | false         // Disconnection tracking
     }
   ],
 
   teams: [                            // Created when two players pair
     {
-      teamId: "team",                 // 4-letter team code (not UUID)
+      teamId: "team",                 // team code (not UUID)
       player1Id: "socketId",          // Must update on reconnect
       player2Id: "socketId",          // Must update on reconnect
       score: 0

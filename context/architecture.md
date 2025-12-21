@@ -19,10 +19,10 @@
    - Handles player join/reconnect logic, round lifecycle, scoring
 
 3. **Room Code Generator** (`server/roomCodeGenerator.js`)
-   - Generates unique 4-letter room codes using `random-words` package
-   - Generates 4-letter team codes for team IDs
+   - Generates unique room codes using `random-words` package
+   - Generates team codes for team IDs
    - Tracks active rooms to prevent collisions
-   - Validates room code format (4 lowercase letters)
+   - Validates room code format (text string)
 
 4. **State Management** (`server/gameState.js`)
    - **In-memory only** - game states stored in Map: `roomCode → gameState`
@@ -33,7 +33,7 @@
 
 5. **Database Layer** (`server/database.js`)
    - SQLite for game history/analytics (not for state restoration)
-   - Persists games (using room code as game_id), rounds, and answers
+   - Persists games (using room code as game_code), rounds, and answers
    - Uses promisified wrappers around sqlite3 callbacks
 
 ### Client Structure
@@ -79,7 +79,7 @@ src/
 1. **JoinPage** (`src/pages/JoinPage.tsx`)
    - Entry point for all users (route: `/`)
    - Two-path interface: "Create Game" or "Join Game"
-   - **Create Game**: Host enters name, gets 4-letter room code (e.g., "GAME")
+   - **Create Game**: Host enters name, gets room code (e.g., "GAME")
    - **Join Game**: Player enters room code + name to join existing game
    - Stores player info in `sessionStorage.playerInfo` via `usePlayerInfo` hook
    - Navigates to `/lobby` on successful join
@@ -141,7 +141,7 @@ src/
 
 1. **Multi-Game Support**: Multiple concurrent games supported via room codes. Each game is isolated in its own Socket.io room. Games persist in memory until server restart.
 
-2. **Room Code System**: 4-letter words (e.g., "GAME", "PLAY") generated using `random-words` package. Used as game identifiers instead of UUIDs. Team IDs also use 4-letter codes for consistency.
+2. **Room Code System**: words (e.g., "GAME", "PLAY") generated using `random-words` package. Used as game identifiers instead of UUIDs. Team IDs also use codes for consistency.
 
 3. **Socket ID as Player Identity**: Players are identified by `socket.id` for real-time connections (teams, partnerships), but reconnect by name. On reconnect, `gameState.reconnectPlayer(roomCode, name, newSocketId)` updates all socket ID references. **Answers are keyed by player name** to avoid migration issues on reconnect.
 

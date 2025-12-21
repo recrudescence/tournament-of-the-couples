@@ -66,7 +66,7 @@ async function initializeDatabase() {
 // Create a new game
 async function createGame(gameId) {
   try {
-    await run('INSERT INTO games (game_id) VALUES (?)', [gameId]);
+    await run('INSERT INTO games (game_code) VALUES (?)', [gameId]);
     console.log(`Game created: ${gameId}`);
   } catch (err) {
     console.error('Error creating game:', err.message);
@@ -78,7 +78,7 @@ async function createGame(gameId) {
 async function endGame(gameId) {
   try {
     await run(
-      'UPDATE games SET ended_at = CURRENT_TIMESTAMP WHERE game_id = ?',
+      'UPDATE games SET ended_at = CURRENT_TIMESTAMP WHERE game_code = ?',
       [gameId]
     );
     console.log(`Game ended: ${gameId}`);
@@ -92,7 +92,7 @@ async function endGame(gameId) {
 async function saveRound(gameId, roundNumber, question) {
   try {
     const result = await run(
-      'INSERT INTO rounds (game_id, round_number, question) VALUES (?, ?, ?)',
+      'INSERT INTO rounds (game_code, round_number, question) VALUES (?, ?, ?)',
       [gameId, roundNumber, question]
     );
     console.log(`Round saved: ${result.lastID}`);
@@ -122,7 +122,7 @@ async function saveAnswer(roundId, playerName, teamId, answerText) {
 async function getGameRounds(gameId) {
   try {
     const rounds = await all(
-      `SELECT * FROM rounds WHERE game_id = ? ORDER BY round_number`,
+      `SELECT * FROM rounds WHERE game_code = ? ORDER BY round_number`,
       [gameId]
     );
 
