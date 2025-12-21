@@ -16,6 +16,7 @@ export interface ClientToServerEvents {
   submitAnswer: (data: { answer: string }) => void;
   revealAnswer: (data: { playerName: string }) => void;
   awardPoint: (data: { teamId: string }) => void;
+  removePoint: (data: { teamId: string }) => void;
   skipPoint: (data: { teamId: string }) => void;
   nextRound: () => void;
   backToAnswering: () => void;

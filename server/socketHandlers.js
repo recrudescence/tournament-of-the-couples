@@ -331,6 +331,27 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host removes point from team (for reopening scoring)
+    socket.on('removePoint', ({ teamId }) => {
+      console.log('[socket] removePoint');
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.updateTeamScore(roomCode, teamId, -1);
+        const state = gameState.getGameState(roomCode);
+        const team = state.teams.find(t => t.teamId === teamId);
+
+        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score });
+      } catch (err) {
+        console.error('Remove point error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Host moves to next round
     socket.on('nextRound', () => {
       const roomCode = socket.roomCode;

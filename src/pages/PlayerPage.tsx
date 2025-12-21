@@ -261,13 +261,23 @@ export function PlayerPage() {
         <div className="player-section">
           <div className="success-message">
             <h2>Answer Submitted!</h2>
-            <p>Waiting for other players to finish...</p>
             <div className="submitted-answer">
               <p>
-                <strong>Your answer:</strong>
+                <strong>You said:</strong>
               </p>
               <p>{submittedAnswer}</p>
             </div>
+            {partner && (
+              <div className="partner-status">
+                <p>
+                  <strong>{partner.name}:</strong>{' '}
+                  {gameState?.currentRound?.answers?.[partner.name] ? '✓ Submitted' : '...'}
+                </p>
+              </div>
+            )}
+            {gameState?.currentRound?.answers && Object.keys(gameState.currentRound.answers).length < 4 && (
+              <p>Waiting for other players to finish...</p>
+            )}
           </div>
         </div>
       )}

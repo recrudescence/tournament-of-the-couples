@@ -5,7 +5,7 @@ import type { Team } from '../types/game';
 
 export function FinishGamePage() {
   const navigate = useNavigate();
-  const { playerInfo, clearPlayerInfo } = usePlayerInfo();
+  const { clearPlayerInfo } = usePlayerInfo();
   const { gameState } = useGameContext();
 
   if (!gameState) {
@@ -98,25 +98,14 @@ export function FinishGamePage() {
           ))}
         </div>
 
-        {playerInfo?.isHost ? (
-          <div>
-            <p style={{ marginBottom: '15px', color: '#6b7280' }}>
-              Thanks for hosting! Click below to return to the home page.
-            </p>
-            <button className="primary" onClick={handleReturnHome}>
-              Return to Home
-            </button>
-          </div>
-        ) : (
-          <div>
-            <p style={{ marginBottom: '15px', color: '#6b7280' }}>
-              Thanks for playing! Click below to return to the home page.
-            </p>
-            <button className="primary" onClick={handleReturnHome}>
-              Return to Home
-            </button>
-          </div>
-        )}
+        <div>
+          <p style={{ marginBottom: '15px', color: '#6b7280' }}>
+            Thanks for playing! Click below to return to the home page.
+          </p>
+          <button className="primary" onClick={handleReturnHome}>
+            Return to Home
+          </button>
+        </div>
       </div>
     </div>
   );

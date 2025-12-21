@@ -266,6 +266,41 @@ export function HostPage() {
     emit('nextRound');
   };
 
+  const handleReopenTeamScoring = (teamId: string, teamIndex: number) => {
+    // If team was awarded a point, remove it
+    if (teamPointsAwarded[teamId] === 1) {
+      emit('removePoint', { teamId });
+    }
+
+    // Remove from local tracking
+    setTeamPointsAwarded((prev) => {
+      const updated = { ...prev };
+      delete updated[teamId];
+      return updated;
+    });
+
+    // Clear revealed answers for this team's players
+    const team = localState.teams.find(t => t.teamId === teamId);
+    if (team) {
+      const player1 = getPlayerBySocketId(team.player1Id);
+      const player2 = getPlayerBySocketId(team.player2Id);
+
+      setLocalState((prev) => {
+        const newRevealedAnswers = new Set(prev.revealedAnswers);
+        if (player1) newRevealedAnswers.delete(player1.name);
+        if (player2) newRevealedAnswers.delete(player2.name);
+
+        return {
+          ...prev,
+          currentTeamIndex: teamIndex,
+          revealedAnswers: newRevealedAnswers,
+        };
+      });
+    }
+
+    setShowFinishBtn(false);
+  };
+
   const handleEndGame = () => {
     if (window.confirm('Are you sure you want to end the game? This will show the final scores and cannot be undone.')) {
       emit('endGame');
@@ -345,9 +380,6 @@ export function HostPage() {
 
           <h3>Answer Status</h3>
           <div className="answer-status">
-            <p className="status-summary">
-              {submittedCount} / {localState.players.length} answers submitted
-            </p>
             <ul className="player-status-list">
               {localState.players.map((player) => {
                 const hasSubmitted =
@@ -378,6 +410,11 @@ export function HostPage() {
             </ul>
           </div>
 
+          {!showAllAnswersNotification && (
+              <p className="status-summary">
+                {submittedCount} / {localState.players.length} answers submitted
+              </p>
+          )}
           {showAllAnswersNotification && (
             <div className="notification">
               ✅ All answers are in! Ready to score.
@@ -385,14 +422,14 @@ export function HostPage() {
           )}
 
           <div className="answering-actions">
+            {showReopenBtn && (
+                <button className="btn btn-warning" onClick={handleReopenAnswering}>
+                  Re-open Answering
+                </button>
+            )}
             {showStartScoringBtn && (
               <button className="btn btn-primary" onClick={handleStartScoring}>
                 Begin Scoring
-              </button>
-            )}
-            {showReopenBtn && (
-              <button className="btn btn-warning" onClick={handleReopenAnswering}>
-                Re-open Answering
               </button>
             )}
           </div>
@@ -402,19 +439,19 @@ export function HostPage() {
       {/* Scoring Phase */}
       {phase === 'scoring' && (
         <div className="phase-section">
+          <button className="btn btn-info btn-sm" onClick={handleBackToAnswering}>
+            ← Back to Answering
+          </button>
           <div className="phase-header">
             <h2>Review Team Answers</h2>
-            <button className="btn btn-warning" onClick={handleBackToAnswering}>
-              ← Back to Answering
-            </button>
           </div>
 
           <div className="team-cards-container">
             {localState.teams.map((team, index) => {
               const player1 = getPlayerBySocketId(team.player1Id);
               const player2 = getPlayerBySocketId(team.player2Id);
-              const isExpanded = index === localState.currentTeamIndex;
               const isScored = team.teamId in teamPointsAwarded;
+              const isExpanded = index === localState.currentTeamIndex && !isScored;
 
               return (
                 <div
@@ -425,19 +462,29 @@ export function HostPage() {
                     <div className="team-card-title">
                       {player1?.name || '?'} & {player2?.name || '?'}
                     </div>
-                    <div
-                      className={`team-card-score ${
-                        isScored
-                          ? (teamPointsAwarded[team.teamId] ?? 0) > 0
-                            ? 'points-awarded'
-                            : 'points-none'
-                          : ''
-                      }`}
-                    >
-                      {isScored &&
-                        ((teamPointsAwarded[team.teamId] ?? 0) > 0
-                          ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
-                          : '0 points 😔')}
+                    <div className="team-card-header-right">
+                      <div
+                        className={`team-card-score ${
+                          isScored
+                            ? (teamPointsAwarded[team.teamId] ?? 0) > 0
+                              ? 'points-awarded'
+                              : 'points-none'
+                            : ''
+                        }`}
+                      >
+                        {isScored &&
+                          ((teamPointsAwarded[team.teamId] ?? 0) > 0
+                            ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
+                            : '0 points 😔')}
+                      </div>
+                      {!isExpanded && isScored && (
+                        <button
+                          className="btn btn-info btn-sm"
+                          onClick={() => handleReopenTeamScoring(team.teamId, index)}
+                        >
+                          ↪️
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -446,7 +493,7 @@ export function HostPage() {
                       {[player1, player2].map((player) =>
                         player ? (
                           <div key={player.socketId} className="player-answer">
-                            <h4>{player.name}</h4>
+                            <h4>{player.name} said...</h4>
                             {!localState.revealedAnswers.has(player.name) ? (
                               <button
                                 className="btn btn-secondary"

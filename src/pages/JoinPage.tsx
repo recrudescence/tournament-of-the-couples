@@ -279,15 +279,15 @@ export function JoinPage() {
 
       {step === 'gameCreated' && (
         <div className="form-section">
-          <h2>Game Created!</h2>
           <div className="room-code-display">
+            <h2>Game Created!</h2>
             <p>Room Code:</p>
             <h1 className="room-code-large">{createdRoomCode}</h1>
+
+            <button className="primary" onClick={() => navigate(`/game?room=${createdRoomCode.toLowerCase()}`)}>
+              Continue to Lobby
+            </button>
           </div>
-          <p>Share this code with players</p>
-          <button className="primary" onClick={() => navigate(`/game?room=${createdRoomCode.toLowerCase()}`)}>
-            Continue to Lobby
-          </button>
         </div>
       )}
 

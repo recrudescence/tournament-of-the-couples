@@ -77,6 +77,7 @@
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 4px solid #28a745;
+  text-align: right;
 }
 
 .submitted-answer p:first-child {
@@ -88,6 +89,21 @@
 .submitted-answer p:last-child {
   font-size: 1.1rem;
   margin-bottom: 0;
+}
+
+.partner-status {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #e3f2fd;
+  border-radius: 8px;
+  border-left: 4px solid #2196F3;
+  text-align: left;
+}
+
+.partner-status p {
+  margin: 0;
+  color: #1976D2;
+  font-size: 0.95rem;
 }
 
 .team-score {

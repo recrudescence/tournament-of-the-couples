@@ -184,7 +184,7 @@ button:disabled {
   border: 2px solid #ddd;
   border-radius: 8px;
   padding: 20px;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
 }
 
 .team-card.collapsed {
@@ -207,7 +207,7 @@ button:disabled {
 }
 
 .team-card.collapsed .team-card-header {
-  margin-bottom: 5px;
+  margin-bottom: 0;
 }
 
 .team-card-title {
@@ -216,9 +216,23 @@ button:disabled {
   color: #333;
 }
 
+.team-card.collapsed .team-card-title {
+  font-size: 1em;
+}
+
+.team-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .team-card-score {
   font-size: 1.1em;
   font-weight: bold;
+}
+
+.team-card.collapsed .team-card-score {
+  font-size: 0.95em;
 }
 
 .team-card-score.points-awarded {
