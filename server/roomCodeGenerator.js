@@ -44,6 +44,7 @@ function generateTeamCode() {
  */
 function validateRoomCode(code) {
   return typeof code === 'string' &&
+         code.length === 6 &&
          /^[a-z]+$/.test(code);
 }
 

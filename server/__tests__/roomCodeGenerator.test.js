@@ -84,39 +84,40 @@ describe('Room Code Generator', () => {
     test('validates correct lowercase codes', () => {
       const generator = require('../roomCodeGenerator');
 
-      expect(generator.validateRoomCode('game')).toBe(true);
-      expect(generator.validateRoomCode('test')).toBe(true);
-      expect(generator.validateRoomCode('room')).toBe(true);
+      expect(generator.validateRoomCode('gamers')).toBe(true);
+      expect(generator.validateRoomCode('tested')).toBe(true);
+      expect(generator.validateRoomCode('roomed')).toBe(true);
     });
 
     test('rejects uppercase codes', () => {
       const generator = require('../roomCodeGenerator');
 
-      expect(generator.validateRoomCode('GAME')).toBe(false);
-      expect(generator.validateRoomCode('Game')).toBe(false);
+      expect(generator.validateRoomCode('GAMERS')).toBe(false);
+      expect(generator.validateRoomCode('Gamers')).toBe(false);
     });
 
     test('rejects codes with wrong length', () => {
       const generator = require('../roomCodeGenerator');
 
-      expect(generator.validateRoomCode('gam')).toBe(false);    // too short
-      expect(generator.validateRoomCode('games')).toBe(false);  // too long
-      expect(generator.validateRoomCode('ga')).toBe(false);     // too short
+      expect(generator.validateRoomCode('game')).toBe(false);     // too short (4 chars)
+      expect(generator.validateRoomCode('gam')).toBe(false);      // too short (3 chars)
+      expect(generator.validateRoomCode('gamers7')).toBe(false);  // too long (7 chars)
+      expect(generator.validateRoomCode('ga')).toBe(false);       // too short (2 chars)
     });
 
     test('rejects codes with numbers', () => {
       const generator = require('../roomCodeGenerator');
 
-      expect(generator.validateRoomCode('gam3')).toBe(false);
-      expect(generator.validateRoomCode('1234')).toBe(false);
+      expect(generator.validateRoomCode('game12')).toBe(false);
+      expect(generator.validateRoomCode('123456')).toBe(false);
     });
 
     test('rejects codes with special characters', () => {
       const generator = require('../roomCodeGenerator');
 
-      expect(generator.validateRoomCode('gam-')).toBe(false);
-      expect(generator.validateRoomCode('gam!')).toBe(false);
-      expect(generator.validateRoomCode('ga e')).toBe(false);
+      expect(generator.validateRoomCode('game-r')).toBe(false);
+      expect(generator.validateRoomCode('game!r')).toBe(false);
+      expect(generator.validateRoomCode('gam er')).toBe(false);
     });
 
     test('rejects non-string values', () => {

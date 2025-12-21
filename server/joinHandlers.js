@@ -67,7 +67,7 @@ function handlePlayerReconnect(roomCode, socket, name, state) {
 
   // If player is already connected, reject (duplicate)
   if (existingPlayer.connected) {
-    return { success: false, error: 'Player name already exists..' };
+    return { success: false, error: 'Player name already exists' };
   }
 
   // Reconnect the player
@@ -81,6 +81,7 @@ function handlePlayerReconnect(roomCode, socket, name, state) {
       socketId: socket.id,
       name: player.name,
       isHost: false,
+      player: player,
       gameState: updatedState,
       reconnected: true
     }
@@ -105,7 +106,7 @@ function handleNewPlayerJoin(roomCode, socket, name, isHost, state) {
   // Check if player name already exists (shouldn't happen, but defensive)
   const existingPlayer = state.players.find(p => p.name === name);
   if (existingPlayer) {
-    return { success: false, error: 'Player name already exists...' };
+    return { success: false, error: 'Player name already exists' };
   }
 
   // Add the new player
