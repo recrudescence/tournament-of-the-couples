@@ -88,14 +88,14 @@ describe('GameState - Array Operations for submittedInCurrentPhase', () => {
     });
 
     test('stores answer even when duplicate prevention triggers', () => {
-      gameState.submitAnswer(roomCode, 'socket1', 'Red');
-      gameState.submitAnswer(roomCode, 'socket1', 'Blue'); // Update answer
+      gameState.submitAnswer(roomCode, 'socket1', 'Red', 1000);
+      gameState.submitAnswer(roomCode, 'socket1', 'Blue', 2000); // Update answer
 
       const state = gameState.getGameState(roomCode);
       // Array has one entry
       expect(state.currentRound.submittedInCurrentPhase).toEqual(['Alice']);
       // But answer is updated
-      expect(state.currentRound.answers['Alice']).toBe('Blue');
+      expect(state.currentRound.answers['Alice']).toEqual({ text: 'Blue', responseTime: 2000 });
     });
   });
 
@@ -173,10 +173,10 @@ describe('GameState - Array Operations for submittedInCurrentPhase', () => {
 
       const state = gameState.getGameState(roomCode);
       expect(state.currentRound.answers).toEqual({
-        'Alice': 'Answer1',
-        'Bob': 'Answer2',
-        'Charlie': 'Answer3',
-        'Diana': 'Answer4'
+        'Alice': { text: 'Answer1', responseTime: -1 },
+        'Bob': { text: 'Answer2', responseTime: -1 },
+        'Charlie': { text: 'Answer3', responseTime: -1 },
+        'Diana': { text: 'Answer4', responseTime: -1 }
       });
     });
 
@@ -191,11 +191,11 @@ describe('GameState - Array Operations for submittedInCurrentPhase', () => {
       gameState.returnToAnswering(roomCode);
 
       // Alice resubmits
-      gameState.submitAnswer(roomCode, 'socket1', 'New Answer');
+      gameState.submitAnswer(roomCode, 'socket1', 'New Answer', 1500);
 
       const state = gameState.getGameState(roomCode);
       expect(state.currentRound.submittedInCurrentPhase).toEqual(['Alice']);
-      expect(state.currentRound.answers['Alice']).toBe('New Answer');
+      expect(state.currentRound.answers['Alice']).toEqual({ text: 'New Answer', responseTime: 1500 });
     });
   });
 
@@ -234,6 +234,72 @@ describe('GameState - Array Operations for submittedInCurrentPhase', () => {
       }));
 
       expect(socketData.currentRound.submittedInCurrentPhase).toEqual(['Alice', 'Bob']);
+    });
+  });
+
+  describe('Response Time Tracking', () => {
+    beforeEach(() => {
+      gameState.startRound(roomCode, 'Test question');
+    });
+
+    test('stores response time with answer', () => {
+      gameState.submitAnswer(roomCode, 'socket1', 'Blue', 3420);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answers['Alice']).toEqual({
+        text: 'Blue',
+        responseTime: 3420
+      });
+    });
+
+    test('defaults to -1 when no response time provided', () => {
+      gameState.submitAnswer(roomCode, 'socket1', 'Red');
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answers['Alice']).toEqual({
+        text: 'Red',
+        responseTime: -1
+      });
+    });
+
+    test('updates response time when player resubmits', () => {
+      gameState.submitAnswer(roomCode, 'socket1', 'Blue', 3000);
+      gameState.submitAnswer(roomCode, 'socket1', 'Red', 4000);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answers['Alice']).toEqual({
+        text: 'Red',
+        responseTime: 4000
+      });
+    });
+
+    test('preserves response times when returning to answering', () => {
+      gameState.submitAnswer(roomCode, 'socket1', 'Answer1', 2000);
+      gameState.submitAnswer(roomCode, 'socket2', 'Answer2', 3000);
+      gameState.submitAnswer(roomCode, 'socket3', 'Answer3', 1500);
+      gameState.submitAnswer(roomCode, 'socket4', 'Answer4', 2500);
+      gameState.completeRound(roomCode);
+
+      gameState.returnToAnswering(roomCode);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answers['Alice'].responseTime).toBe(2000);
+      expect(state.currentRound.answers['Bob'].responseTime).toBe(3000);
+      expect(state.currentRound.answers['Charlie'].responseTime).toBe(1500);
+      expect(state.currentRound.answers['Diana'].responseTime).toBe(2500);
+    });
+
+    test('answer objects serialize correctly to JSON', () => {
+      gameState.submitAnswer(roomCode, 'socket1', 'Blue', 3420);
+
+      const state = gameState.getGameState(roomCode);
+      const json = JSON.stringify(state.currentRound.answers);
+      const parsed = JSON.parse(json);
+
+      expect(parsed['Alice']).toEqual({
+        text: 'Blue',
+        responseTime: 3420
+      });
     });
   });
 });

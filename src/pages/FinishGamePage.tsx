@@ -52,10 +52,10 @@ export function FinishGamePage() {
           textAlign: 'center'
         }}>
           <h3 style={{ fontSize: '2em', margin: '10px 0' }}>
-            {getTeamNames(winningTeam)}
+            {winningTeam ? getTeamNames(winningTeam) : '???'}
           </h3>
           <p style={{ fontSize: '3em', margin: '10px 0', fontWeight: 'bold' }}>
-            {winningTeam.score} points
+            {winningTeam ? winningTeam.score : '???'} points
           </p>
         </div>
 

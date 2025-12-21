@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS answers (
   player_name TEXT NOT NULL,
   team_id TEXT NOT NULL,
   answer_text TEXT NOT NULL,
+  response_time INTEGER DEFAULT -1,
   FOREIGN KEY (round_id) REFERENCES rounds(round_id)
 );

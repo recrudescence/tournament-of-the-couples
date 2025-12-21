@@ -259,7 +259,7 @@ function startRound(roomCode, question) {
 }
 
 // Submit an answer
-function submitAnswer(roomCode, socketId, answer) {
+function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) {
     throw new Error('No active round');
@@ -275,15 +275,18 @@ function submitAnswer(roomCode, socketId, answer) {
     throw new Error('Player not found');
   }
 
-  // Store answer by player name (stable across reconnections)
-  gameState.currentRound.answers[player.name] = answer;
+  // Store answer object with text and response time by player name (stable across reconnections)
+  gameState.currentRound.answers[player.name] = {
+    text: answerText,
+    responseTime: responseTime
+  };
 
   // Mark player as having submitted in the current answering phase
   if (!gameState.currentRound.submittedInCurrentPhase.includes(player.name)) {
     gameState.currentRound.submittedInCurrentPhase.push(player.name);
   }
 
-  console.log(`Answer submitted by ${player.name}`);
+  console.log(`Answer submitted by ${player.name} (${responseTime}ms)`);
 }
 
 // Check if round is complete (all players answered)

@@ -36,12 +36,17 @@ export interface Team {
   score: number;
 }
 
+export interface Answer {
+  text: string;
+  responseTime: number; // milliseconds
+}
+
 export interface CurrentRound {
   roundNumber: number;
   roundId: string | null;
   question: string;
   status: RoundStatus;
-  answers: Record<string, string>;
+  answers: Record<string, Answer>;
   submittedInCurrentPhase: string[];
 }
 

@@ -3,7 +3,7 @@ import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { DebugSidebar } from '../components/common/DebugSidebar';
-import { RoundPhase, type GameState, type Team, type Player } from '../types/game';
+import {RoundPhase, type GameState, type Team, type Player, Answer} from '../types/game';
 import '../styles/host.css';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
@@ -13,7 +13,7 @@ interface LocalGameState {
   currentQuestion: string;
   teams: Team[];
   players: Player[];
-  answers: Record<string, string>;
+  answers: Record<string, Answer>;
   submittedInCurrentPhase: string[];
   currentTeamIndex: number;
   revealedAnswers: Set<string>;
@@ -34,6 +34,7 @@ export function HostPage() {
   const [showReopenBtn, setShowReopenBtn] = useState(false);
   const [showFinishBtn, setShowFinishBtn] = useState(false);
   const [teamPointsAwarded, setTeamPointsAwarded] = useState<Record<string, number>>({});
+  const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
 
   const [localState, setLocalState] = useState<LocalGameState>({
     roundNumber: 0,
@@ -123,10 +124,10 @@ export function HostPage() {
         setPhase('answering');
       }),
 
-      on('answerSubmitted', ({ playerName, answer, submittedInCurrentPhase }) => {
+      on('answerSubmitted', ({ playerName, answer, responseTime, submittedInCurrentPhase }) => {
         setLocalState((prev) => ({
           ...prev,
-          answers: { ...prev.answers, [playerName]: answer },
+          answers: { ...prev.answers, [playerName]: { text: answer, responseTime } },
           submittedInCurrentPhase,
         }));
       }),
@@ -139,11 +140,19 @@ export function HostPage() {
         setGameStatus('All Answers In');
       }),
 
-      on('answerRevealed', ({ playerName }) => {
+      on('answerRevealed', ({ playerName, responseTime }) => {
         setLocalState((prev) => ({
           ...prev,
           revealedAnswers: new Set([...prev.revealedAnswers, playerName]),
         }));
+
+        // Reveal response time with a delay (500ms) for emphasis
+        setTimeout(() => {
+          setRevealedResponseTimes((prev) => ({
+            ...prev,
+            [playerName]: responseTime
+          }));
+        }, 500);
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {
@@ -165,6 +174,7 @@ export function HostPage() {
         setGameStatus('Setting Up');
         setShowFinishBtn(false);
         setTeamPointsAwarded({});
+        setRevealedResponseTimes({});
         setPhase('roundSetup');
       }),
 
@@ -220,6 +230,7 @@ export function HostPage() {
     setLocalState((prev) => ({ ...prev, currentTeamIndex: 0, revealedAnswers: new Set() }));
     setGameStatus('Scoring');
     setTeamPointsAwarded({});
+    setRevealedResponseTimes({});
     setShowFinishBtn(false);
     setPhase('scoring');
   };
@@ -279,7 +290,7 @@ export function HostPage() {
       return updated;
     });
 
-    // Clear revealed answers for this team's players
+    // Clear revealed answers and response times for this team's players
     const team = localState.teams.find(t => t.teamId === teamId);
     if (team) {
       const player1 = getPlayerBySocketId(team.player1Id);
@@ -296,6 +307,14 @@ export function HostPage() {
           revealedAnswers: newRevealedAnswers,
         };
       });
+
+      // Clear response times for these players
+      setRevealedResponseTimes((prev) => {
+        const updated = { ...prev };
+        if (player1) delete updated[player1.name];
+        if (player2) delete updated[player2.name];
+        return updated;
+      });
     }
 
     setShowFinishBtn(false);
@@ -308,6 +327,11 @@ export function HostPage() {
   };
 
   // Computed values
+  const getPlayerBySocketId = useCallback(
+    (socketId: string) => localState.players.find((p) => p.socketId === socketId),
+    [localState.players]
+  );
+
   const submittedCount = useMemo(() => {
     if (localState.roundPhase === RoundPhase.COMPLETED) {
       return Object.keys(localState.answers).length;
@@ -319,10 +343,28 @@ export function HostPage() {
     return [...localState.teams].sort((a, b) => b.score - a.score);
   }, [localState.teams]);
 
-  const getPlayerBySocketId = useCallback(
-    (socketId: string) => localState.players.find((p) => p.socketId === socketId),
-    [localState.players]
-  );
+  // Sort teams by total response time for scoring phase
+  const teamsSortedByResponseTime = useMemo(() => {
+    return localState.teams.map((team, originalIndex) => {
+      const player1 = getPlayerBySocketId(team.player1Id);
+      const player2 = getPlayerBySocketId(team.player2Id);
+
+      const player1Answer = player1 ? localState.answers[player1.name] : null;
+      const player2Answer = player2 ? localState.answers[player2.name] : null;
+
+      const player1Time = player1Answer?.responseTime ?? Infinity;
+      const player2Time = player2Answer?.responseTime ?? Infinity;
+      const totalResponseTime = player1Time + player2Time;
+
+      return {
+        team,
+        originalIndex,
+        totalResponseTime,
+        player1Time,
+        player2Time
+      };
+    }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
+  }, [localState.teams, localState.answers, getPlayerBySocketId]);
 
   if (!playerInfo || !isConnected) {
     return (
@@ -447,11 +489,17 @@ export function HostPage() {
           </div>
 
           <div className="team-cards-container">
-            {localState.teams.map((team, index) => {
+            {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
               const player1 = getPlayerBySocketId(team.player1Id);
               const player2 = getPlayerBySocketId(team.player2Id);
               const isScored = team.teamId in teamPointsAwarded;
-              const isExpanded = index === localState.currentTeamIndex && !isScored;
+              const isExpanded = originalIndex === localState.currentTeamIndex && !isScored;
+
+              // Sort players by response time (ascending)
+              const players = [
+                { player: player1, time: player1Time },
+                { player: player2, time: player2Time }
+              ].sort((a, b) => a.time - b.time);
 
               return (
                 <div
@@ -480,7 +528,7 @@ export function HostPage() {
                       {!isExpanded && isScored && (
                         <button
                           className="btn btn-info btn-sm"
-                          onClick={() => handleReopenTeamScoring(team.teamId, index)}
+                          onClick={() => handleReopenTeamScoring(team.teamId, originalIndex)}
                         >
                           ↪️
                         </button>
@@ -490,7 +538,7 @@ export function HostPage() {
 
                   {isExpanded && (
                     <div className="team-card-content">
-                      {[player1, player2].map((player) =>
+                      {players.map(({ player }) =>
                         player ? (
                           <div key={player.socketId} className="player-answer">
                             <h4>{player.name} said...</h4>
@@ -503,7 +551,13 @@ export function HostPage() {
                               </button>
                             ) : (
                               <div className="answer-display">
-                                {localState.answers[player.name] || 'No answer'}
+                                {localState.answers[player.name]?.text || 'No answer'} (
+                                {revealedResponseTimes[player.name] !== undefined && (
+                                  <i>
+                                    took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s
+                                  </i>
+                                )}
+                                )
                               </div>
                             )}
                           </div>
@@ -513,13 +567,13 @@ export function HostPage() {
                       <div className="scoring-actions">
                         <button
                           className="btn btn-success"
-                          onClick={() => handleAwardPoint(team.teamId, index)}
+                          onClick={() => handleAwardPoint(team.teamId, originalIndex)}
                         >
                           Award Point ⭐
                         </button>
                         <button
                           className="btn btn-neutral"
-                          onClick={() => handleSkipPoint(team.teamId, index)}
+                          onClick={() => handleSkipPoint(team.teamId, originalIndex)}
                         >
                           No Point
                         </button>

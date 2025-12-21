@@ -21,8 +21,12 @@ export function PlayerPage() {
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [responseTime, setResponseTime] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
 
   const scoreRef = useRef<HTMLElement>(null);
+  const timerStartRef = useRef<number | null>(null);
+  const timerIntervalRef = useRef<number | null>(null);
 
   const updateFromGameState = useCallback(
     (state: GameState, socketId?: string) => {
@@ -53,16 +57,20 @@ export function PlayerPage() {
 
         if (state.status === 'scoring' || state.currentRound.status === 'complete') {
           if (previousAnswer) {
-            setSubmittedAnswer(previousAnswer);
+            setSubmittedAnswer(previousAnswer.text);
+            setResponseTime(previousAnswer.responseTime);
           }
           setSection('scoring');
+          setTimerRunning(false);
         } else if (state.currentRound.status === 'answering') {
           if (previousAnswer) {
             // Player has already submitted - restore submitted state
-            setAnswer(previousAnswer);
-            setSubmittedAnswer(previousAnswer);
+            setAnswer(previousAnswer.text);
+            setSubmittedAnswer(previousAnswer.text);
+            setResponseTime(previousAnswer.responseTime);
             setHasSubmitted(true);
             setSection('submitted');
+            setTimerRunning(false);
           } else {
             // Player hasn't submitted yet
             setAnswer('');
@@ -87,6 +95,32 @@ export function PlayerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
+  // Timer effect
+  useEffect(() => {
+    if (timerRunning) {
+      if (!timerStartRef.current) {
+        timerStartRef.current = Date.now();
+      }
+
+      timerIntervalRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - (timerStartRef.current || Date.now());
+        setResponseTime(elapsed);
+      }, 10); // Update every 10ms for smooth display
+
+      return () => {
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
+      };
+    } else {
+      // Timer stopped - clear interval and ref
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    }
+  }, [timerRunning]);
+
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
@@ -100,6 +134,10 @@ export function PlayerPage() {
         setAnswer('');
         setHasSubmitted(false);
         setSection('answering');
+        // Start timer
+        setResponseTime(0);
+        timerStartRef.current = null;
+        setTimerRunning(true);
       }),
 
       on('answerSubmitted', ({ playerName, answer: ans }) => {
@@ -132,7 +170,7 @@ export function PlayerPage() {
         if (currentRound?.answers && playerInfo) {
           const previousAnswer = currentRound.answers[playerInfo.name];
           if (previousAnswer) {
-            setAnswer(previousAnswer);
+            setAnswer(previousAnswer.text);
           } else {
             setAnswer('');
           }
@@ -141,6 +179,10 @@ export function PlayerPage() {
         }
         setHasSubmitted(false);
         setSection('answering');
+        // Reset and restart timer
+        setResponseTime(0);
+        timerStartRef.current = null;
+        setTimerRunning(true);
       }),
 
       on('error', ({ message }) => {
@@ -166,7 +208,21 @@ export function PlayerPage() {
 
     const trimmedAnswer = answer.trim();
     if (trimmedAnswer) {
-      emit('submitAnswer', { answer: trimmedAnswer });
+      // Freeze timer
+      setTimerRunning(false);
+
+      // Calculate final response time
+      const finalResponseTime = timerStartRef.current
+        ? Date.now() - timerStartRef.current
+        : responseTime;
+
+      setResponseTime(finalResponseTime);
+
+      // Submit answer with response time
+      emit('submitAnswer', {
+        answer: trimmedAnswer,
+        responseTime: finalResponseTime
+      });
     }
   };
 
@@ -232,6 +288,9 @@ export function PlayerPage() {
         <div className="player-section">
           <div className="round-info">
             <h2>Round {roundNumber}</h2>
+            <div className="timer">
+              {(responseTime / 1000).toFixed(2)}s
+            </div>
           </div>
 
           <div className="question-box">

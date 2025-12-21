@@ -4,10 +4,12 @@
 ```sql
 games (game_code, started_at, ended_at)
 rounds (round_id, game_code, round_number, question, created_at)
-answers (answer_id, round_id, player_name, team_id, answer_text)
+answers (answer_id, round_id, player_name, team_id, answer_text, response_time)
 ```
 
 Database is append-only logging, not used for state restoration.
+
+**Note:** `response_time` is in milliseconds and represents how long it took the player to submit their answer from when the round started.
 
 ## Game State Structure
 
@@ -51,9 +53,15 @@ Understanding the in-memory game state structure is critical for working with th
     roundId: null,                    // Database ID (set after persistence)
     question: "What's your partner's favorite color?",
     status: "answering" | "complete",
-    answers: {                        // Map of PLAYER NAME → answer text (stable across reconnections)
-      "Alice": "Blue",
-      "Bob": "Red"
+    answers: {                        // Map of PLAYER NAME → answer object (stable across reconnections)
+      "Alice": {
+        text: "Blue",
+        responseTime: 3420            // Time in milliseconds from round start to submission
+      },
+      "Bob": {
+        text: "Red",
+        responseTime: 5180
+      }
     },
     submittedInCurrentPhase: []       // Array of player names who submitted in THIS answering session
                                       // Cleared when returning to answering from scoring

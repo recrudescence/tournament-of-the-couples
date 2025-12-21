@@ -240,7 +240,7 @@ function setupSocketHandlers(io) {
     });
 
     // Player submits an answer
-    socket.on('submitAnswer', async ({ answer }) => {
+    socket.on('submitAnswer', async ({ answer, responseTime }) => {
       console.log('[socket] submitAnswer');
       const roomCode = socket.roomCode;
       if (!roomCode) {
@@ -249,7 +249,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.submitAnswer(roomCode, socket.id, answer);
+        gameState.submitAnswer(roomCode, socket.id, answer, responseTime);
         const state = gameState.getGameState(roomCode);
 
         // Get player info for database
@@ -261,7 +261,8 @@ function setupSocketHandlers(io) {
             state.currentRound.roundId,
             player.name,
             player.teamId,
-            answer
+            answer,
+            responseTime
           );
         }
 
@@ -270,6 +271,7 @@ function setupSocketHandlers(io) {
         io.to(roomCode).emit('answerSubmitted', {
           playerName: player.name,
           answer: answer,
+          responseTime: responseTime,
           submittedInCurrentPhase: state.currentRound.submittedInCurrentPhase
         });
 
@@ -296,13 +298,14 @@ function setupSocketHandlers(io) {
 
       try {
         const state = gameState.getGameState(roomCode);
-        const answer = state.currentRound.answers[playerName];
+        const answerObj = state.currentRound.answers[playerName];
         const player = state.players.find(p => p.name === playerName);
 
         io.to(roomCode).emit('answerRevealed', {
           socketId: player.socketId,  // Still send socketId for client compatibility
           playerName: playerName,
-          answer
+          answer: answerObj.text,
+          responseTime: answerObj.responseTime
         });
       } catch (err) {
         console.error('Reveal answer error:', err);

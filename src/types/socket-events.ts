@@ -13,7 +13,7 @@ export interface ClientToServerEvents {
   unpair: () => void;
   startGame: () => void;
   startRound: (data: { question: string }) => void;
-  submitAnswer: (data: { answer: string }) => void;
+  submitAnswer: (data: { answer: string; responseTime: number }) => void;
   revealAnswer: (data: { playerName: string }) => void;
   awardPoint: (data: { teamId: string }) => void;
   removePoint: (data: { teamId: string }) => void;
@@ -56,10 +56,11 @@ export interface ServerToClientEvents {
   answerSubmitted: (data: {
     playerName: string;
     answer: string;
+    responseTime: number;
     submittedInCurrentPhase: string[];
   }) => void;
   allAnswersIn: () => void;
-  answerRevealed: (data: { playerName: string; answer: string }) => void;
+  answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number }) => void;
   readyForNextRound: (data: { nextRoundNumber: number }) => void;
   returnedToAnswering: (data: { currentRound: CurrentRound }) => void;

@@ -104,13 +104,13 @@ async function saveRound(gameId, roundNumber, question) {
 }
 
 // Save an answer
-async function saveAnswer(roundId, playerName, teamId, answerText) {
+async function saveAnswer(roundId, playerName, teamId, answerText, responseTime = -1) {
   try {
     const result = await run(
-      'INSERT INTO answers (round_id, player_name, team_id, answer_text) VALUES (?, ?, ?, ?)',
-      [roundId, playerName, teamId, answerText]
+      'INSERT INTO answers (round_id, player_name, team_id, answer_text, response_time) VALUES (?, ?, ?, ?, ?)',
+      [roundId, playerName, teamId, answerText, responseTime]
     );
-    console.log(`Answer saved: ${result.lastID}`);
+    console.log(`Answer saved: ${result.lastID} (response time: ${responseTime}ms)`);
     return result.lastID;
   } catch (err) {
     console.error('Error saving answer:', err.message);
