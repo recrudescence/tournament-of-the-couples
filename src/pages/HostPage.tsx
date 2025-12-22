@@ -88,7 +88,6 @@ export function HostPage() {
     if (gameState) {
       updateFromGameState(gameState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Sync local players to GameContext so DebugSidebar reflects disconnections
@@ -107,7 +106,10 @@ export function HostPage() {
       // Note: gameStarted is handled by LobbyPage which updates GameContext
       // HostPage reads from GameContext on mount via the initialization effect above
 
-      on('roundStarted', ({ roundNumber, question, gameState }) => {
+      on('roundStarted', ({ roundNumber, question, variant, options, gameState }) => {
+        // variant and options are extracted to ensure we're handling the full event signature
+        void variant; // Suppress unused warnings
+        void options;
         setLocalState((prev) => ({
           ...prev,
           roundNumber,

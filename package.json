@@ -9,6 +9,8 @@
     "dev:server": "node --watch server/index.js",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -25,10 +27,15 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.16.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
     "@vitejs/plugin-react": "^5.1.2",
     "concurrently": "^9.2.1",
+    "eslint": "^9.16.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "jest": "^29.7.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0"

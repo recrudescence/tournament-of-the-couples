@@ -95,7 +95,6 @@ export function PlayerPage() {
     if (gameState) {
       updateFromGameState(gameState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Timer effect
