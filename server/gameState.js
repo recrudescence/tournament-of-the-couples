@@ -441,6 +441,17 @@ function getRoomCodes() {
   return Array.from(gameStates.keys());
 }
 
+// Get all active games (not ended)
+function getAllGames() {
+  const games = [];
+  for (const [roomCode, state] of gameStates.entries()) {
+    if (state.status !== 'ended') {
+      games.push(state);
+    }
+  }
+  return games;
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -465,5 +476,6 @@ module.exports = {
   returnToAnswering,
   hasRoom,
   deleteRoom,
-  getRoomCodes
+  getRoomCodes,
+  getAllGames
 };

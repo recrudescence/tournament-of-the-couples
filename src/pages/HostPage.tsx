@@ -29,7 +29,6 @@ export function HostPage() {
   const [questionInput, setQuestionInput] = useState('');
   const [selectedVariant, setSelectedVariant] = useState<'open_ended' | 'multiple_choice' | 'binary'>('open_ended');
   const [mcOptions, setMcOptions] = useState<string[]>(['', '']);
-  const [roomCode, setRoomCode] = useState('');
   const [gameStatus, setGameStatus] = useState('Setting Up');
   const [showAllAnswersNotification, setShowAllAnswersNotification] = useState(false);
   const [showStartScoringBtn, setShowStartScoringBtn] = useState(false);
@@ -52,7 +51,6 @@ export function HostPage() {
 
   const updateFromGameState = useCallback((state: GameState) => {
     dispatch({ type: 'SET_GAME_STATE', payload: state });
-    setRoomCode(state.roomCode);
 
     setLocalState((prev) => ({
       ...prev,
@@ -98,8 +96,7 @@ export function HostPage() {
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
-      on('joinSuccess', ({ gameState: state, roomCode: rc }) => {
-        setRoomCode(rc);
+      on('joinSuccess', ({ gameState: state }) => {
         updateFromGameState(state);
       }),
 
@@ -409,7 +406,6 @@ export function HostPage() {
         <header>
         <h1>Tournament of Couples</h1>
         <div className="header-info">
-          <p>Room: <strong>{roomCode.toUpperCase() || playerInfo.roomCode.toUpperCase()}</strong></p>
           <p>Host: <strong>{playerInfo.name}</strong></p>
           <p>Round: <strong>{localState.roundNumber || '-'}</strong></p>
           <p>Status: <strong>{gameStatus}</strong></p>

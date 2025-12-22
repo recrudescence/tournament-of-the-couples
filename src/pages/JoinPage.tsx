@@ -1,48 +1,64 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import type { Player } from '../types/game';
 
-type JoinStep = 'menu' | 'roomCode' | 'nameInput' | 'reconnect' | 'gameCreated';
+type JoinStep = 'menu' | 'reconnect';
+
+interface GameListItem {
+  roomCode: string;
+  hostName: string;
+  status: string;
+  playerCount: number;
+  canJoin: boolean;
+}
 
 export function JoinPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { isConnected, emit, on } = useSocket();
   const { savePlayerInfo } = usePlayerInfo();
   const { dispatch } = useGameContext();
 
   const [step, setStep] = useState<JoinStep>('menu');
-  const [hostName, setHostName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [availableGames, setAvailableGames] = useState<GameListItem[]>([]);
+  const [isLoadingGames, setIsLoadingGames] = useState(false);
+  const [selectedRoomCode, setSelectedRoomCode] = useState<string | null>(null);
+  const [selectedGameHost, setSelectedGameHost] = useState<string>('');
   const [playerName, setPlayerName] = useState('');
-  const [createdRoomCode, setCreatedRoomCode] = useState('');
   const [disconnectedPlayers, setDisconnectedPlayers] = useState<Player[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [joiningExisting, setJoiningExisting] = useState(false);
 
   const showError = useCallback((message: string) => {
     setError(message);
     setTimeout(() => setError(null), 5000);
   }, []);
 
-  const validateRoomCode = (code: string) => {
-    return /^[a-z]+$/.test(code);
+  // Fetch available games
+  const fetchGames = async () => {
+    setIsLoadingGames(true);
+    try {
+      const response = await fetch('/api/games');
+      const data = await response.json();
+      setAvailableGames(data.games);
+    } catch (err) {
+      console.error('Failed to fetch games:', err);
+      showError('Failed to load games');
+    } finally {
+      setIsLoadingGames(false);
+    }
   };
 
-  // Handle pre-filled room code from URL query param
+  // Load games on mount
   useEffect(() => {
-    const roomCodeParam = searchParams.get('room');
-    if (roomCodeParam && validateRoomCode(roomCodeParam.toLowerCase())) {
-      const code = roomCodeParam.toLowerCase();
-      setRoomCode(code);
-      setIsLoading(true);
-      // Auto-check room status when room code is pre-filled
-      emit('checkRoomStatus', { roomCode: code });
+    if (isConnected && step === 'menu' && !creatingNew && !joiningExisting) {
+      fetchGames();
     }
-  }, [searchParams, emit]);
+  }, [isConnected, step, creatingNew, joiningExisting]);
 
   // Socket event handlers
   useEffect(() => {
@@ -51,30 +67,36 @@ export function JoinPage() {
         savePlayerInfo({ name, isHost: true, roomCode });
         dispatch({ type: 'SET_GAME_STATE', payload: gameState });
         dispatch({ type: 'SET_PLAYER_INFO', payload: { name, isHost: true, roomCode } });
-        setCreatedRoomCode(roomCode.toUpperCase());
-        setStep('gameCreated');
         setIsLoading(false);
+        navigate(`/game?room=${roomCode}`);
       }),
 
-      on('roomStatus', ({ found, error: roomError, roomCode: code, inProgress, disconnectedPlayers: players }) => {
+      on('roomStatus', ({ found, error: roomError, roomCode: code, inProgress, disconnectedPlayers: players, canJoinAsNew }) => {
         setIsLoading(false);
 
         if (!found) {
-          showError(roomError ?? 'Room not found');
+          showError(roomError ?? 'Game not found');
+          setSelectedRoomCode(null);
+          setJoiningExisting(false);
           return;
         }
 
-        setRoomCode(code);
-
-        if (inProgress) {
-          if (players.length === 0) {
-            showError('Cannot join game in progress. No disconnected players available.');
-            return;
-          }
+        if (inProgress && players.length > 0) {
           setDisconnectedPlayers(players);
           setStep('reconnect');
+        } else if (canJoinAsNew) {
+          // Proceed to join as new player (name already entered in first form)
+          setIsLoading(true);
+          emit('joinGame', {
+            name: playerName.trim(),
+            isHost: false,
+            isReconnect: false,
+            roomCode: code,
+          });
         } else {
-          setStep('nameInput');
+          showError('Cannot join this game');
+          setSelectedRoomCode(null);
+          setJoiningExisting(false);
         }
       }),
 
@@ -93,46 +115,42 @@ export function JoinPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, savePlayerInfo, dispatch, navigate, showError]);
+  }, [on, savePlayerInfo, dispatch, navigate, showError, playerName]);
 
-  const handleCreateGame = () => {
-    const name = hostName.trim();
-    if (!name) {
+  const handleSelectGame = (roomCode: string, hostName: string) => {
+    setSelectedRoomCode(roomCode);
+    setSelectedGameHost(hostName);
+    setJoiningExisting(true);
+  };
+
+  const handleStartOwnRoom = () => {
+    setCreatingNew(true);
+  };
+
+  const handleBack = () => {
+    setCreatingNew(false);
+    setJoiningExisting(false);
+    setPlayerName('');
+    setSelectedRoomCode(null);
+    setSelectedGameHost('');
+    setStep('menu');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!playerName.trim()) {
       showError('Please enter your name');
       return;
     }
-    setIsLoading(true);
-    emit('createGame', { name });
-  };
 
-  const handleCheckRoom = () => {
-    const code = roomCode.trim().toLowerCase();
-    if (!code) {
-      showError('Please enter a room code');
-      return;
-    }
-    if (!validateRoomCode(code)) {
-      showError('Room code seems wrong');
-      return;
-    }
-    setRoomCode(code);
     setIsLoading(true);
-    emit('checkRoomStatus', { roomCode: code });
-  };
 
-  const handleJoinGame = () => {
-    const name = playerName.trim();
-    if (!name) {
-      showError('Please enter your name');
-      return;
+    if (creatingNew) {
+      emit('createGame', { name: playerName.trim() });
+    } else if (joiningExisting && selectedRoomCode) {
+      emit('checkRoomStatus', { roomCode: selectedRoomCode });
     }
-    setIsLoading(true);
-    emit('joinGame', {
-      name,
-      isHost: false,
-      isReconnect: false,
-      roomCode,
-    });
   };
 
   const handleReconnect = (name: string) => {
@@ -141,13 +159,22 @@ export function JoinPage() {
       name,
       isHost: false,
       isReconnect: true,
-      roomCode,
+      roomCode: selectedRoomCode,
     });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent, action: () => void) => {
-    if (e.key === 'Enter') {
-      action();
+  const formatGameStatus = (status: string): string => {
+    switch (status) {
+      case 'lobby':
+        return 'In Lobby';
+      case 'playing':
+        return 'Playing';
+      case 'scoring':
+        return 'Scoring';
+      case 'ended':
+        return 'Ended';
+      default:
+        return status;
     }
   };
 
@@ -164,87 +191,77 @@ export function JoinPage() {
     <div className="container">
       <h1>Tournament of the Couples</h1>
 
-      {step === 'menu' && (
-        <>
-          <div className="form-section">
-            <h2>Start New Game</h2>
-            <div className="form-group">
-              <label htmlFor="hostName">Your Name:</label>
-              <input
-                type="text"
-                id="hostName"
-                placeholder="Enter your name"
-                value={hostName}
-                onChange={(e) => setHostName(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, handleCreateGame)}
-              />
+      {step === 'menu' && !creatingNew && !joiningExisting && (
+        <div className="join-options">
+          <div className="games-section">
+            <div className="games-header">
+              <h2>Current Rooms</h2>
+              <button
+                onClick={fetchGames}
+                disabled={isLoadingGames}
+                className="btn-refresh"
+              >
+                {isLoadingGames ? 'Refreshing...' : 'Refresh'}
+              </button>
             </div>
-            <button
-              className="primary"
-              onClick={handleCreateGame}
-              disabled={isLoading}
-            >
-              Create Game
-            </button>
+
+            {availableGames.length === 0 ? (
+              <p className="empty-state">No games currently open. Start your own!</p>
+            ) : (
+              <div className="games-list">
+                {availableGames.map((game) => (
+                  <button
+                    key={game.roomCode}
+                    onClick={() => handleSelectGame(game.roomCode, game.hostName)}
+                    disabled={!game.canJoin}
+                    className={`game-button ${!game.canJoin ? 'disabled' : ''}`}
+                  >
+                    <div className="game-info">
+                      <span className="game-name">{game.hostName}'s Game</span>
+                      <span className="game-status">{formatGameStatus(game.status)}</span>
+                    </div>
+                    {!game.canJoin && <span className="game-ended-badge">Ended</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <br /><br /><br />
-
-          <div className="form-section">
-            <h2>Join Existing Game</h2>
-            <div className="form-group">
-              <label htmlFor="joinRoomCode">Room Code:</label>
-              <input
-                type="text"
-                id="joinRoomCode"
-                placeholder="6 letters"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toLowerCase())}
-                onKeyPress={(e) => handleKeyPress(e, handleCheckRoom)}
-              />
-            </div>
-            <button
-              className="primary"
-              onClick={handleCheckRoom}
-              disabled={isLoading}
-            >
-              Continue
-            </button>
+          <div className="divider">
+            <span>or</span>
           </div>
-        </>
+
+          <button onClick={handleStartOwnRoom} className="btn-primary btn-large">
+            Start Your Own Room
+          </button>
+        </div>
       )}
 
-      {step === 'nameInput' && (
-        <div className="form-section">
-          <h2>Join Game</h2>
-          <div className="form-group">
-            <label htmlFor="joinPlayerName">Your Name:</label>
-            <input
-              type="text"
-              id="joinPlayerName"
-              placeholder="Enter your name"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, handleJoinGame)}
-              autoFocus
-            />
-          </div>
-          <button
-            className="primary"
-            onClick={handleJoinGame}
-            disabled={isLoading}
-          >
-            Join Game
-          </button>
-          <button
-            className="secondary"
-            onClick={() => {
-              setStep('menu');
-              setRoomCode('');
-            }}
-          >
-            Back
-          </button>
+      {(creatingNew || joiningExisting) && step === 'menu' && (
+        <div className="name-entry">
+          <h2>{creatingNew ? 'Create Your Room' : `Join ${selectedGameHost}'s Game`}</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="nameInput">Enter Your Name:</label>
+              <input
+                id="nameInput"
+                type="text"
+                placeholder="Enter your name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <div className="form-actions">
+              <button type="button" onClick={handleBack} className="btn-secondary" disabled={isLoading}>
+                Back
+              </button>
+              <button type="submit" className="btn-primary" disabled={isLoading}>
+                {creatingNew ? 'Create Room' : 'Join Game'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -268,26 +285,14 @@ export function JoinPage() {
             className="secondary"
             onClick={() => {
               setStep('menu');
-              setRoomCode('');
+              setPlayerName('');
               setDisconnectedPlayers([]);
+              setJoiningExisting(false);
+              setSelectedRoomCode(null);
             }}
           >
             Back
           </button>
-        </div>
-      )}
-
-      {step === 'gameCreated' && (
-        <div className="form-section">
-          <div className="room-code-display">
-            <h2>Game Created!</h2>
-            <p>Room Code:</p>
-            <h1 className="room-code-large">{createdRoomCode}</h1>
-
-            <button className="primary" onClick={() => navigate(`/game?room=${createdRoomCode.toLowerCase()}`)}>
-              Continue to Lobby
-            </button>
-          </div>
         </div>
       )}
 

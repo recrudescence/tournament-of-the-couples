@@ -280,9 +280,6 @@ export function PlayerPage() {
         <h1>Tournament of Couples</h1>
         <div className="header-info">
           <p>
-            Room: <strong>{gameState?.roomCode.toUpperCase() ?? playerInfo.roomCode.toUpperCase()}</strong>
-          </p>
-          <p>
             Host: <strong>{gameState?.host.name ?? '-'}</strong>
           </p>
           <p>

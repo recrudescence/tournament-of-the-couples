@@ -151,8 +151,7 @@ export function LobbyPage() {
         <header>
           <h1>Lobby</h1>
           <div className="room-code-header">
-            Welcome to <strong>{gameState.roomCode.toUpperCase()}</strong>, hosted by{' '}
-            <strong>{gameState.host.name}</strong>!
+            Welcome, hosted by <strong>{gameState.host.name}</strong>!
           </div>
         </header>
 

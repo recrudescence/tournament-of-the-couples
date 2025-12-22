@@ -20,14 +20,36 @@ const fs = require('fs');
 const distPath = path.join(__dirname, '..', 'dist');
 const publicPath = path.join(__dirname, '..', 'public');
 
+// API endpoint to list all active games (must be before static/SPA fallback)
+app.get('/api/games', (req, res) => {
+  try {
+    const activeGames = gameState.getAllGames();
+
+    const gameList = activeGames
+      .filter(game => game.host) // Only include games with a host
+      .map(game => ({
+        roomCode: game.roomCode,
+        hostName: game.host.name,
+        status: game.status, // 'lobby', 'playing', 'scoring'
+        playerCount: game.players.length,
+        canJoin: game.status === 'lobby' || game.status === 'playing' // Joinable states
+      }));
+
+    res.json({ games: gameList });
+  } catch (error) {
+    console.error('Error fetching games:', error);
+    res.status(500).json({ error: 'Failed to fetch games' });
+  }
+});
+
 // Check if dist folder exists (production build)
 if (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'))) {
   app.use(express.static(distPath));
 
   // SPA fallback - serve index.html for all routes (Express 5 syntax)
   app.get('/{*path}', (req, res, next) => {
-    // Skip socket.io requests
-    if (req.path.startsWith('/socket.io')) {
+    // Skip socket.io and api requests
+    if (req.path.startsWith('/socket.io') || req.path.startsWith('/api/')) {
       return next();
     }
     res.sendFile(path.join(distPath, 'index.html'));

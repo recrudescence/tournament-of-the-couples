@@ -23,6 +23,7 @@ See `context/react-migration.md` for full migration details.
 - When adding new features, use React components and TypeScript (not vanilla JS)
 - When modifying socket events, update type definitions in `src/types/socket-events.ts`
 - When planning or thinking, check for confirmation before opening or exploring a lot of files. Avoid looking at CSS unless necessary.
+- When estimating effort for plan mode, use estimated token usage instead of developer time commitment
 
 ## Project-specific context
 
