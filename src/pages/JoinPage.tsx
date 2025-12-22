@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
-import type { Player } from '../types/game';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -13,6 +12,12 @@ interface GameListItem {
   status: string;
   playerCount: number;
   canJoin: boolean;
+}
+
+interface DisconnectedPlayer {
+  name: string;
+  socketId: string;
+  isHost?: boolean;
 }
 
 export function JoinPage() {
@@ -27,7 +32,7 @@ export function JoinPage() {
   const [selectedRoomCode, setSelectedRoomCode] = useState<string | null>(null);
   const [selectedGameHost, setSelectedGameHost] = useState<string>('');
   const [playerName, setPlayerName] = useState('');
-  const [disconnectedPlayers, setDisconnectedPlayers] = useState<Player[]>([]);
+  const [disconnectedPlayers, setDisconnectedPlayers] = useState<DisconnectedPlayer[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [creatingNew, setCreatingNew] = useState(false);
@@ -163,12 +168,12 @@ export function JoinPage() {
     }
   };
 
-  const handleReconnect = (name: string) => {
+  const handleReconnect = (name: string, isHost: boolean = false) => {
     if (!selectedRoomCode) return;
     setIsLoading(true);
     emit('joinGame', {
       name,
-      isHost: false,
+      isHost,
       isReconnect: true,
       roomCode: selectedRoomCode,
     });
@@ -285,10 +290,10 @@ export function JoinPage() {
               <button
                 key={player.socketId}
                 className="player-button"
-                onClick={() => handleReconnect(player.name)}
+                onClick={() => handleReconnect(player.name, player.isHost ?? false)}
                 disabled={isLoading}
               >
-                {player.name}
+                {player.name}{player.isHost ? ' (Host)' : ''}
               </button>
             ))}
           </div>

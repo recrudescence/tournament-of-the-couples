@@ -11,9 +11,9 @@ const gameState = require('./gameState');
 function handleHostJoin(roomCode, socket, name, state) {
   // Check if this is the host reconnecting
   if (state.host && state.host.name === name) {
-    // Update host socket ID
-    state.host.socketId = socket.id;
-    console.log(`Host reconnected: ${name}`);
+    // Reconnect the host
+    gameState.reconnectHost(roomCode, socket.id);
+    const updatedState = gameState.getGameState(roomCode);
 
     return {
       success: true,
@@ -22,7 +22,7 @@ function handleHostJoin(roomCode, socket, name, state) {
         name,
         isHost: true,
         reconnected: true,
-        gameState: state
+        gameState: updatedState
       }
     };
   }

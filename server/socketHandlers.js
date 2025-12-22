@@ -175,7 +175,12 @@ function setupSocketHandlers(io) {
       const state = gameState.getGameState(normalizedCode);
       const disconnectedPlayers = state.players
         .filter(p => !p.connected && !p.isHost && p.teamId)
-        .map(p => ({ name: p.name, socketId: p.socketId }));
+        .map(p => ({ name: p.name, socketId: p.socketId, isHost: false }));
+
+      // Add disconnected host if applicable
+      if (state.host && !state.host.connected) {
+        disconnectedPlayers.unshift({ name: state.host.name, socketId: state.host.socketId, isHost: true });
+      }
 
       socket.emit('roomStatus', {
         found: true,
@@ -426,9 +431,14 @@ function setupSocketHandlers(io) {
 
       const state = gameState.getGameState(roomCode);
       if (state) {
-        // Always mark as disconnected (don't remove from lobby)
-        // This allows for seamless reconnection on page transitions
-        gameState.disconnectPlayer(roomCode, socket.id);
+        // Check if this is the host
+        if (state.host && state.host.socketId === socket.id) {
+          gameState.disconnectHost(roomCode);
+        } else {
+          // Always mark player as disconnected (don't remove from lobby)
+          // This allows for seamless reconnection on page transitions
+          gameState.disconnectPlayer(roomCode, socket.id);
+        }
 
         if (state.status === 'lobby') {
           io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));

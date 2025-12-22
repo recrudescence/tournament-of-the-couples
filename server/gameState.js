@@ -28,7 +28,7 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
   }
 
   if (isHost) {
-    gameState.host = { socketId, name };
+    gameState.host = { socketId, name, connected: true };
     console.log(`Host added: ${name}`);
   } else {
     // Check if player name already exists
@@ -129,6 +129,27 @@ function getDisconnectedPlayers(roomCode) {
   return gameState.players
     .filter(p => !p.connected)
     .map(p => ({ name: p.name }));
+}
+
+// Mark host as disconnected
+function disconnectHost(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.host) return;
+
+  gameState.host.connected = false;
+  console.log(`<${gameState.host.name}> (host) disconnected`);
+}
+
+// Reconnect the host
+function reconnectHost(roomCode, newSocketId) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.host) {
+    throw new Error('Host not found');
+  }
+
+  gameState.host.socketId = newSocketId;
+  gameState.host.connected = true;
+  console.log(`<${gameState.host.name}> (host) reconnected`);
 }
 
 // Check if new players can join
@@ -458,6 +479,8 @@ module.exports = {
   removePlayer,
   disconnectPlayer,
   reconnectPlayer,
+  disconnectHost,
+  reconnectHost,
   getDisconnectedPlayers,
   canJoinAsNew,
   pairPlayers,
