@@ -22,7 +22,7 @@ See `context/react-migration.md` for full migration details.
 - Avoid excessively praising the user's decisions or ideas - be to the point, thoughtfully questioning, and critical of any design or decisions that may lead to messy or poorly architected code
 - When adding new features, use React components and TypeScript (not vanilla JS)
 - When modifying socket events, update type definitions in `src/types/socket-events.ts`
-- When thinking, check in before opening or exploring a lot of files
+- When planning or thinking, check for confirmation before opening or exploring a lot of files. Avoid looking at CSS unless necessary.
 
 ## Project-specific context
 

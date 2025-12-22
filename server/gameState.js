@@ -238,10 +238,31 @@ function endGame(roomCode) {
 }
 
 // Start a new round
-function startRound(roomCode, question) {
+function startRound(roomCode, question, variant = 'open_ended', options = null) {
   const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
+  }
+
+  // Validation
+  if (!['open_ended', 'multiple_choice', 'binary'].includes(variant)) {
+    throw new Error('Invalid variant type');
+  }
+
+  if (variant === 'multiple_choice') {
+    if (!options || !Array.isArray(options) || options.length < 2 || options.length > 4) {
+      throw new Error('Multiple choice requires 2-4 options');
+    }
+  }
+
+  if (variant === 'binary') {
+    if (!options || !Array.isArray(options) || options.length !== 2) {
+      throw new Error('Binary requires exactly 2 options');
+    }
+  }
+
+  if (variant === 'open_ended' && options !== null) {
+    throw new Error('Open ended should not have options');
   }
 
   const roundNumber = gameState.currentRound ? gameState.currentRound.roundNumber + 1 : 1;
@@ -250,12 +271,14 @@ function startRound(roomCode, question) {
     roundNumber,
     roundId: null, // Will be set after DB persistence
     question,
+    variant,
+    options,
     status: 'answering',
     answers: {},
     submittedInCurrentPhase: [] // Track who has submitted in THIS answering session
   };
 
-  console.log(`Round ${roundNumber} started: ${question}`);
+  console.log(`Round ${roundNumber} started: ${question} (${variant})`);
 }
 
 // Submit an answer

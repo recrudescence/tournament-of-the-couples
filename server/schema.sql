@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS rounds (
   game_code TEXT NOT NULL,
   round_number INTEGER NOT NULL,
   question TEXT NOT NULL,
+  variant_type TEXT DEFAULT 'open_ended',
+  variant_options_json TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (game_code) REFERENCES games(game_code)
 );

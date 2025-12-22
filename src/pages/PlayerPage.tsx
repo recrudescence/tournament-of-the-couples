@@ -23,6 +23,9 @@ export function PlayerPage() {
   const [error, setError] = useState<string | null>(null);
   const [responseTime, setResponseTime] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [variant, setVariant] = useState<string>('open_ended');
+  const [options, setOptions] = useState<string[] | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string>('');
 
   const scoreRef = useRef<HTMLElement>(null);
   const timerStartRef = useRef<number | null>(null);
@@ -128,10 +131,29 @@ export function PlayerPage() {
         updateFromGameState(state, socketId);
       }),
 
-      on('roundStarted', ({ roundNumber: rn, question: q }) => {
+      on('roundStarted', ({ roundNumber: rn, question: q, variant: v, options: opts }) => {
         setRoundNumber(rn);
         setQuestion(q);
+        setVariant(v);
+
+        // For binary: replace placeholders with actual team member names
+        if (v === 'binary' && opts && playerInfo?.name) {
+          const player = gameState?.players.find(p => p.name === playerInfo.name);
+          const team = gameState?.teams.find(t => t.teamId === player?.teamId);
+
+          if (team) {
+            const player1 = gameState?.players.find(p => p.socketId === team.player1Id);
+            const player2 = gameState?.players.find(p => p.socketId === team.player2Id);
+            setOptions([player1?.name || 'Player 1', player2?.name || 'Player 2']);
+          } else {
+            setOptions(opts);
+          }
+        } else {
+          setOptions(opts);
+        }
+
         setAnswer('');
+        setSelectedOption('');
         setHasSubmitted(false);
         setSection('answering');
         // Start timer
@@ -206,24 +228,28 @@ export function PlayerPage() {
       return;
     }
 
-    const trimmedAnswer = answer.trim();
-    if (trimmedAnswer) {
-      // Freeze timer
-      setTimerRunning(false);
+    const finalAnswer = variant === 'open_ended' ? answer : selectedOption;
 
-      // Calculate final response time
-      const finalResponseTime = timerStartRef.current
-        ? Date.now() - timerStartRef.current
-        : responseTime;
-
-      setResponseTime(finalResponseTime);
-
-      // Submit answer with response time
-      emit('submitAnswer', {
-        answer: trimmedAnswer,
-        responseTime: finalResponseTime
-      });
+    if (!finalAnswer.trim()) {
+      setError('Please provide an answer');
+      return;
     }
+
+    // Freeze timer
+    setTimerRunning(false);
+
+    // Calculate final response time
+    const finalResponseTime = timerStartRef.current
+      ? Date.now() - timerStartRef.current
+      : responseTime;
+
+    setResponseTime(finalResponseTime);
+
+    // Submit answer with response time
+    emit('submitAnswer', {
+      answer: finalAnswer.trim(),
+      responseTime: finalResponseTime
+    });
   };
 
   if (!playerInfo || !isConnected) {
@@ -298,17 +324,40 @@ export function PlayerPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="answerInput">Your Answer:</label>
-              <textarea
-                id="answerInput"
-                rows={3}
-                placeholder="Type your answer here..."
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                required
-              />
-            </div>
+            {variant === 'open_ended' ? (
+              <div className="form-group">
+                <label htmlFor="answerInput">Your Answer:</label>
+                <textarea
+                  id="answerInput"
+                  rows={3}
+                  placeholder="Type your answer here..."
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="answer-options">
+                {options?.map((option, index) => (
+                  <div
+                    key={index}
+                    className={`answer-option ${selectedOption === option ? 'selected' : ''}`}
+                    onClick={() => setSelectedOption(option)}
+                  >
+                    <input
+                      type="radio"
+                      id={`option-${index}`}
+                      name="answer-option"
+                      value={option}
+                      checked={selectedOption === option}
+                      onChange={(e) => setSelectedOption(e.target.value)}
+                      required
+                    />
+                    <label htmlFor={`option-${index}`}>{option}</label>
+                  </div>
+                ))}
+              </div>
+            )}
             <button type="submit" className="btn-primary">
               Submit Answer
             </button>

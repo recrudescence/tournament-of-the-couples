@@ -16,6 +16,12 @@ export enum RoundPhase {
   COMPLETED = 'completed',
 }
 
+export enum RoundVariant {
+  OPEN_ENDED = 'open_ended',
+  MULTIPLE_CHOICE = 'multiple_choice',
+  BINARY = 'binary',
+}
+
 export interface Host {
   socketId: string;
   name: string;
@@ -45,6 +51,8 @@ export interface CurrentRound {
   roundNumber: number;
   roundId: string | null;
   question: string;
+  variant: RoundVariant;
+  options: string[] | null;
   status: RoundStatus;
   answers: Record<string, Answer>;
   submittedInCurrentPhase: string[];

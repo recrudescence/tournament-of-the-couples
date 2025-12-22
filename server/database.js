@@ -89,13 +89,14 @@ async function endGame(gameId) {
 }
 
 // Save a round
-async function saveRound(gameId, roundNumber, question) {
+async function saveRound(gameId, roundNumber, question, variant = 'open_ended', options = null) {
   try {
+    const optionsJson = options ? JSON.stringify(options) : null;
     const result = await run(
-      'INSERT INTO rounds (game_code, round_number, question) VALUES (?, ?, ?)',
-      [gameId, roundNumber, question]
+      'INSERT INTO rounds (game_code, round_number, question, variant_type, variant_options_json) VALUES (?, ?, ?, ?, ?)',
+      [gameId, roundNumber, question, variant, optionsJson]
     );
-    console.log(`Round saved: ${result.lastID}`);
+    console.log(`Round saved: ${result.lastID} (${variant})`);
     return result.lastID;
   } catch (err) {
     console.error('Error saving round:', err.message);
@@ -126,8 +127,11 @@ async function getGameRounds(gameId) {
       [gameId]
     );
 
-    // For each round, get its answers
+    // For each round, get its answers and parse JSON options
     for (let round of rounds) {
+      if (round.variant_options_json) {
+        round.variant_options = JSON.parse(round.variant_options_json);
+      }
       round.answers = await all(
         `SELECT * FROM answers WHERE round_id = ?`,
         [round.round_id]

@@ -137,3 +137,59 @@
 .btn-primary:hover {
   background-color: #0056b3;
 }
+
+/* Answer Options for Multiple Choice and Binary */
+.answer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.answer-option {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.answer-option:hover {
+  border-color: #667eea;
+  background: #f8f9fa;
+}
+
+.answer-option.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.answer-option input[type="radio"] {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.answer-option label {
+  font-size: 1.1rem;
+  margin: 0;
+  cursor: pointer;
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+@media (max-width: 600px) {
+  .answer-option {
+    padding: 14px;
+  }
+
+  .answer-option label {
+    font-size: 1rem;
+  }
+}

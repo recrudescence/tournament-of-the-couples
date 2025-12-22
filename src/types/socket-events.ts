@@ -12,7 +12,7 @@ export interface ClientToServerEvents {
   requestPair: (data: { targetSocketId: string }) => void;
   unpair: () => void;
   startGame: () => void;
-  startRound: (data: { question: string }) => void;
+  startRound: (data: { question: string; variant: string; options?: string[] }) => void;
   submitAnswer: (data: { answer: string; responseTime: number }) => void;
   revealAnswer: (data: { playerName: string }) => void;
   awardPoint: (data: { teamId: string }) => void;
@@ -51,6 +51,8 @@ export interface ServerToClientEvents {
   roundStarted: (data: {
     roundNumber: number;
     question: string;
+    variant: string;
+    options: string[] | null;
     gameState: GameState;
   }) => void;
   answerSubmitted: (data: {

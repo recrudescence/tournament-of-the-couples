@@ -27,6 +27,8 @@ export function HostPage() {
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [questionInput, setQuestionInput] = useState('');
+  const [selectedVariant, setSelectedVariant] = useState<'open_ended' | 'multiple_choice' | 'binary'>('open_ended');
+  const [mcOptions, setMcOptions] = useState<string[]>(['', '']);
   const [roomCode, setRoomCode] = useState('');
   const [gameStatus, setGameStatus] = useState('Setting Up');
   const [showAllAnswersNotification, setShowAllAnswersNotification] = useState(false);
@@ -220,10 +222,33 @@ export function HostPage() {
 
   const handleStartRound = (e: React.FormEvent) => {
     e.preventDefault();
-    const question = questionInput.trim();
-    if (question) {
-      emit('startRound', { question });
+
+    if (!questionInput.trim()) {
+      alert('Please enter a question');
+      return;
     }
+
+    let options: string[] | undefined = undefined;
+
+    if (selectedVariant === 'multiple_choice') {
+      const filledOptions = mcOptions.filter(opt => opt.trim() !== '');
+      if (filledOptions.length < 2 || filledOptions.length > 4) {
+        alert('Please provide 2-4 options');
+        return;
+      }
+      options = filledOptions.map(opt => opt.trim());
+    } else if (selectedVariant === 'binary') {
+      options = ['Player 1', 'Player 2'];
+    }
+
+    emit('startRound', {
+      question: questionInput.trim(),
+      variant: selectedVariant,
+      options
+    });
+
+    setQuestionInput('');
+    setMcOptions(['', '']);
   };
 
   const handleStartScoring = () => {
@@ -393,18 +418,129 @@ export function HostPage() {
       {phase === 'roundSetup' && (
         <div className="phase-section">
           <h2>Start New Round</h2>
+
+          {/* Variant Tabs */}
+          <div className="variant-tabs">
+            <button
+              type="button"
+              className={`variant-tab ${selectedVariant === 'open_ended' ? 'active' : ''}`}
+              onClick={() => setSelectedVariant('open_ended')}
+            >
+              Open Ended
+            </button>
+            <button
+              type="button"
+              className={`variant-tab ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}
+              onClick={() => setSelectedVariant('multiple_choice')}
+            >
+              Multiple Choice
+            </button>
+            <button
+              type="button"
+              className={`variant-tab ${selectedVariant === 'binary' ? 'active' : ''}`}
+              onClick={() => setSelectedVariant('binary')}
+            >
+              Binary
+            </button>
+          </div>
+
           <form onSubmit={handleStartRound}>
-            <div className="form-group">
-              <label htmlFor="questionInput">Enter Question:</label>
-              <textarea
-                id="questionInput"
-                rows={6}
-                placeholder="What's your partner's favorite movie?"
-                value={questionInput}
-                onChange={(e) => setQuestionInput(e.target.value)}
-                required
-              />
+            {/* Open Ended Form */}
+            <div className={`variant-tab-content ${selectedVariant === 'open_ended' ? 'active' : ''}`}>
+              <div className="form-group">
+                <label htmlFor="questionInput">Enter Question:</label>
+                <textarea
+                  id="questionInput"
+                  rows={6}
+                  placeholder="What's your partner's favorite movie?"
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  required={selectedVariant === 'open_ended'}
+                />
+              </div>
             </div>
+
+            {/* Multiple Choice Form */}
+            <div className={`variant-tab-content ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}>
+              <div className="form-group">
+                <label htmlFor="mcQuestionInput">Enter Question:</label>
+                <textarea
+                  id="mcQuestionInput"
+                  rows={4}
+                  placeholder="What's your partner's favorite color?"
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  required={selectedVariant === 'multiple_choice'}
+                />
+              </div>
+
+              <label>Options (2-4 choices):</label>
+              <div className="mc-options-container">
+                {mcOptions.map((option, index) => (
+                  <div key={index} className="mc-option-row">
+                    <input
+                      type="text"
+                      className="mc-option-input"
+                      placeholder={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...mcOptions];
+                        newOptions[index] = e.target.value;
+                        setMcOptions(newOptions);
+                      }}
+                      required={selectedVariant === 'multiple_choice'}
+                    />
+                    {mcOptions.length > 2 && (
+                      <button
+                        type="button"
+                        className="btn-remove-option"
+                        onClick={() => {
+                          const newOptions = mcOptions.filter((_, i) => i !== index);
+                          setMcOptions(newOptions);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {mcOptions.length < 4 && (
+                <button
+                  type="button"
+                  className="btn-add-option"
+                  onClick={() => setMcOptions([...mcOptions, ''])}
+                >
+                  + Add Option
+                </button>
+              )}
+            </div>
+
+            {/* Binary Form */}
+            <div className={`variant-tab-content ${selectedVariant === 'binary' ? 'active' : ''}`}>
+              <div className="form-group">
+                <label htmlFor="binaryQuestionInput">Enter Question:</label>
+                <textarea
+                  id="binaryQuestionInput"
+                  rows={4}
+                  placeholder="Who is more likely to...?"
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  required={selectedVariant === 'binary'}
+                />
+              </div>
+
+              <label>Options (auto-filled with team member names):</label>
+              <div className="binary-options">
+                <div className="binary-option-display">Player 1</div>
+                <div className="binary-option-display">Player 2</div>
+              </div>
+              <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '16px' }}>
+                Note: Player names will be filled in dynamically for each team
+              </p>
+            </div>
+
             <button type="submit" className="btn btn-primary">
               Start Round
             </button>

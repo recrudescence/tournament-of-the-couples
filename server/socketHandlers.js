@@ -208,8 +208,8 @@ function setupSocketHandlers(io) {
     });
 
     // Host starts a new round
-    socket.on('startRound', async ({ question }) => {
-      console.log('[socket] startRound');
+    socket.on('startRound', async ({ question, variant, options }) => {
+      console.log('[socket] startRound', { variant, optionsCount: options?.length });
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -217,20 +217,24 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.startRound(roomCode, question);
+        gameState.startRound(roomCode, question, variant, options);
         const state = gameState.getGameState(roomCode);
 
         // Persist round to database
         const roundId = await database.saveRound(
           roomCode,  // gameId is now roomCode
           state.currentRound.roundNumber,
-          question
+          question,
+          variant,
+          options
         );
         gameState.setCurrentRoundId(roomCode, roundId);
 
         io.to(roomCode).emit('roundStarted', {
           roundNumber: state.currentRound.roundNumber,
-          question,
+          question: state.currentRound.question,
+          variant: state.currentRound.variant,
+          options: state.currentRound.options,
           gameState: state
         });
       } catch (err) {
