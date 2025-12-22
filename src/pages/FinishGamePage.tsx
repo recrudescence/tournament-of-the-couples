@@ -39,7 +39,7 @@ export function FinishGamePage() {
 
   return (
     <div className="container">
-      <h1>Game Over!</h1>
+      <h1>Game Over</h1>
 
       <div className="form-section">
         <h2>🏆 Winners!</h2>

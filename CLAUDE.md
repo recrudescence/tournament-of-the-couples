@@ -22,8 +22,12 @@ See `context/react-migration.md` for full migration details.
 - Avoid excessively praising the user's decisions or ideas - be to the point, thoughtfully questioning, and critical of any design or decisions that may lead to messy or poorly architected code
 - When adding new features, use React components and TypeScript (not vanilla JS)
 - When modifying socket events, update type definitions in `src/types/socket-events.ts`
-- When planning or thinking, check for confirmation before opening or exploring a lot of files. Avoid looking at CSS unless necessary.
-- When estimating effort for plan mode, use estimated token usage instead of developer time commitment
+- When thinking, check in before opening or exploring a lot of files
+
+## Important Configuration Notes
+
+- **Vite Dev Server Proxy**: The Vite dev server proxies `/api/*` and `/socket.io/*` requests to the backend at `http://localhost:3000`. If you add new API endpoints, ensure they're defined in `server/index.js` BEFORE the static file serving middleware, or they'll be caught by the SPA fallback route.
+- **Room Code Visibility**: Room codes exist internally for socket.io room management but are completely hidden from the user-facing UI. The join flow uses a game list instead of manual code entry.
 
 ## Project-specific context
 

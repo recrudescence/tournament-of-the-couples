@@ -375,7 +375,7 @@ export function PlayerPage() {
               <div className="partner-status">
                 <p>
                   <strong>{partner.name}:</strong>{' '}
-                  {gameState?.currentRound?.answers?.[partner.name] ? '✓ Submitted' : '...'}
+                  <i>{gameState?.currentRound?.answers?.[partner.name] ? '✓ Submitted' : 'is thinking...'}</i>
                 </p>
               </div>
             )}

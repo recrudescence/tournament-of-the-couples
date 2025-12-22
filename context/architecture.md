@@ -6,9 +6,11 @@
 **Four-layer architecture:**
 
 1. **HTTP/WebSocket Layer** (`server/index.js`)
-   - Express server serving static files from `public/`
+   - Express server serving static files from `dist/` (Vite build) or `public/` (legacy)
    - Socket.io server handling real-time connections
-   - Routes: `/` (join), `/lobby`, `/host`, `/player`
+   - REST API: `/api/games` - Lists all active (non-ended) games for the join page
+   - SPA fallback route serves `index.html` for all non-API/socket paths
+   - **Important**: API routes must be defined BEFORE static file serving to avoid being caught by SPA fallback
 
 2. **Socket Event Handlers** (`server/socketHandlers.js`)
    - Central event router for all Socket.io events
@@ -80,11 +82,16 @@ src/
 
 1. **JoinPage** (`src/pages/JoinPage.tsx`)
    - Entry point for all users (routes: `/` and `/join`)
-   - Supports pre-filled room code via `?room=CODE` query parameter
-   - Two-path interface: "Create Game" or "Join Game"
-   - **Create Game**: Host enters name, gets room code (e.g., "GAME")
-   - **Join Game**: Player enters room code + name to join existing game
-   - **Reconnection**: If game in progress, shows list of disconnected players to reconnect
+   - **Room codes are hidden from the UI** - players never see or enter codes manually
+   - Fetches available games from `/api/games` endpoint and displays as clickable list
+   - Shows games as "Host's Game - Status" (e.g., "Alice's Game - In Lobby")
+   - Two-path interface: "Join Existing Game" or "Create Room"
+   - **Create Room**: Host enters name → server generates room code internally → navigates to game
+   - **Join Existing Game**:
+     - Click game from list → enter name → join game (for lobby games)
+     - Click in-progress game → shows reconnect page if disconnected players exist (including host)
+     - Shows name entry if no disconnected players (new player joining in-progress game)
+   - **Reconnection**: Shows list of disconnected players to reconnect, with "(Host)" label for disconnected host
    - Stores player info in `sessionStorage.playerInfo` via `usePlayerInfo` hook
    - Navigates to `/game?room=CODE` on successful join
 
@@ -102,7 +109,7 @@ src/
 3. **LobbyPage** (`src/pages/LobbyPage.tsx`)
    - Team formation interface (rendered by GamePage)
    - No route guards (GamePage handles this)
-   - **Displays room code prominently** in header for sharing
+   - Shows host name in header (room codes hidden from UI)
    - Players can pair/unpair before game starts
    - Host can start game when teams are formed
    - Updates GameContext when game starts (no navigation)
@@ -161,7 +168,7 @@ src/
 
 1. **Multi-Game Support**: Multiple concurrent games supported via room codes. Each game is isolated in its own Socket.io room. Games persist in memory until server restart.
 
-2. **Room Code System**: words (e.g., "GAME", "PLAY") generated using `random-words` package. Used as game identifiers instead of UUIDs. Team IDs also use codes for consistency.
+2. **Room Code System**: words (e.g., "GAME", "PLAY") generated using `random-words` package. Used as game identifiers instead of UUIDs for socket.io room management. Team IDs also use codes for consistency. **Room codes are never displayed to users** - they're internal identifiers only. The join flow uses a game list fetched from `/api/games` showing "Host's Game" instead of codes.
 
 3. **Socket ID as Player Identity**: Players are identified by `socket.id` for real-time connections (teams, partnerships), but reconnect by name. On reconnect, `gameState.reconnectPlayer(roomCode, name, newSocketId)` updates all socket ID references. **Answers are keyed by player name** to avoid migration issues on reconnect.
 
@@ -175,7 +182,7 @@ src/
 
 6. **Team References**: Teams store `player1Id` and `player2Id` (socket IDs), players store `partnerId` and `teamId`. On reconnect, both must be updated (see `gameState.reconnectPlayer()`).
 
-7. **Disconnection vs Removal**: During gameplay, disconnected players are marked `connected: false` rather than removed, enabling seamless reconnection. Only in lobby phase can players be fully removed.
+7. **Disconnection vs Removal**: During gameplay, disconnected players AND the host are marked `connected: false` rather than removed, enabling seamless reconnection. The host object (`gameState.host`) has a `connected` flag just like players. When checking room status for reconnection, disconnected host is included in the reconnectable players list with `isHost: true` flag. Only in lobby phase can players be fully removed. Disconnected players shown in reconnection list are filtered to only include those in teams (`teamId` exists).
 
 8. **Single Socket Connection in SPA**: Unlike the legacy multi-page setup, the React SPA maintains a single Socket.io connection throughout navigation. The connection is established in `SocketContext` on app mount and persists across route changes. When navigating between views (all rendered via GamePage at `/game?room=CODE`), the same socket connection is reused. GamePage calls `emit('joinGame', ...)` on mount to rejoin with stored sessionStorage data, but this does NOT create a new socket connection.
 
