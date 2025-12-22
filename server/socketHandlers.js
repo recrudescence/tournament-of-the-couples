@@ -174,7 +174,7 @@ function setupSocketHandlers(io) {
 
       const state = gameState.getGameState(normalizedCode);
       const disconnectedPlayers = state.players
-        .filter(p => !p.connected && !p.isHost)
+        .filter(p => !p.connected && !p.isHost && p.teamId)
         .map(p => ({ name: p.name, socketId: p.socketId }));
 
       socket.emit('roomStatus', {

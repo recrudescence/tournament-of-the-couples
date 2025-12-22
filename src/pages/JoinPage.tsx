@@ -71,7 +71,7 @@ export function JoinPage() {
         navigate(`/game?room=${roomCode}`);
       }),
 
-      on('roomStatus', ({ found, error: roomError, roomCode: code, inProgress, disconnectedPlayers: players, canJoinAsNew }) => {
+      on('roomStatus', ({ found, error: roomError, roomCode: _code, inProgress, disconnectedPlayers: players, canJoinAsNew }) => {
         setIsLoading(false);
 
         if (!found) {
@@ -82,17 +82,12 @@ export function JoinPage() {
         }
 
         if (inProgress && players.length > 0) {
+          // Game in progress with disconnected players - show reconnect page
           setDisconnectedPlayers(players);
           setStep('reconnect');
         } else if (canJoinAsNew) {
-          // Proceed to join as new player (name already entered in first form)
-          setIsLoading(true);
-          emit('joinGame', {
-            name: playerName.trim(),
-            isHost: false,
-            isReconnect: false,
-            roomCode: code,
-          });
+          // Can join as new player - show name entry form
+          setJoiningExisting(true);
         } else {
           showError('Cannot join this game');
           setSelectedRoomCode(null);
@@ -117,10 +112,18 @@ export function JoinPage() {
     return () => unsubscribers.forEach((unsub) => unsub());
   }, [on, savePlayerInfo, dispatch, navigate, showError, playerName]);
 
-  const handleSelectGame = (roomCode: string, hostName: string) => {
+  const handleSelectGame = (roomCode: string, hostName: string, status: string) => {
     setSelectedRoomCode(roomCode);
     setSelectedGameHost(hostName);
-    setJoiningExisting(true);
+
+    // If game is in progress, check status first (may show reconnect page)
+    // If game is in lobby, show name entry form
+    if (status === 'playing' || status === 'scoring') {
+      setIsLoading(true);
+      emit('checkRoomStatus', { roomCode });
+    } else {
+      setJoiningExisting(true);
+    }
   };
 
   const handleStartOwnRoom = () => {
@@ -149,11 +152,19 @@ export function JoinPage() {
     if (creatingNew) {
       emit('createGame', { name: playerName.trim() });
     } else if (joiningExisting && selectedRoomCode) {
-      emit('checkRoomStatus', { roomCode: selectedRoomCode });
+      // For lobby games, directly join
+      // For in-progress games, this won't be called (checkRoomStatus is called from handleSelectGame instead)
+      emit('joinGame', {
+        name: playerName.trim(),
+        isHost: false,
+        isReconnect: false,
+        roomCode: selectedRoomCode,
+      });
     }
   };
 
   const handleReconnect = (name: string) => {
+    if (!selectedRoomCode) return;
     setIsLoading(true);
     emit('joinGame', {
       name,
@@ -212,7 +223,7 @@ export function JoinPage() {
                 {availableGames.map((game) => (
                   <button
                     key={game.roomCode}
-                    onClick={() => handleSelectGame(game.roomCode, game.hostName)}
+                    onClick={() => handleSelectGame(game.roomCode, game.hostName, game.status)}
                     disabled={!game.canJoin}
                     className={`game-button ${!game.canJoin ? 'disabled' : ''}`}
                   >
@@ -232,7 +243,7 @@ export function JoinPage() {
           </div>
 
           <button onClick={handleStartOwnRoom} className="btn-primary btn-large">
-            Start Your Own Room
+            Create Room
           </button>
         </div>
       )}
