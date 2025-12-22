@@ -186,3 +186,10 @@
   font-weight: 700;
   color: #2196F3;
 }
+
+.end-game-section {
+  display: flex;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}

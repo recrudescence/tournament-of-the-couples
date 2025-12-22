@@ -404,368 +404,367 @@ export function HostPage() {
       <DebugSidebar />
       <div className="container">
         <header>
-        <h1>Tournament of Couples</h1>
-        <div className="header-info">
-          <p>Host: <strong>{playerInfo.name}</strong></p>
-          <p>Round: <strong>{localState.roundNumber || '-'}</strong></p>
-          <p>Status: <strong>{gameStatus}</strong></p>
-        </div>
-      </header>
-
-      {/* Round Setup Phase */}
-      {phase === 'roundSetup' && (
-        <div className="phase-section">
-          <h2>Start New Round</h2>
-
-          {/* Variant Tabs */}
-          <div className="variant-tabs">
-            <button
-              type="button"
-              className={`variant-tab ${selectedVariant === 'open_ended' ? 'active' : ''}`}
-              onClick={() => setSelectedVariant('open_ended')}
-            >
-              Open Ended
-            </button>
-            <button
-              type="button"
-              className={`variant-tab ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}
-              onClick={() => setSelectedVariant('multiple_choice')}
-            >
-              Multiple Choice
-            </button>
-            <button
-              type="button"
-              className={`variant-tab ${selectedVariant === 'binary' ? 'active' : ''}`}
-              onClick={() => setSelectedVariant('binary')}
-            >
-              Binary
-            </button>
+          <h1>Tournament of Couples</h1>
+          <div className="header-info">
+            <p>Host: <strong>{playerInfo.name}</strong></p>
+            <p>Round: <strong>{localState.roundNumber || '-'}</strong></p>
+            <p>Status: <strong>{gameStatus}</strong></p>
           </div>
+        </header>
 
-          <form onSubmit={handleStartRound}>
-            {/* Open Ended Form */}
-            <div className={`variant-tab-content ${selectedVariant === 'open_ended' ? 'active' : ''}`}>
-              <div className="form-group">
-                <label htmlFor="questionInput">Enter Question:</label>
-                <textarea
-                  id="questionInput"
-                  rows={6}
-                  placeholder="What's your partner's favorite movie?"
-                  value={questionInput}
-                  onChange={(e) => setQuestionInput(e.target.value)}
-                  required={selectedVariant === 'open_ended'}
-                />
-              </div>
+        {/* Round Setup Phase */}
+        {phase === 'roundSetup' && (
+          <div className="phase-section">
+            <h2>Start New Round</h2>
+
+            {/* Variant Tabs */}
+            <div className="variant-tabs">
+              <button
+                type="button"
+                className={`variant-tab ${selectedVariant === 'open_ended' ? 'active' : ''}`}
+                onClick={() => setSelectedVariant('open_ended')}
+              >
+                Open Ended
+              </button>
+              <button
+                type="button"
+                className={`variant-tab ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}
+                onClick={() => setSelectedVariant('multiple_choice')}
+              >
+                Multiple Choice
+              </button>
+              <button
+                type="button"
+                className={`variant-tab ${selectedVariant === 'binary' ? 'active' : ''}`}
+                onClick={() => setSelectedVariant('binary')}
+              >
+                Binary
+              </button>
             </div>
 
-            {/* Multiple Choice Form */}
-            <div className={`variant-tab-content ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}>
-              <div className="form-group">
-                <label htmlFor="mcQuestionInput">Enter Question:</label>
-                <textarea
-                  id="mcQuestionInput"
-                  rows={4}
-                  placeholder="What's your partner's favorite color?"
-                  value={questionInput}
-                  onChange={(e) => setQuestionInput(e.target.value)}
-                  required={selectedVariant === 'multiple_choice'}
-                />
+            <form onSubmit={handleStartRound}>
+              {/* Open Ended Form */}
+              <div className={`variant-tab-content ${selectedVariant === 'open_ended' ? 'active' : ''}`}>
+                <div className="form-group">
+                  <label htmlFor="questionInput">Enter Question:</label>
+                  <textarea
+                    id="questionInput"
+                    rows={6}
+                    placeholder="What's your partner's favorite movie?"
+                    value={questionInput}
+                    onChange={(e) => setQuestionInput(e.target.value)}
+                    required={selectedVariant === 'open_ended'}
+                  />
+                </div>
               </div>
 
-              <label>Options (2-4 choices):</label>
-              <div className="mc-options-container">
-                {mcOptions.map((option, index) => (
-                  <div key={index} className="mc-option-row">
-                    <input
-                      type="text"
-                      className="mc-option-input"
-                      placeholder={`Option ${index + 1}`}
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...mcOptions];
-                        newOptions[index] = e.target.value;
-                        setMcOptions(newOptions);
-                      }}
-                      required={selectedVariant === 'multiple_choice'}
-                    />
-                    {mcOptions.length > 2 && (
-                      <button
-                        type="button"
-                        className="btn-remove-option"
-                        onClick={() => {
-                          const newOptions = mcOptions.filter((_, i) => i !== index);
+              {/* Multiple Choice Form */}
+              <div className={`variant-tab-content ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}>
+                <div className="form-group">
+                  <label htmlFor="mcQuestionInput">Enter Question:</label>
+                  <textarea
+                    id="mcQuestionInput"
+                    rows={4}
+                    placeholder="What's your partner's favorite color?"
+                    value={questionInput}
+                    onChange={(e) => setQuestionInput(e.target.value)}
+                    required={selectedVariant === 'multiple_choice'}
+                  />
+                </div>
+
+                <label>Options (2-4 choices):</label>
+                <div className="mc-options-container">
+                  {mcOptions.map((option, index) => (
+                    <div key={index} className="mc-option-row">
+                      <input
+                        type="text"
+                        className="mc-option-input"
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...mcOptions];
+                          newOptions[index] = e.target.value;
                           setMcOptions(newOptions);
                         }}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+                        required={selectedVariant === 'multiple_choice'}
+                      />
+                      {mcOptions.length > 2 && (
+                        <button
+                          type="button"
+                          className="btn-remove-option"
+                          onClick={() => {
+                            const newOptions = mcOptions.filter((_, i) => i !== index);
+                            setMcOptions(newOptions);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {mcOptions.length < 4 && (
+                  <button
+                    type="button"
+                    className="btn-add-option"
+                    onClick={() => setMcOptions([...mcOptions, ''])}
+                  >
+                    + Add Option
+                  </button>
+                )}
               </div>
 
-              {mcOptions.length < 4 && (
-                <button
-                  type="button"
-                  className="btn-add-option"
-                  onClick={() => setMcOptions([...mcOptions, ''])}
-                >
-                  + Add Option
+              {/* Binary Form */}
+              <div className={`variant-tab-content ${selectedVariant === 'binary' ? 'active' : ''}`}>
+                <div className="form-group">
+                  <label htmlFor="binaryQuestionInput">Enter Question:</label>
+                  <textarea
+                    id="binaryQuestionInput"
+                    rows={4}
+                    placeholder="Who is more likely to...?"
+                    value={questionInput}
+                    onChange={(e) => setQuestionInput(e.target.value)}
+                    required={selectedVariant === 'binary'}
+                  />
+                </div>
+
+                <label>Options (auto-filled with team member names):</label>
+                <div className="binary-options">
+                  <div className="binary-option-display">Player 1</div>
+                  <div className="binary-option-display">Player 2</div>
+                </div>
+                <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '16px' }}>
+                  Note: Player names will be filled in dynamically for each team
+                </p>
+              </div>
+
+              <button type="submit" className="btn btn-primary">
+                Start Round
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Answering Phase */}
+        {phase === 'answering' && (
+          <div className="phase-section">
+            <h2>Current Question</h2>
+            <div className="question-display">
+              <p>{localState.currentQuestion}</p>
+            </div>
+
+            <h3>Answer Status</h3>
+            <div className="answer-status">
+              <ul className="player-status-list">
+                {localState.players.map((player) => {
+                  const hasSubmitted =
+                    localState.roundPhase === RoundPhase.COMPLETED
+                      ? player.name in localState.answers
+                      : localState.submittedInCurrentPhase.includes(player.name);
+
+                  return (
+                    <li
+                      key={player.socketId}
+                      className={
+                        !player.connected
+                          ? 'disconnected'
+                          : hasSubmitted
+                          ? 'answered'
+                          : 'waiting'
+                      }
+                    >
+                      {player.name}{' '}
+                      {!player.connected
+                        ? '🔌 (Disconnected)'
+                        : hasSubmitted
+                        ? '✅'
+                        : '⏳'}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {!showAllAnswersNotification && (
+                <p className="status-summary">
+                  {submittedCount} / {localState.players.length} answers submitted
+                </p>
+            )}
+            {showAllAnswersNotification && (
+              <div className="notification">
+                ✅ All answers are in! Ready to score.
+              </div>
+            )}
+
+            <div className="answering-actions">
+              {showReopenBtn && (
+                  <button className="btn btn-info" onClick={handleReopenAnswering}>
+                    Re-open Answering
+                  </button>
+              )}
+              {showStartScoringBtn && (
+                <button className="btn btn-primary" onClick={handleStartScoring}>
+                  Begin Scoring
                 </button>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Binary Form */}
-            <div className={`variant-tab-content ${selectedVariant === 'binary' ? 'active' : ''}`}>
-              <div className="form-group">
-                <label htmlFor="binaryQuestionInput">Enter Question:</label>
-                <textarea
-                  id="binaryQuestionInput"
-                  rows={4}
-                  placeholder="Who is more likely to...?"
-                  value={questionInput}
-                  onChange={(e) => setQuestionInput(e.target.value)}
-                  required={selectedVariant === 'binary'}
-                />
-              </div>
-
-              <label>Options (auto-filled with team member names):</label>
-              <div className="binary-options">
-                <div className="binary-option-display">Player 1</div>
-                <div className="binary-option-display">Player 2</div>
-              </div>
-              <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '16px' }}>
-                Note: Player names will be filled in dynamically for each team
-              </p>
+        {/* Scoring Phase */}
+        {phase === 'scoring' && (
+          <div className="phase-section">
+            <button className="btn btn-info btn-sm" onClick={handleBackToAnswering}>
+              ← Back to Answering
+            </button>
+            <div className="phase-header">
+              <h2>Review Team Answers</h2>
             </div>
 
-            <button type="submit" className="btn btn-primary">
-              Start Round
-            </button>
-          </form>
-        </div>
-      )}
+            <div className="team-cards-container">
+              {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
+                const player1 = getPlayerBySocketId(team.player1Id);
+                const player2 = getPlayerBySocketId(team.player2Id);
+                const isScored = team.teamId in teamPointsAwarded;
+                const isExpanded = originalIndex === localState.currentTeamIndex && !isScored;
 
-      {/* Answering Phase */}
-      {phase === 'answering' && (
-        <div className="phase-section">
-          <h2>Current Question</h2>
-          <div className="question-display">
-            <p>{localState.currentQuestion}</p>
-          </div>
-
-          <h3>Answer Status</h3>
-          <div className="answer-status">
-            <ul className="player-status-list">
-              {localState.players.map((player) => {
-                const hasSubmitted =
-                  localState.roundPhase === RoundPhase.COMPLETED
-                    ? player.name in localState.answers
-                    : localState.submittedInCurrentPhase.includes(player.name);
+                // Sort players by response time (ascending)
+                const players = [
+                  { player: player1, time: player1Time },
+                  { player: player2, time: player2Time }
+                ].sort((a, b) => a.time - b.time);
 
                 return (
-                  <li
-                    key={player.socketId}
-                    className={
-                      !player.connected
-                        ? 'disconnected'
-                        : hasSubmitted
-                        ? 'answered'
-                        : 'waiting'
-                    }
+                  <div
+                    key={team.teamId}
+                    className={`team-card ${isExpanded ? 'expanded' : 'collapsed'}`}
                   >
-                    {player.name}{' '}
-                    {!player.connected
-                      ? '🔌 (Disconnected)'
-                      : hasSubmitted
-                      ? '✅'
-                      : '⏳'}
-                  </li>
+                    <div className="team-card-header">
+                      <div className="team-card-title">
+                        {player1?.name || '?'} & {player2?.name || '?'}
+                      </div>
+                      <div className="team-card-header-right">
+                        <div
+                          className={`team-card-score ${
+                            isScored
+                              ? (teamPointsAwarded[team.teamId] ?? 0) > 0
+                                ? 'points-awarded'
+                                : 'points-none'
+                              : ''
+                          }`}
+                        >
+                          {isScored &&
+                            ((teamPointsAwarded[team.teamId] ?? 0) > 0
+                              ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
+                              : '0 points 😔')}
+                        </div>
+                        {!isExpanded && isScored && (
+                          <button
+                            className="btn btn-info btn-sm"
+                            onClick={() => handleReopenTeamScoring(team.teamId, originalIndex)}
+                          >
+                            ↪️
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="team-card-content">
+                        {players.map(({ player }) =>
+                          player ? (
+                            <div key={player.socketId} className="player-answer">
+                              <h4>{player.name} said...</h4>
+                              {!localState.revealedAnswers.has(player.name) ? (
+                                <button
+                                  className="btn btn-secondary"
+                                  onClick={() => handleRevealAnswer(player.name)}
+                                >
+                                  Reveal Answer
+                                </button>
+                              ) : (
+                                <div className="answer-display">
+                                  {localState.answers[player.name]?.text || 'No answer'} (
+                                  {revealedResponseTimes[player.name] !== undefined && (
+                                    <i>
+                                      took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s
+                                    </i>
+                                  )}
+                                  )
+                                </div>
+                              )}
+                            </div>
+                          ) : null
+                        )}
+
+                        <div className="scoring-actions">
+                          <button
+                            className="btn btn-success"
+                            onClick={() => handleAwardPoint(team.teamId, originalIndex)}
+                          >
+                            Award Point ⭐
+                          </button>
+                          <button
+                            className="btn btn-neutral"
+                            onClick={() => handleSkipPoint(team.teamId, originalIndex)}
+                          >
+                            No Point
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-            </ul>
-          </div>
-
-          {!showAllAnswersNotification && (
-              <p className="status-summary">
-                {submittedCount} / {localState.players.length} answers submitted
-              </p>
-          )}
-          {showAllAnswersNotification && (
-            <div className="notification">
-              ✅ All answers are in! Ready to score.
             </div>
-          )}
 
-          <div className="answering-actions">
-            {showReopenBtn && (
-                <button className="btn btn-warning" onClick={handleReopenAnswering}>
-                  Re-open Answering
+            {showFinishBtn && (
+              <div className="navigation-actions">
+                <button className="btn btn-primary" onClick={handleFinishRound}>
+                  Finish Round
                 </button>
-            )}
-            {showStartScoringBtn && (
-              <button className="btn btn-primary" onClick={handleStartScoring}>
-                Begin Scoring
-              </button>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Scoring Phase */}
-      {phase === 'scoring' && (
-        <div className="phase-section">
-          <button className="btn btn-info btn-sm" onClick={handleBackToAnswering}>
-            ← Back to Answering
-          </button>
-          <div className="phase-header">
-            <h2>Review Team Answers</h2>
-          </div>
+        {/* Scoreboard (Always Visible) */}
+        <div className="scoreboard">
+          <h3>📊 Scoreboard</h3>
+          <div className="scoreboard-list">
+            {sortedTeams.length === 0 ? (
+              <p>No teams yet</p>
+            ) : (
+              sortedTeams.map((team) => {
+                const player1 = getPlayerBySocketId(team.player1Id);
+                const player2 = getPlayerBySocketId(team.player2Id);
 
-          <div className="team-cards-container">
-            {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
-              const player1 = getPlayerBySocketId(team.player1Id);
-              const player2 = getPlayerBySocketId(team.player2Id);
-              const isScored = team.teamId in teamPointsAwarded;
-              const isExpanded = originalIndex === localState.currentTeamIndex && !isScored;
-
-              // Sort players by response time (ascending)
-              const players = [
-                { player: player1, time: player1Time },
-                { player: player2, time: player2Time }
-              ].sort((a, b) => a.time - b.time);
-
-              return (
-                <div
-                  key={team.teamId}
-                  className={`team-card ${isExpanded ? 'expanded' : 'collapsed'}`}
-                >
-                  <div className="team-card-header">
-                    <div className="team-card-title">
+                return (
+                  <div key={team.teamId} className="team-score-item">
+                    <span className="team-names">
                       {player1?.name || '?'} & {player2?.name || '?'}
-                    </div>
-                    <div className="team-card-header-right">
-                      <div
-                        className={`team-card-score ${
-                          isScored
-                            ? (teamPointsAwarded[team.teamId] ?? 0) > 0
-                              ? 'points-awarded'
-                              : 'points-none'
-                            : ''
-                        }`}
-                      >
-                        {isScored &&
-                          ((teamPointsAwarded[team.teamId] ?? 0) > 0
-                            ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
-                            : '0 points 😔')}
-                      </div>
-                      {!isExpanded && isScored && (
-                        <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => handleReopenTeamScoring(team.teamId, originalIndex)}
-                        >
-                          ↪️
-                        </button>
-                      )}
-                    </div>
+                    </span>
+                    <span className="score">{team.score} pts</span>
                   </div>
-
-                  {isExpanded && (
-                    <div className="team-card-content">
-                      {players.map(({ player }) =>
-                        player ? (
-                          <div key={player.socketId} className="player-answer">
-                            <h4>{player.name} said...</h4>
-                            {!localState.revealedAnswers.has(player.name) ? (
-                              <button
-                                className="btn btn-secondary"
-                                onClick={() => handleRevealAnswer(player.name)}
-                              >
-                                Reveal Answer
-                              </button>
-                            ) : (
-                              <div className="answer-display">
-                                {localState.answers[player.name]?.text || 'No answer'} (
-                                {revealedResponseTimes[player.name] !== undefined && (
-                                  <i>
-                                    took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s
-                                  </i>
-                                )}
-                                )
-                              </div>
-                            )}
-                          </div>
-                        ) : null
-                      )}
-
-                      <div className="scoring-actions">
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handleAwardPoint(team.teamId, originalIndex)}
-                        >
-                          Award Point ⭐
-                        </button>
-                        <button
-                          className="btn btn-neutral"
-                          onClick={() => handleSkipPoint(team.teamId, originalIndex)}
-                        >
-                          No Point
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
-
-          {showFinishBtn && (
-            <div className="navigation-actions">
-              <button className="btn btn-primary" onClick={handleFinishRound}>
-                Finish Round
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Scoreboard (Always Visible) */}
-      <div className="scoreboard">
-        <h3>📊 Scoreboard</h3>
-        <div className="scoreboard-list">
-          {sortedTeams.length === 0 ? (
-            <p>No teams yet</p>
-          ) : (
-            sortedTeams.map((team) => {
-              const player1 = getPlayerBySocketId(team.player1Id);
-              const player2 = getPlayerBySocketId(team.player2Id);
-
-              return (
-                <div key={team.teamId} className="team-score-item">
-                  <span className="team-names">
-                    {player1?.name || '?'} & {player2?.name || '?'}
-                  </span>
-                  <span className="score">{team.score} pts</span>
-                </div>
-              );
-            })
-          )}
         </div>
 
         {/* End Game Button */}
-        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+        <div className="end-game-section">
           <button
-            className="btn btn-secondary"
-            onClick={handleEndGame}
-            style={{
-              width: '100%',
-              color: 'white'
-            }}
+              className="btn btn-info btn-sm"
+              onClick={handleEndGame}
+              style={{
+                width: '100%',
+              }}
           >
             🏁 End Game
           </button>
         </div>
-      </div>
       </div>
     </>
   );
