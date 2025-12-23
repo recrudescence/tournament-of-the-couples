@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { useGameError } from '../hooks/useGameError';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -33,15 +34,10 @@ export function JoinPage() {
   const [selectedGameHost, setSelectedGameHost] = useState<string>('');
   const [playerName, setPlayerName] = useState('');
   const [disconnectedPlayers, setDisconnectedPlayers] = useState<DisconnectedPlayer[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { error, showError } = useGameError();
   const [isLoading, setIsLoading] = useState(false);
   const [creatingNew, setCreatingNew] = useState(false);
   const [joiningExisting, setJoiningExisting] = useState(false);
-
-  const showError = useCallback((message: string) => {
-    setError(message);
-    setTimeout(() => setError(null), 5000);
-  }, []);
 
   // Fetch available games
   const fetchGames = async () => {

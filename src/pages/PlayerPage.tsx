@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { useGameError } from '../hooks/useGameError';
 import type { GameState } from '../types/game';
 import '../styles/player.css';
 
@@ -20,7 +21,7 @@ export function PlayerPage() {
   const [teamScore, setTeamScore] = useState(0);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, showError } = useGameError();
   const [responseTime, setResponseTime] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [variant, setVariant] = useState<string>('open_ended');
@@ -207,8 +208,7 @@ export function PlayerPage() {
       }),
 
       on('error', ({ message }) => {
-        setError(message);
-        setTimeout(() => setError(null), 5000);
+        showError(message);
         if (hasSubmitted) {
           setHasSubmitted(false);
           setSection('answering');
@@ -217,20 +217,20 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, playerInfo, gameState, hasSubmitted, updateFromGameState]);
+  }, [on, playerInfo, gameState, hasSubmitted, updateFromGameState, showError]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (hasSubmitted) {
-      setError('You have already submitted an answer for this round!');
+      showError('You have already submitted an answer for this round!');
       return;
     }
 
     const finalAnswer = variant === 'open_ended' ? answer : selectedOption;
 
     if (!finalAnswer.trim()) {
-      setError('Please provide an answer');
+      showError('Please provide an answer');
       return;
     }
 

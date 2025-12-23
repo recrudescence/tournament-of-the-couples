@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import {RoundPhase, type GameState, type Team, type Player, Answer} from '../types/game';
 import '../styles/host.css';
@@ -24,6 +25,7 @@ export function HostPage() {
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
+  const { error, showError } = useGameError();
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [questionInput, setQuestionInput] = useState('');
@@ -212,18 +214,18 @@ export function HostPage() {
       }),
 
       on('error', ({ message }) => {
-        alert('Error: ' + message);
+        showError(message);
       }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, updateFromGameState]);
+  }, [on, dispatch, updateFromGameState, showError]);
 
   const handleStartRound = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!questionInput.trim()) {
-      alert('Please enter a question');
+      showError('Please enter a question');
       return;
     }
 
@@ -232,7 +234,7 @@ export function HostPage() {
     if (selectedVariant === 'multiple_choice') {
       const filledOptions = mcOptions.filter(opt => opt.trim() !== '');
       if (filledOptions.length < 2 || filledOptions.length > 4) {
-        alert('Please provide 2-4 options');
+        showError('Please provide 2-4 options');
         return;
       }
       options = filledOptions.map(opt => opt.trim());
@@ -765,6 +767,8 @@ export function HostPage() {
             🏁 End Game
           </button>
         </div>
+
+        {error && <div className="error">{error}</div>}
       </div>
     </>
   );

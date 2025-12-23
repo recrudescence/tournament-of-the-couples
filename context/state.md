@@ -26,7 +26,8 @@ Understanding the in-memory game state structure is critical for working with th
 
   host: {
     socketId: "...",
-    name: "..."
+    name: "...",
+    connected: true | false         // Disconnection tracking (same as players)
   },
 
   players: [                          // Includes ALL players (may include host)
@@ -52,6 +53,8 @@ Understanding the in-memory game state structure is critical for working with th
     roundNumber: 1,
     roundId: null,                    // Database ID (set after persistence)
     question: "What's your partner's favorite color?",
+    variant: "open_ended" | "multiple_choice" | "binary",
+    options: ["Option 1", "Option 2"] | null,  // Array of choices for MC/binary, null for open_ended
     status: "answering" | "complete",
     answers: {                        // Map of PLAYER NAME → answer object (stable across reconnections)
       "Alice": {

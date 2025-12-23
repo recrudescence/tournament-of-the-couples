@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import type { Player, Team } from '../types/game';
 import '../styles/lobby.css';
@@ -10,13 +11,7 @@ export function LobbyPage() {
   const { emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
-
-  const [error, setError] = useState<string | null>(null);
-
-  const showError = useCallback((message: string) => {
-    setError(message);
-    setTimeout(() => setError(null), 5000);
-  }, []);
+  const { error, showError } = useGameError();
 
   // Socket event handlers
   useEffect(() => {

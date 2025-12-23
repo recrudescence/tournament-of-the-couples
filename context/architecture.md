@@ -152,10 +152,11 @@ src/
 - **Join/Reconnect**: `joinGame` (includes roomCode) → `joinSuccess` or `error`
 - **Lobby**: `requestPair`, `unpair` → `lobbyUpdate`
 - **Game Start**: `startGame` → `gameStarted`
-- **Round Lifecycle**: `startRound` → `roundStarted` (includes gameState) → `submitAnswer` → `answerSubmitted` → `allAnswersIn`
-- **Scoring**: `revealAnswer` → `answerRevealed`, `awardPoint` → `scoreUpdated`
+- **Round Lifecycle**: `startRound` (with variant and options) → `roundStarted` (includes gameState, variant, options) → `submitAnswer` → `answerSubmitted` → `allAnswersIn`
+- **Scoring**: `revealAnswer` → `answerRevealed`, `awardPoint`/`removePoint`/`skipPoint` → `scoreUpdated`
 - **Phase Transitions**: `nextRound` → `readyForNextRound`, `backToAnswering` → `returnedToAnswering`
 - **Game End**: `endGame` → `gameEnded` (all clients receive final gameState)
+- **Reconnection**: `playerReconnected` (notifies all clients when a player reconnects)
 
 **State synchronization:**
 - Server is source of truth
@@ -197,3 +198,31 @@ src/
 11. **View-Based Navigation**: Navigation between game phases (lobby → playing → ended) happens via React state changes, not route changes. GamePage stays at `/game?room=CODE` and conditionally renders different child pages based on `gameState.status`. This keeps the room code visible in the URL throughout the game lifecycle.
 
 12. **State Initialization on Mount**: HostPage and PlayerPage initialize their UI state from GameContext when they mount. This ensures proper state restoration on page refresh or when transitioning from other views. The initialization happens via an effect that calls `updateFromGameState()` once on mount.
+
+### Round Variants
+
+The game supports three types of questions, each creating different answer interfaces:
+
+**1. Open-Ended (`open_ended`)**
+- Default question type
+- Players type free-form text answers
+- No predefined options
+- Used for creative/opinion questions
+
+**2. Multiple Choice (`multiple_choice`)**
+- Host provides 2-4 answer options when starting the round
+- Players select one option from a list
+- Options stored in `currentRound.options` array
+- Enforced at UI level - host must provide valid number of options
+
+**3. Binary (`binary`)**
+- Special case for couple-specific questions
+- Automatically provides two options: "Player 1" and "Player 2"
+- Players choose which partner matches the question
+- Options hardcoded as `['Player 1', 'Player 2']`
+
+**Implementation:**
+- Variant and options passed in `startRound` socket event
+- Stored in `currentRound.variant` and `currentRound.options`
+- PlayerPage renders different input UI based on variant
+- Answer text submitted is the same regardless of variant (selected option text for MC/binary)
