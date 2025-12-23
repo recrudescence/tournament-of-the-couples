@@ -4,22 +4,10 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
-import {RoundPhase, type GameState, type Team, type Player, Answer} from '../types/game';
+import { type GameState } from '../types/game';
 import '../styles/host.css';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
-
-interface LocalGameState {
-  roundNumber: number;
-  currentQuestion: string;
-  teams: Team[];
-  players: Player[];
-  answers: Record<string, Answer>;
-  submittedInCurrentPhase: string[];
-  currentTeamIndex: number;
-  revealedAnswers: Set<string>;
-  roundPhase: RoundPhase;
-}
 
 export function HostPage() {
   const { isConnected, emit, on } = useSocket();
@@ -39,87 +27,37 @@ export function HostPage() {
   const [teamPointsAwarded, setTeamPointsAwarded] = useState<Record<string, number>>({});
   const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
 
-  const [localState, setLocalState] = useState<LocalGameState>({
-    roundNumber: 0,
-    currentQuestion: '',
-    teams: [],
-    players: [],
-    answers: {},
-    submittedInCurrentPhase: [],
-    currentTeamIndex: 0,
-    revealedAnswers: new Set(),
-    roundPhase: RoundPhase.INITIAL,
-  });
+  // UI-only state
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
-  const updateFromGameState = useCallback((state: GameState) => {
-    dispatch({ type: 'SET_GAME_STATE', payload: state });
-
-    setLocalState((prev) => ({
-      ...prev,
-      players: state.players,
-      teams: state.teams,
-    }));
-
-    if (state.currentRound) {
-      setLocalState((prev) => ({
-        ...prev,
-        roundNumber: state.currentRound!.roundNumber,
-        currentQuestion: state.currentRound!.question,
-        answers: state.currentRound!.answers || {},
-      }));
-
-      if (state.status === 'scoring' || state.currentRound.status === 'complete') {
-        setLocalState((prev) => ({ ...prev, roundPhase: RoundPhase.COMPLETED }));
+  // Initialize phase from gameState on mount
+  useEffect(() => {
+    if (gameState?.currentRound) {
+      if (gameState.status === 'scoring' || gameState.currentRound.status === 'complete') {
         setGameStatus('Scoring');
         setPhase('scoring');
-      } else if (state.currentRound.status === 'answering') {
-        setLocalState((prev) => ({ ...prev, roundPhase: RoundPhase.IN_PROGRESS }));
+      } else if (gameState.currentRound.status === 'answering') {
         setPhase('answering');
       }
-    } else if (state.status === 'playing') {
-      setLocalState((prev) => ({ ...prev, roundPhase: RoundPhase.INITIAL }));
+    } else if (gameState?.status === 'playing') {
       setGameStatus('Playing');
       setPhase('roundSetup');
     }
-  }, [dispatch]);
-
-  // Initialize local state from GameContext when HostPage mounts
-  useEffect(() => {
-    if (gameState) {
-      updateFromGameState(gameState);
-    }
   }, []); // Only run on mount
-
-  // Sync local players to GameContext so DebugSidebar reflects disconnections
-  useEffect(() => {
-    dispatch({ type: 'UPDATE_PLAYERS', payload: localState.players });
-  }, [localState.players, dispatch]);
 
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
       on('joinSuccess', ({ gameState: state }) => {
-        updateFromGameState(state);
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
-      // Note: gameStarted is handled by LobbyPage which updates GameContext
-      // HostPage reads from GameContext on mount via the initialization effect above
-
-      on('roundStarted', ({ roundNumber, question, variant, options, gameState }) => {
-        // variant and options are extracted to ensure we're handling the full event signature
-        void variant; // Suppress unused warnings
-        void options;
-        setLocalState((prev) => ({
-          ...prev,
-          roundNumber,
-          currentQuestion: question,
-          answers: {},
-          submittedInCurrentPhase: [],
-          revealedAnswers: new Set(),
-          roundPhase: RoundPhase.IN_PROGRESS,
-          players: gameState?.players || prev.players,
-          teams: gameState?.teams || prev.teams,
-        }));
+      on('roundStarted', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        setRevealedAnswers(new Set());
         setGameStatus('Answering');
         setShowAllAnswersNotification(false);
         setShowStartScoringBtn(false);
@@ -127,16 +65,13 @@ export function HostPage() {
         setPhase('answering');
       }),
 
-      on('answerSubmitted', ({ playerName, answer, responseTime, submittedInCurrentPhase }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          answers: { ...prev.answers, [playerName]: { text: answer, responseTime } },
-          submittedInCurrentPhase,
-        }));
+      on('answerSubmitted', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
       }),
 
       on('allAnswersIn', () => {
-        setLocalState((prev) => ({ ...prev, roundPhase: RoundPhase.COMPLETED }));
         setShowAllAnswersNotification(true);
         setShowStartScoringBtn(true);
         setShowReopenBtn(true);
@@ -144,10 +79,7 @@ export function HostPage() {
       }),
 
       on('answerRevealed', ({ playerName, responseTime }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          revealedAnswers: new Set([...prev.revealedAnswers, playerName]),
-        }));
+        setRevealedAnswers((prev) => new Set([...prev, playerName]));
 
         // Reveal response time with a delay (500ms) for emphasis
         setTimeout(() => {
@@ -159,20 +91,10 @@ export function HostPage() {
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          teams: prev.teams.map((t) =>
-            t.teamId === teamId ? { ...t, score: newScore } : t
-          ),
-        }));
+        dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
       }),
 
-      on('readyForNextRound', ({ nextRoundNumber }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          roundNumber: nextRoundNumber,
-          roundPhase: RoundPhase.INITIAL,
-        }));
+      on('readyForNextRound', () => {
         setQuestionInput('');
         setGameStatus('Setting Up');
         setShowFinishBtn(false);
@@ -181,13 +103,10 @@ export function HostPage() {
         setPhase('roundSetup');
       }),
 
-      on('returnedToAnswering', ({ currentRound }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          roundPhase: RoundPhase.IN_PROGRESS,
-          answers: currentRound?.answers || prev.answers,
-          submittedInCurrentPhase: [],
-        }));
+      on('returnedToAnswering', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
         setShowStartScoringBtn(false);
         setShowReopenBtn(false);
         setShowAllAnswersNotification(false);
@@ -197,20 +116,15 @@ export function HostPage() {
 
       on('lobbyUpdate', (data) => {
         const state = (data as { gameState?: GameState }).gameState || data;
-        setLocalState((prev) => ({
-          ...prev,
-          players: state.players || prev.players,
-          teams: state.teams || prev.teams,
-        }));
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
       on('playerDisconnected', ({ socketId }) => {
-        setLocalState((prev) => ({
-          ...prev,
-          players: prev.players.map((p) =>
-            p.socketId === socketId ? { ...p, connected: false } : p
-          ),
-        }));
+        if (!gameState) return;
+        const updatedPlayers = gameState.players.map((p) =>
+          p.socketId === socketId ? { ...p, connected: false } : p
+        );
+        dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
       }),
 
       on('error', ({ message }) => {
@@ -219,7 +133,7 @@ export function HostPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, updateFromGameState, showError]);
+  }, [on, dispatch, showError, gameState]);
 
   const handleStartRound = (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +167,8 @@ export function HostPage() {
   };
 
   const handleStartScoring = () => {
-    setLocalState((prev) => ({ ...prev, currentTeamIndex: 0, revealedAnswers: new Set() }));
+    setCurrentTeamIndex(0);
+    setRevealedAnswers(new Set());
     setGameStatus('Scoring');
     setTeamPointsAwarded({});
     setRevealedResponseTimes({});
@@ -292,8 +207,8 @@ export function HostPage() {
 
   const moveToNextTeam = (currentIndex: number) => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex < localState.teams.length) {
-      setLocalState((prev) => ({ ...prev, currentTeamIndex: nextIndex }));
+    if (nextIndex < (gameState?.teams.length || 0)) {
+      setCurrentTeamIndex(nextIndex);
     } else {
       setShowFinishBtn(true);
     }
@@ -317,22 +232,16 @@ export function HostPage() {
     });
 
     // Clear revealed answers and response times for this team's players
-    const team = localState.teams.find(t => t.teamId === teamId);
+    const team = gameState?.teams.find(t => t.teamId === teamId);
     if (team) {
       const player1 = getPlayerBySocketId(team.player1Id);
       const player2 = getPlayerBySocketId(team.player2Id);
 
-      setLocalState((prev) => {
-        const newRevealedAnswers = new Set(prev.revealedAnswers);
-        if (player1) newRevealedAnswers.delete(player1.name);
-        if (player2) newRevealedAnswers.delete(player2.name);
-
-        return {
-          ...prev,
-          currentTeamIndex: teamIndex,
-          revealedAnswers: newRevealedAnswers,
-        };
-      });
+      const newRevealedAnswers = new Set(revealedAnswers);
+      if (player1) newRevealedAnswers.delete(player1.name);
+      if (player2) newRevealedAnswers.delete(player2.name);
+      setRevealedAnswers(newRevealedAnswers);
+      setCurrentTeamIndex(teamIndex);
 
       // Clear response times for these players
       setRevealedResponseTimes((prev) => {
@@ -354,29 +263,34 @@ export function HostPage() {
 
   // Computed values
   const getPlayerBySocketId = useCallback(
-    (socketId: string) => localState.players.find((p) => p.socketId === socketId),
-    [localState.players]
+    (socketId: string) => gameState?.players.find((p) => p.socketId === socketId),
+    [gameState?.players]
   );
 
   const submittedCount = useMemo(() => {
-    if (localState.roundPhase === RoundPhase.COMPLETED) {
-      return Object.keys(localState.answers).length;
+    if (!gameState?.currentRound) return 0;
+
+    if (gameState.currentRound.status === 'complete') {
+      return Object.keys(gameState.currentRound.answers).length;
     }
-    return localState.submittedInCurrentPhase.length;
-  }, [localState.roundPhase, localState.answers, localState.submittedInCurrentPhase]);
+    return gameState.currentRound.submittedInCurrentPhase.length;
+  }, [gameState?.currentRound]);
 
   const sortedTeams = useMemo(() => {
-    return [...localState.teams].sort((a, b) => b.score - a.score);
-  }, [localState.teams]);
+    if (!gameState?.teams) return [];
+    return [...gameState.teams].sort((a, b) => b.score - a.score);
+  }, [gameState?.teams]);
 
   // Sort teams by total response time for scoring phase
   const teamsSortedByResponseTime = useMemo(() => {
-    return localState.teams.map((team, originalIndex) => {
+    if (!gameState?.teams || !gameState?.currentRound) return [];
+
+    return gameState.teams.map((team, originalIndex) => {
       const player1 = getPlayerBySocketId(team.player1Id);
       const player2 = getPlayerBySocketId(team.player2Id);
 
-      const player1Answer = player1 ? localState.answers[player1.name] : null;
-      const player2Answer = player2 ? localState.answers[player2.name] : null;
+      const player1Answer = player1 ? gameState.currentRound!.answers[player1.name] : null;
+      const player2Answer = player2 ? gameState.currentRound!.answers[player2.name] : null;
 
       const player1Time = player1Answer?.responseTime ?? Infinity;
       const player2Time = player2Answer?.responseTime ?? Infinity;
@@ -390,7 +304,7 @@ export function HostPage() {
         player2Time
       };
     }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
-  }, [localState.teams, localState.answers, getPlayerBySocketId]);
+  }, [gameState?.teams, gameState?.currentRound, getPlayerBySocketId]);
 
   if (!playerInfo || !isConnected) {
     return (
@@ -409,7 +323,7 @@ export function HostPage() {
           <h1>Tournament of Couples</h1>
           <div className="header-info">
             <p>Host: <strong>{playerInfo.name}</strong></p>
-            <p>Round: <strong>{localState.roundNumber || '-'}</strong></p>
+            <p>Round: <strong>{gameState?.currentRound?.roundNumber || '-'}</strong></p>
             <p>Status: <strong>{gameStatus}</strong></p>
           </div>
         </header>
@@ -553,17 +467,18 @@ export function HostPage() {
           <div className="phase-section">
             <h2>Current Question</h2>
             <div className="question-display">
-              <p>{localState.currentQuestion}</p>
+              <p>{gameState?.currentRound?.question}</p>
             </div>
 
             <h3>Answer Status</h3>
             <div className="answer-status">
               <ul className="player-status-list">
-                {localState.players.map((player) => {
-                  const hasSubmitted =
-                    localState.roundPhase === RoundPhase.COMPLETED
-                      ? player.name in localState.answers
-                      : localState.submittedInCurrentPhase.includes(player.name);
+                {gameState?.players.map((player) => {
+                  const hasSubmitted = gameState.currentRound
+                    ? gameState.currentRound.status === 'complete'
+                      ? player.name in gameState.currentRound.answers
+                      : gameState.currentRound.submittedInCurrentPhase.includes(player.name)
+                    : false;
 
                   return (
                     <li
@@ -590,7 +505,7 @@ export function HostPage() {
 
             {!showAllAnswersNotification && (
                 <p className="status-summary">
-                  {submittedCount} / {localState.players.length} answers submitted
+                  {submittedCount} / {gameState?.players.length || 0} answers submitted
                 </p>
             )}
             {showAllAnswersNotification && (
@@ -629,7 +544,7 @@ export function HostPage() {
                 const player1 = getPlayerBySocketId(team.player1Id);
                 const player2 = getPlayerBySocketId(team.player2Id);
                 const isScored = team.teamId in teamPointsAwarded;
-                const isExpanded = originalIndex === localState.currentTeamIndex && !isScored;
+                const isExpanded = originalIndex === currentTeamIndex && !isScored;
 
                 // Sort players by response time (ascending)
                 const players = [
@@ -678,7 +593,7 @@ export function HostPage() {
                           player ? (
                             <div key={player.socketId} className="player-answer">
                               <h4>{player.name} said...</h4>
-                              {!localState.revealedAnswers.has(player.name) ? (
+                              {!revealedAnswers.has(player.name) ? (
                                 <button
                                   className="btn btn-secondary"
                                   onClick={() => handleRevealAnswer(player.name)}
@@ -687,7 +602,7 @@ export function HostPage() {
                                 </button>
                               ) : (
                                 <div className="answer-display">
-                                  {localState.answers[player.name]?.text || 'No answer'} (
+                                  {gameState?.currentRound?.answers[player.name]?.text || 'No answer'} (
                                   {revealedResponseTimes[player.name] !== undefined && (
                                     <i>
                                       took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s

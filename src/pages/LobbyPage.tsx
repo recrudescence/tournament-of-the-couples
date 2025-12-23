@@ -10,7 +10,7 @@ import '../styles/lobby.css';
 export function LobbyPage() {
   const { emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
-  const { gameState, dispatch } = useGameContext();
+  const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
 
   // Socket event handlers
@@ -58,9 +58,10 @@ export function LobbyPage() {
     );
   }
 
+  // For host, create a player-like object; for players, use myPlayer from context
   const currentPlayer = playerInfo.isHost
-    ? { ...gameState.host, isHost: true, partnerId: null, teamId: null, connected: true }
-    : gameState.players.find((p) => p.name === playerInfo.name);
+    ? { ...gameState.host, isHost: true, partnerId: null, teamId: null, connected: true, name: gameState.host.name, socketId: gameState.host.socketId }
+    : myPlayer;
 
   const connectedPlayers = gameState.players.filter((p) => p.connected);
   const playerCount = connectedPlayers.length;

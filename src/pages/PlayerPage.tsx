@@ -11,14 +11,11 @@ type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 export function PlayerPage() {
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
-  const { gameState, dispatch } = useGameContext();
+  const { gameState, dispatch, myPlayer, myTeam, myPartner } = useGameContext();
 
   const [section, setSection] = useState<PlayerSection>('waiting');
   const [answer, setAnswer] = useState('');
   const [submittedAnswer, setSubmittedAnswer] = useState('');
-  const [roundNumber, setRoundNumber] = useState(0);
-  const [question, setQuestion] = useState('');
-  const [teamScore, setTeamScore] = useState(0);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const { error, showError } = useGameError();
@@ -32,69 +29,46 @@ export function PlayerPage() {
   const timerStartRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
 
-  const updateFromGameState = useCallback(
-    (state: GameState, socketId?: string) => {
-      dispatch({ type: 'SET_GAME_STATE', payload: state });
+  // Initialize from GameContext when PlayerPage mounts (handles reconnection)
+  useEffect(() => {
+    if (!gameState || !playerInfo) return;
 
-      // Find my player and team
-      // If no socketId provided, try to find player by name (for initialization from GameContext)
-      const me = socketId
-        ? state.players.find((p) => p.socketId === socketId)
-        : state.players.find((p) => p.name === playerInfo?.name);
+    dispatch({ type: 'SET_GAME_STATE', payload: gameState });
 
-      if (!me || !playerInfo) return;
+    // Restore round state if there's an active round
+    if (gameState.currentRound) {
+      setVariant(gameState.currentRound.variant);
+      setOptions(gameState.currentRound.options);
 
-      // Update team score
-      if (me.teamId) {
-        const myTeam = state.teams.find((t) => t.teamId === me.teamId);
-        if (myTeam) {
-          setTeamScore(myTeam.score);
+      const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
+
+      if (gameState.status === 'scoring' || gameState.currentRound.status === 'complete') {
+        if (previousAnswer) {
+          setSubmittedAnswer(previousAnswer.text);
+          setResponseTime(previousAnswer.responseTime);
         }
-      }
-
-      // Restore round state if there's an active round
-      if (state.currentRound) {
-        setRoundNumber(state.currentRound.roundNumber);
-        setQuestion(state.currentRound.question);
-
-        const previousAnswer = state.currentRound.answers?.[playerInfo.name];
-
-        if (state.status === 'scoring' || state.currentRound.status === 'complete') {
-          if (previousAnswer) {
-            setSubmittedAnswer(previousAnswer.text);
-            setResponseTime(previousAnswer.responseTime);
-          }
-          setSection('scoring');
+        setSection('scoring');
+        setTimerRunning(false);
+      } else if (gameState.currentRound.status === 'answering') {
+        if (previousAnswer) {
+          // Player has already submitted - restore submitted state
+          setAnswer(previousAnswer.text);
+          setSubmittedAnswer(previousAnswer.text);
+          setResponseTime(previousAnswer.responseTime);
+          setHasSubmitted(true);
+          setSection('submitted');
           setTimerRunning(false);
-        } else if (state.currentRound.status === 'answering') {
-          if (previousAnswer) {
-            // Player has already submitted - restore submitted state
-            setAnswer(previousAnswer.text);
-            setSubmittedAnswer(previousAnswer.text);
-            setResponseTime(previousAnswer.responseTime);
-            setHasSubmitted(true);
-            setSection('submitted');
-            setTimerRunning(false);
-          } else {
-            // Player hasn't submitted yet
-            setAnswer('');
-            setHasSubmitted(false);
-            setSection('answering');
-          }
         } else {
-          setSection('waiting');
+          // Player hasn't submitted yet
+          setAnswer('');
+          setHasSubmitted(false);
+          setSection('answering');
         }
       } else {
         setSection('waiting');
       }
-    },
-    [dispatch, playerInfo]
-  );
-
-  // Initialize from GameContext when PlayerPage mounts (handles reconnection)
-  useEffect(() => {
-    if (gameState) {
-      updateFromGameState(gameState);
+    } else {
+      setSection('waiting');
     }
   }, []); // Only run on mount
 
@@ -127,27 +101,22 @@ export function PlayerPage() {
   // Socket event handlers
   useEffect(() => {
     const unsubscribers = [
-      on('joinSuccess', ({ gameState: state, socketId }) => {
-        updateFromGameState(state, socketId);
+      on('joinSuccess', ({ gameState: state }) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
-      on('roundStarted', ({ roundNumber: rn, question: q, variant: v, options: opts }) => {
-        setRoundNumber(rn);
-        setQuestion(q);
+      on('roundStarted', ({ gameState: state, variant: v, options: opts }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+
         setVariant(v);
 
         // For binary: replace placeholders with actual team member names
-        if (v === 'binary' && opts && playerInfo?.name) {
-          const player = gameState?.players.find(p => p.name === playerInfo.name);
-          const team = gameState?.teams.find(t => t.teamId === player?.teamId);
-
-          if (team) {
-            const player1 = gameState?.players.find(p => p.socketId === team.player1Id);
-            const player2 = gameState?.players.find(p => p.socketId === team.player2Id);
-            setOptions([player1?.name || 'Player 1', player2?.name || 'Player 2']);
-          } else {
-            setOptions(opts);
-          }
+        if (v === 'binary' && opts && myPlayer && myTeam) {
+          const player1 = gameState?.players.find(p => p.socketId === myTeam.player1Id);
+          const player2 = gameState?.players.find(p => p.socketId === myTeam.player2Id);
+          setOptions([player1?.name || 'Player 1', player2?.name || 'Player 2']);
         } else {
           setOptions(opts);
         }
@@ -162,7 +131,10 @@ export function PlayerPage() {
         setTimerRunning(true);
       }),
 
-      on('answerSubmitted', ({ playerName, answer: ans }) => {
+      on('answerSubmitted', ({ playerName, answer: ans, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
         if (playerName === playerInfo?.name) {
           setHasSubmitted(true);
           setSubmittedAnswer(ans);
@@ -175,10 +147,10 @@ export function PlayerPage() {
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {
+        dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
+
         // Check if this is my team
-        const me = gameState?.players.find((p) => p.name === playerInfo?.name);
-        if (me?.teamId === teamId) {
-          setTeamScore(newScore);
+        if (myPlayer?.teamId === teamId) {
           setIsCelebrating(true);
           setTimeout(() => setIsCelebrating(false), 500);
         }
@@ -188,7 +160,11 @@ export function PlayerPage() {
         setSection('waiting');
       }),
 
-      on('returnedToAnswering', ({ currentRound }) => {
+      on('returnedToAnswering', ({ currentRound, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+
         if (currentRound?.answers && playerInfo) {
           const previousAnswer = currentRound.answers[playerInfo.name];
           if (previousAnswer) {
@@ -217,7 +193,7 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, playerInfo, gameState, hasSubmitted, updateFromGameState, showError]);
+  }, [on, playerInfo, myPlayer, myTeam, gameState, hasSubmitted, dispatch, showError]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,19 +236,7 @@ export function PlayerPage() {
     );
   }
 
-  // Find partner name
-  const me = gameState?.players.find((p) => p.name === playerInfo.name);
-  const myTeam = me?.teamId
-    ? gameState?.teams.find((t) => t.teamId === me.teamId)
-    : null;
-  const partnerId = myTeam
-    ? myTeam.player1Id === me?.socketId
-      ? myTeam.player2Id
-      : myTeam.player1Id
-    : null;
-  const partner = partnerId
-    ? gameState?.players.find((p) => p.socketId === partnerId)
-    : null;
+  // Use computed values from context
 
   return (
     <div className="container">
@@ -286,12 +250,12 @@ export function PlayerPage() {
             <strong>{playerInfo.name}</strong>
           </p>
           <p>
-            Partner: <strong>{partner?.name ?? '-'}</strong>
+            Partner: <strong>{myPartner?.name ?? '-'}</strong>
           </p>
           <p>
             Team Score:{' '}
             <strong className={`team-score ${isCelebrating ? 'celebrating' : ''}`} ref={scoreRef}>
-              {teamScore}
+              {myTeam?.score || 0}
             </strong>
           </p>
         </div>
@@ -309,14 +273,14 @@ export function PlayerPage() {
       {section === 'answering' && (
         <div className="player-section">
           <div className="round-info">
-            <h2>Round {roundNumber}</h2>
+            <h2>Round {gameState?.currentRound?.roundNumber || '-'}</h2>
             <div className="timer">
               {(responseTime / 1000).toFixed(2)}s
             </div>
           </div>
 
           <div className="question-box">
-            <p>{question}</p>
+            <p>{gameState?.currentRound?.question}</p>
           </div>
 
           <form onSubmit={handleSubmit}>
