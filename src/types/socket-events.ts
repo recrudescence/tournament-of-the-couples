@@ -65,7 +65,7 @@ export interface ServerToClientEvents {
   allAnswersIn: () => void;
   answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number }) => void;
-  readyForNextRound: (data: { nextRoundNumber: number }) => void;
+  readyForNextRound: (data: GameState) => void;
   returnedToAnswering: (data: GameState) => void;
   playerDisconnected: (data: { socketId: string; name: string }) => void;
   playerReconnected: (data: { name: string; newSocketId: string }) => void;

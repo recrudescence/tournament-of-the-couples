@@ -27,10 +27,16 @@ export function PlayerPage() {
   const timerStartRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
 
+  // Debug section changes
+  useEffect(() => {
+    console.log('[PlayerPage] Section changed to:', section);
+  }, [section]);
+
   // Initialize from GameContext when PlayerPage mounts (handles reconnection)
   useEffect(() => {
     if (!gameState || !playerInfo) return;
 
+    console.log('[PlayerPage] Initializing from gameState', { status: gameState.status, currentRound: gameState.currentRound });
     dispatch({ type: 'SET_GAME_STATE', payload: gameState });
 
     // Restore round state if there's an active round
@@ -45,6 +51,7 @@ export function PlayerPage() {
           setSubmittedAnswer(previousAnswer.text);
           setResponseTime(previousAnswer.responseTime);
         }
+        console.log('[PlayerPage] Setting section to scoring');
         setSection('scoring');
         setTimerRunning(false);
       } else if (gameState.currentRound.status === 'answering') {
@@ -54,18 +61,26 @@ export function PlayerPage() {
           setSubmittedAnswer(previousAnswer.text);
           setResponseTime(previousAnswer.responseTime);
           setHasSubmitted(true);
+          console.log('[PlayerPage] Setting section to submitted');
           setSection('submitted');
           setTimerRunning(false);
         } else {
           // Player hasn't submitted yet
           setAnswer('');
           setHasSubmitted(false);
+          console.log('[PlayerPage] Setting section to answering');
           setSection('answering');
         }
       } else {
+        console.log('[PlayerPage] Setting section to waiting (other status)');
         setSection('waiting');
       }
+    } else if (gameState.status === 'playing') {
+      // Game is playing but no currentRound - host is setting up
+      console.log('[PlayerPage] Setting section to waiting (no round, but playing)');
+      setSection('waiting');
     } else {
+      console.log('[PlayerPage] Setting section to waiting (default)');
       setSection('waiting');
     }
   }, []); // Only run on mount
@@ -154,7 +169,9 @@ export function PlayerPage() {
         }
       }),
 
-      on('readyForNextRound', () => {
+      on('readyForNextRound', (state) => {
+        console.log('[PlayerPage] readyForNextRound event received', { status: state.status, currentRound: state.currentRound });
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
         setSection('waiting');
       }),
 
@@ -267,8 +284,15 @@ export function PlayerPage() {
 
       {section === 'waiting' && (
         <div className="box has-text-centered">
-          <h2 className="subtitle is-4 mb-3">Waiting for Host</h2>
-          <p className="has-text-grey">The host will start the next round soon...</p>
+          <h2 className="subtitle is-4 mb-4">🎄 Your host is setting up the next round!</h2>
+          <p className="has-text-grey mb-4">Get ready for Round {(gameState?.currentRound?.roundNumber || 0) + 1}...</p>
+          {myTeam && (
+            <div className="notification is-success is-light">
+              <p className="has-text-weight-semibold">
+                Your Team Score: <span className="is-size-4 has-text-success">{myTeam.score}</span> points
+              </p>
+            </div>
+          )}
         </div>
       )}
 

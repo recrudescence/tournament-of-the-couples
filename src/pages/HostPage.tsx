@@ -93,7 +93,8 @@ export function HostPage() {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
       }),
 
-      on('readyForNextRound', () => {
+      on('readyForNextRound', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
         setQuestionInput('');
         setGameStatus('Setting Up');
         setShowFinishBtn(false);
