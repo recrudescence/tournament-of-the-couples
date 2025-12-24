@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - React Router for client-side navigation
 - Context API + useReducer for state management
 - **Bulma CSS framework** for styling (imported in `main.tsx`)
+- **Wake Lock API** to prevent mobile screen sleep during gameplay
 
 **Backend:** Node.js, Express 5, Socket.io (unchanged)
 - Server code remains vanilla JavaScript

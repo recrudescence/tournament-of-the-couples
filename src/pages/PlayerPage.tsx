@@ -3,6 +3,7 @@ import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -10,6 +11,7 @@ export function PlayerPage() {
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer, myTeam, myPartner } = useGameContext();
+  const { requestWakeLock, isSupported: wakeLockSupported } = useWakeLock();
 
   const [section, setSection] = useState<PlayerSection>('waiting');
   const [answer, setAnswer] = useState('');
@@ -31,6 +33,14 @@ export function PlayerPage() {
   useEffect(() => {
     console.log('[PlayerPage] Section changed to:', section);
   }, [section]);
+
+  // Request wake lock to prevent screen sleep during gameplay
+  useEffect(() => {
+    if (gameState?.status === 'playing' && wakeLockSupported) {
+      console.log('[PlayerPage] Game is playing, requesting wake lock');
+      requestWakeLock();
+    }
+  }, [gameState?.status, wakeLockSupported, requestWakeLock]);
 
   // Initialize from GameContext when PlayerPage mounts (handles reconnection)
   useEffect(() => {
