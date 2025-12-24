@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
-import type { GameState } from '../types/game';
 import '../styles/player.css';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
@@ -160,13 +159,11 @@ export function PlayerPage() {
         setSection('waiting');
       }),
 
-      on('returnedToAnswering', ({ currentRound, gameState: state }) => {
-        if (state) {
-          dispatch({ type: 'SET_GAME_STATE', payload: state });
-        }
+      on('returnedToAnswering', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
 
-        if (currentRound?.answers && playerInfo) {
-          const previousAnswer = currentRound.answers[playerInfo.name];
+        if (state.currentRound?.answers && playerInfo) {
+          const previousAnswer = state.currentRound.answers[playerInfo.name];
           if (previousAnswer) {
             setAnswer(previousAnswer.text);
           } else {

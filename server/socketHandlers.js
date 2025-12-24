@@ -281,7 +281,8 @@ function setupSocketHandlers(io) {
           playerName: player.name,
           answer: answer,
           responseTime: responseTime,
-          submittedInCurrentPhase: state.currentRound.submittedInCurrentPhase
+          submittedInCurrentPhase: state.currentRound.submittedInCurrentPhase,
+          gameState: state
         });
 
         // Check if round is complete

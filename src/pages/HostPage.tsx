@@ -103,10 +103,8 @@ export function HostPage() {
         setPhase('roundSetup');
       }),
 
-      on('returnedToAnswering', ({ gameState: state }) => {
-        if (state) {
-          dispatch({ type: 'SET_GAME_STATE', payload: state });
-        }
+      on('returnedToAnswering', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
         setShowStartScoringBtn(false);
         setShowReopenBtn(false);
         setShowAllAnswersNotification(false);

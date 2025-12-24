@@ -60,12 +60,13 @@ export interface ServerToClientEvents {
     answer: string;
     responseTime: number;
     submittedInCurrentPhase: string[];
+    gameState: GameState;
   }) => void;
   allAnswersIn: () => void;
   answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number }) => void;
   readyForNextRound: (data: { nextRoundNumber: number }) => void;
-  returnedToAnswering: (data: { currentRound: CurrentRound }) => void;
+  returnedToAnswering: (data: GameState) => void;
   playerDisconnected: (data: { socketId: string; name: string }) => void;
   playerReconnected: (data: { name: string; newSocketId: string }) => void;
   gameEnded: (data: GameState) => void;
