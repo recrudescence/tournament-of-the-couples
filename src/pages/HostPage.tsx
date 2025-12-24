@@ -308,154 +308,181 @@ export function HostPage() {
 
   if (!playerInfo || !isConnected) {
     return (
-      <div className="container">
-        <h1>Tournament of Couples</h1>
-        <p>Loading...</p>
-      </div>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <p className="has-text-centered">Loading...</p>
+        </div>
+      </section>
     );
   }
 
   return (
     <>
       <DebugSidebar />
-      <div className="container">
-        <header>
-          <h1>Tournament of Couples</h1>
-          <div className="header-info">
-            <p>Host: <strong>{playerInfo.name}</strong></p>
-            <p>Round: <strong>{gameState?.currentRound?.roundNumber || '-'}</strong></p>
-            <p>Status: <strong>{gameStatus}</strong></p>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <div className="block">
+            <h1 className="title has-text-centered">Tournament of Couples</h1>
+            <div className="box">
+              <div className="columns is-mobile has-text-centered">
+                <div className="column">
+                  <p className="heading">Host</p>
+                  <p className="title is-6 has-text-primary">{playerInfo.name}</p>
+                </div>
+                <div className="column">
+                  <p className="heading">Round</p>
+                  <p className="title is-6">{gameState?.currentRound?.roundNumber || '-'}</p>
+                </div>
+                <div className="column">
+                  <p className="heading">Status</p>
+                  <p className="title is-6">{gameStatus}</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
 
         {/* Round Setup Phase */}
         {phase === 'roundSetup' && (
-          <div className="phase-section">
-            <h2>Start New Round</h2>
+          <div className="box">
+            <h2 className="subtitle is-4 mb-4">Start New Round</h2>
 
             {/* Variant Tabs */}
-            <div className="variant-tabs">
-              <button
-                type="button"
-                className={`variant-tab ${selectedVariant === 'open_ended' ? 'active' : ''}`}
-                onClick={() => setSelectedVariant('open_ended')}
-              >
-                Open Ended
-              </button>
-              <button
-                type="button"
-                className={`variant-tab ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}
-                onClick={() => setSelectedVariant('multiple_choice')}
-              >
-                Multiple Choice
-              </button>
-              <button
-                type="button"
-                className={`variant-tab ${selectedVariant === 'binary' ? 'active' : ''}`}
-                onClick={() => setSelectedVariant('binary')}
-              >
-                Binary
-              </button>
+            <div className="tabs is-centered is-boxed mb-4">
+              <ul>
+                <li className={selectedVariant === 'open_ended' ? 'is-active' : ''}>
+                  <a onClick={() => setSelectedVariant('open_ended')}>
+                    Open Ended
+                  </a>
+                </li>
+                <li className={selectedVariant === 'multiple_choice' ? 'is-active' : ''}>
+                  <a onClick={() => setSelectedVariant('multiple_choice')}>
+                    Multiple Choice
+                  </a>
+                </li>
+                <li className={selectedVariant === 'binary' ? 'is-active' : ''}>
+                  <a onClick={() => setSelectedVariant('binary')}>
+                    Binary
+                  </a>
+                </li>
+              </ul>
             </div>
 
             <form onSubmit={handleStartRound}>
               {/* Open Ended Form */}
-              <div className={`variant-tab-content ${selectedVariant === 'open_ended' ? 'active' : ''}`}>
-                <div className="form-group">
-                  <label htmlFor="questionInput">Enter Question:</label>
-                  <textarea
-                    id="questionInput"
-                    rows={6}
-                    placeholder="What's your partner's favorite movie?"
-                    value={questionInput}
-                    onChange={(e) => setQuestionInput(e.target.value)}
-                    required={selectedVariant === 'open_ended'}
-                  />
+              {selectedVariant === 'open_ended' && (
+                <div className="field">
+                  <label className="label" htmlFor="questionInput">Enter Question:</label>
+                  <div className="control">
+                    <textarea
+                      id="questionInput"
+                      className="textarea"
+                      rows={6}
+                      placeholder="What's your partner's favorite movie?"
+                      value={questionInput}
+                      onChange={(e) => setQuestionInput(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Multiple Choice Form */}
-              <div className={`variant-tab-content ${selectedVariant === 'multiple_choice' ? 'active' : ''}`}>
-                <div className="form-group">
-                  <label htmlFor="mcQuestionInput">Enter Question:</label>
-                  <textarea
-                    id="mcQuestionInput"
-                    rows={4}
-                    placeholder="What's your partner's favorite color?"
-                    value={questionInput}
-                    onChange={(e) => setQuestionInput(e.target.value)}
-                    required={selectedVariant === 'multiple_choice'}
-                  />
-                </div>
-
-                <label>Options (2-4 choices):</label>
-                <div className="mc-options-container">
-                  {mcOptions.map((option, index) => (
-                    <div key={index} className="mc-option-row">
-                      <input
-                        type="text"
-                        className="mc-option-input"
-                        placeholder={`Option ${index + 1}`}
-                        value={option}
-                        onChange={(e) => {
-                          const newOptions = [...mcOptions];
-                          newOptions[index] = e.target.value;
-                          setMcOptions(newOptions);
-                        }}
-                        required={selectedVariant === 'multiple_choice'}
+              {selectedVariant === 'multiple_choice' && (
+                <>
+                  <div className="field">
+                    <label className="label" htmlFor="mcQuestionInput">Enter Question:</label>
+                    <div className="control">
+                      <textarea
+                        id="mcQuestionInput"
+                        className="textarea"
+                        rows={4}
+                        placeholder="What's your partner's favorite color?"
+                        value={questionInput}
+                        onChange={(e) => setQuestionInput(e.target.value)}
+                        required
                       />
-                      {mcOptions.length > 2 && (
-                        <button
-                          type="button"
-                          className="btn-remove-option"
-                          onClick={() => {
-                            const newOptions = mcOptions.filter((_, i) => i !== index);
-                            setMcOptions(newOptions);
-                          }}
-                        >
-                          Remove
-                        </button>
-                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                {mcOptions.length < 4 && (
-                  <button
-                    type="button"
-                    className="btn-add-option"
-                    onClick={() => setMcOptions([...mcOptions, ''])}
-                  >
-                    + Add Option
-                  </button>
-                )}
-              </div>
+                  <label className="label">Options (2-4 choices):</label>
+                  <div className="mb-3">
+                    {mcOptions.map((option, index) => (
+                      <div key={index} className="field has-addons mb-2">
+                        <div className="control is-expanded">
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder={`Option ${index + 1}`}
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...mcOptions];
+                              newOptions[index] = e.target.value;
+                              setMcOptions(newOptions);
+                            }}
+                            required
+                          />
+                        </div>
+                        {mcOptions.length > 2 && (
+                          <div className="control">
+                            <button
+                              type="button"
+                              className="button is-danger"
+                              onClick={() => {
+                                const newOptions = mcOptions.filter((_, i) => i !== index);
+                                setMcOptions(newOptions);
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {mcOptions.length < 4 && (
+                    <button
+                      type="button"
+                      className="button is-light mb-3"
+                      onClick={() => setMcOptions([...mcOptions, ''])}
+                    >
+                      + Add Option
+                    </button>
+                  )}
+                </>
+              )}
 
               {/* Binary Form */}
-              <div className={`variant-tab-content ${selectedVariant === 'binary' ? 'active' : ''}`}>
-                <div className="form-group">
-                  <label htmlFor="binaryQuestionInput">Enter Question:</label>
-                  <textarea
-                    id="binaryQuestionInput"
-                    rows={4}
-                    placeholder="Who is more likely to...?"
-                    value={questionInput}
-                    onChange={(e) => setQuestionInput(e.target.value)}
-                    required={selectedVariant === 'binary'}
-                  />
-                </div>
+              {selectedVariant === 'binary' && (
+                <>
+                  <div className="field">
+                    <label className="label" htmlFor="binaryQuestionInput">Enter Question:</label>
+                    <div className="control">
+                      <textarea
+                        id="binaryQuestionInput"
+                        className="textarea"
+                        rows={4}
+                        placeholder="Who is more likely to...?"
+                        value={questionInput}
+                        onChange={(e) => setQuestionInput(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <label>Options (auto-filled with team member names):</label>
-                <div className="binary-options">
-                  <div className="binary-option-display">Player 1</div>
-                  <div className="binary-option-display">Player 2</div>
-                </div>
-                <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '16px' }}>
-                  Note: Player names will be filled in dynamically for each team
-                </p>
-              </div>
+                  <label className="label">Options (auto-filled with team member names):</label>
+                  <div className="tags mb-3">
+                    <span className="tag is-info is-medium">Player 1</span>
+                    <span className="tag is-info is-medium">Player 2</span>
+                  </div>
+                  <p className="help mb-3">
+                    Note: Player names will be filled in dynamically for each team
+                  </p>
+                </>
+              )}
 
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="button is-primary is-fullwidth is-large">
                 Start Round
               </button>
             </form>
@@ -464,66 +491,72 @@ export function HostPage() {
 
         {/* Answering Phase */}
         {phase === 'answering' && (
-          <div className="phase-section">
-            <h2>Current Question</h2>
-            <div className="question-display">
-              <p>{gameState?.currentRound?.question}</p>
+          <div className="box">
+            <h2 className="subtitle is-4 mb-3">Current Question</h2>
+            <div className="notification is-primary is-light mb-4">
+              <p className="is-size-5 has-text-weight-semibold">{gameState?.currentRound?.question}</p>
             </div>
 
-            <h3>Answer Status</h3>
-            <div className="answer-status">
-              <ul className="player-status-list">
-                {gameState?.players.map((player) => {
-                  const hasSubmitted = gameState.currentRound
-                    ? gameState.currentRound.status === 'complete'
-                      ? player.name in gameState.currentRound.answers
-                      : gameState.currentRound.submittedInCurrentPhase.includes(player.name)
-                    : false;
+            <h3 className="subtitle is-5 mb-3">Answer Status</h3>
+            <div className="box has-background-white-ter mb-4">
+              <div className="content">
+                <ul>
+                  {gameState?.players.map((player) => {
+                    const hasSubmitted = gameState.currentRound
+                      ? gameState.currentRound.status === 'complete'
+                        ? player.name in gameState.currentRound.answers
+                        : gameState.currentRound.submittedInCurrentPhase.includes(player.name)
+                      : false;
 
-                  return (
-                    <li
-                      key={player.socketId}
-                      className={
-                        !player.connected
-                          ? 'disconnected'
+                    return (
+                      <li
+                        key={player.socketId}
+                        className={
+                          !player.connected
+                            ? 'has-text-grey'
+                            : hasSubmitted
+                            ? 'has-text-success'
+                            : 'has-text-warning-dark'
+                        }
+                      >
+                        <strong>{player.name}</strong>{' '}
+                        {!player.connected
+                          ? '🔌 (Disconnected)'
                           : hasSubmitted
-                          ? 'answered'
-                          : 'waiting'
-                      }
-                    >
-                      {player.name}{' '}
-                      {!player.connected
-                        ? '🔌 (Disconnected)'
-                        : hasSubmitted
-                        ? '✅'
-                        : '⏳'}
-                    </li>
-                  );
-                })}
-              </ul>
+                          ? '✅'
+                          : '⏳'}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
 
             {!showAllAnswersNotification && (
-                <p className="status-summary">
-                  {submittedCount} / {gameState?.players.length || 0} answers submitted
-                </p>
+              <p className="has-text-centered has-text-grey mb-4">
+                {submittedCount} / {gameState?.players.length || 0} answers submitted
+              </p>
             )}
             {showAllAnswersNotification && (
-              <div className="notification">
+              <div className="notification is-success is-light mb-4">
                 ✅ All answers are in! Ready to score.
               </div>
             )}
 
-            <div className="answering-actions">
+            <div className="field is-grouped is-grouped-centered">
               {showReopenBtn && (
-                  <button className="btn btn-info" onClick={handleReopenAnswering}>
+                <div className="control">
+                  <button className="button is-info" onClick={handleReopenAnswering}>
                     Re-open Answering
                   </button>
+                </div>
               )}
               {showStartScoringBtn && (
-                <button className="btn btn-primary" onClick={handleStartScoring}>
-                  Begin Scoring
-                </button>
+                <div className="control">
+                  <button className="button is-primary is-large" onClick={handleStartScoring}>
+                    Begin Scoring
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -531,15 +564,13 @@ export function HostPage() {
 
         {/* Scoring Phase */}
         {phase === 'scoring' && (
-          <div className="phase-section">
-            <button className="btn btn-info btn-sm" onClick={handleBackToAnswering}>
+          <div className="box">
+            <button className="button is-info is-small mb-3" onClick={handleBackToAnswering}>
               ← Back to Answering
             </button>
-            <div className="phase-header">
-              <h2>Review Team Answers</h2>
-            </div>
+            <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
-            <div className="team-cards-container">
+            <div className="mb-4">
               {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
                 const player1 = getPlayerBySocketId(team.player1Id);
                 const player2 = getPlayerBySocketId(team.player2Id);
@@ -555,30 +586,29 @@ export function HostPage() {
                 return (
                   <div
                     key={team.teamId}
-                    className={`team-card ${isExpanded ? 'expanded' : 'collapsed'}`}
+                    className={`box mb-3 ${isExpanded ? 'has-background-link-light' : ''}`}
                   >
-                    <div className="team-card-header">
-                      <div className="team-card-title">
+                    <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                      <div className="has-text-weight-bold is-size-5">
                         {player1?.name || '?'} & {player2?.name || '?'}
                       </div>
-                      <div className="team-card-header-right">
-                        <div
-                          className={`team-card-score ${
-                            isScored
-                              ? (teamPointsAwarded[team.teamId] ?? 0) > 0
-                                ? 'points-awarded'
-                                : 'points-none'
-                              : ''
-                          }`}
-                        >
-                          {isScored &&
-                            ((teamPointsAwarded[team.teamId] ?? 0) > 0
+                      <div className="is-flex is-align-items-center">
+                        {isScored && (
+                          <span
+                            className={`tag is-medium mr-2 ${
+                              (teamPointsAwarded[team.teamId] ?? 0) > 0
+                                ? 'is-success'
+                                : 'is-light'
+                            }`}
+                          >
+                            {(teamPointsAwarded[team.teamId] ?? 0) > 0
                               ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
-                              : '0 points 😔')}
-                        </div>
+                              : '0 points 😔'}
+                          </span>
+                        )}
                         {!isExpanded && isScored && (
                           <button
-                            className="btn btn-info btn-sm"
+                            className="button is-info is-small"
                             onClick={() => handleReopenTeamScoring(team.teamId, originalIndex)}
                           >
                             ↪️
@@ -588,46 +618,49 @@ export function HostPage() {
                     </div>
 
                     {isExpanded && (
-                      <div className="team-card-content">
+                      <div className="content">
                         {players.map(({ player }) =>
                           player ? (
-                            <div key={player.socketId} className="player-answer">
-                              <h4>{player.name} said...</h4>
+                            <div key={player.socketId} className="box has-background-white-ter mb-3">
+                              <h4 className="subtitle is-6">{player.name} said...</h4>
                               {!revealedAnswers.has(player.name) ? (
                                 <button
-                                  className="btn btn-secondary"
+                                  className="button is-link"
                                   onClick={() => handleRevealAnswer(player.name)}
                                 >
                                   Reveal Answer
                                 </button>
                               ) : (
-                                <div className="answer-display">
-                                  {gameState?.currentRound?.answers[player.name]?.text || 'No answer'} (
+                                <div className="notification is-light">
+                                  <strong>{gameState?.currentRound?.answers[player.name]?.text || 'No answer'}</strong>
                                   {revealedResponseTimes[player.name] !== undefined && (
-                                    <i>
-                                      took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s
-                                    </i>
+                                    <span className="has-text-grey ml-2">
+                                      (took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s)
+                                    </span>
                                   )}
-                                  )
                                 </div>
                               )}
                             </div>
                           ) : null
                         )}
 
-                        <div className="scoring-actions">
-                          <button
-                            className="btn btn-success"
-                            onClick={() => handleAwardPoint(team.teamId, originalIndex)}
-                          >
-                            Award Point ⭐
-                          </button>
-                          <button
-                            className="btn btn-neutral"
-                            onClick={() => handleSkipPoint(team.teamId, originalIndex)}
-                          >
-                            No Point
-                          </button>
+                        <div className="field is-grouped is-grouped-centered mt-4">
+                          <div className="control">
+                            <button
+                              className="button is-success is-large"
+                              onClick={() => handleAwardPoint(team.teamId, originalIndex)}
+                            >
+                              Award Point ⭐
+                            </button>
+                          </div>
+                          <div className="control">
+                            <button
+                              className="button is-light is-large"
+                              onClick={() => handleSkipPoint(team.teamId, originalIndex)}
+                            >
+                              No Point
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -637,8 +670,8 @@ export function HostPage() {
             </div>
 
             {showFinishBtn && (
-              <div className="navigation-actions">
-                <button className="btn btn-primary" onClick={handleFinishRound}>
+              <div className="has-text-centered mt-4">
+                <button className="button is-primary is-large" onClick={handleFinishRound}>
                   Finish Round
                 </button>
               </div>
@@ -647,44 +680,42 @@ export function HostPage() {
         )}
 
         {/* Scoreboard (Always Visible) */}
-        <div className="scoreboard">
-          <h3>📊 Scoreboard</h3>
-          <div className="scoreboard-list">
-            {sortedTeams.length === 0 ? (
-              <p>No teams yet</p>
-            ) : (
-              sortedTeams.map((team) => {
+        <div className="box">
+          <h3 className="subtitle is-5 mb-3">📊 Scoreboard</h3>
+          {sortedTeams.length === 0 ? (
+            <p className="has-text-centered has-text-grey">No teams yet</p>
+          ) : (
+            <div>
+              {sortedTeams.map((team) => {
                 const player1 = getPlayerBySocketId(team.player1Id);
                 const player2 = getPlayerBySocketId(team.player2Id);
 
                 return (
-                  <div key={team.teamId} className="team-score-item">
-                    <span className="team-names">
+                  <div key={team.teamId} className="box has-background-white-ter mb-2 is-flex is-justify-content-space-between is-align-items-center">
+                    <span className="has-text-weight-semibold">
                       {player1?.name || '?'} & {player2?.name || '?'}
                     </span>
-                    <span className="score">{team.score} pts</span>
+                    <span className="tag is-info is-medium">{team.score} pts</span>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
 
         {/* End Game Button */}
-        <div className="end-game-section">
+        <div className="box has-background-light">
           <button
-              className="btn btn-info btn-sm"
-              onClick={handleEndGame}
-              style={{
-                width: '100%',
-              }}
+            className="button is-info is-fullwidth"
+            onClick={handleEndGame}
           >
             🏁 End Game
           </button>
         </div>
 
-        {error && <div className="error">{error}</div>}
+        {error && <div className="notification is-danger is-light mt-4">{error}</div>}
       </div>
+      </section>
     </>
   );
 }

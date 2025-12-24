@@ -229,96 +229,108 @@ export function PlayerPage() {
 
   if (!playerInfo || !isConnected) {
     return (
-      <div className="container">
-        <h1>Tournament of Couples</h1>
-        <p>Loading...</p>
-      </div>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <p className="has-text-centered">Loading...</p>
+        </div>
+      </section>
     );
   }
 
   // Use computed values from context
 
   return (
-    <div className="container">
-      <header>
-        <h1>Tournament of Couples</h1>
-        <div className="header-info">
-          <p>
-            Host: <strong>{gameState?.host.name ?? '-'}</strong>
-          </p>
-          <p>
-            <strong>{playerInfo.name}</strong>
-          </p>
-          <p>
-            Partner: <strong>{myPartner?.name ?? '-'}</strong>
-          </p>
-          <p>
-            Team Score:{' '}
-            <strong className={`team-score ${isCelebrating ? 'celebrating' : ''}`} ref={scoreRef}>
-              {myTeam?.score || 0}
-            </strong>
-          </p>
+    <section className="section">
+      <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="block">
+          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <div className="box">
+            <div className="columns is-mobile is-multiline has-text-centered">
+              <div className="column is-half-mobile is-one-quarter-tablet">
+                <p className="heading">Host</p>
+                <p className="title is-6">{gameState?.host.name ?? '-'}</p>
+              </div>
+              <div className="column is-half-mobile is-one-quarter-tablet">
+                <p className="heading">You</p>
+                <p className="title is-6 has-text-primary">{playerInfo.name}</p>
+              </div>
+              <div className="column is-half-mobile is-one-quarter-tablet">
+                <p className="heading">Partner</p>
+                <p className="title is-6">{myPartner?.name ?? '-'}</p>
+              </div>
+              <div className="column is-half-mobile is-one-quarter-tablet">
+                <p className="heading">Team Score</p>
+                <p className={`title is-6 ${isCelebrating ? 'has-text-success' : ''}`} ref={scoreRef}>
+                  {myTeam?.score || 0}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </header>
 
       {section === 'waiting' && (
-        <div className="player-section">
-          <div className="waiting-message">
-            <h2>Waiting for Host</h2>
-            <p>The host will start the next round soon...</p>
-          </div>
+        <div className="box has-text-centered">
+          <h2 className="subtitle is-4 mb-3">Waiting for Host</h2>
+          <p className="has-text-grey">The host will start the next round soon...</p>
         </div>
       )}
 
       {section === 'answering' && (
-        <div className="player-section">
-          <div className="round-info">
-            <h2>Round {gameState?.currentRound?.roundNumber || '-'}</h2>
-            <div className="timer">
+        <div className="box">
+          <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
+            <h2 className="subtitle is-4 mb-0">Round {gameState?.currentRound?.roundNumber || '-'}</h2>
+            <div className="tag is-info is-large">
               {(responseTime / 1000).toFixed(2)}s
             </div>
           </div>
 
-          <div className="question-box">
-            <p>{gameState?.currentRound?.question}</p>
+          <div className="notification is-primary is-light mb-4">
+            <p className="is-size-5 has-text-weight-semibold">{gameState?.currentRound?.question}</p>
           </div>
 
           <form onSubmit={handleSubmit}>
             {variant === 'open_ended' ? (
-              <div className="form-group">
-                <label htmlFor="answerInput">Your Answer:</label>
-                <textarea
-                  id="answerInput"
-                  rows={3}
-                  placeholder="Type your answer here..."
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  required
-                />
+              <div className="field">
+                <label className="label" htmlFor="answerInput">Your Answer:</label>
+                <div className="control">
+                  <textarea
+                    id="answerInput"
+                    className="textarea"
+                    rows={3}
+                    placeholder="Type your answer here..."
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
             ) : (
-              <div className="answer-options">
-                {options?.map((option, index) => (
-                  <div
-                    key={index}
-                    className={`answer-option ${selectedOption === option ? 'selected' : ''}`}
-                    onClick={() => setSelectedOption(option)}
-                  >
-                    <input
-                      type="radio"
-                      id={`option-${index}`}
-                      name="answer-option"
-                      value={option}
-                      checked={selectedOption === option}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                      required
-                    />
-                    <label htmlFor={`option-${index}`}>{option}</label>
-                  </div>
-                ))}
+              <div className="field">
+                <div className="control">
+                  {options?.map((option, index) => (
+                    <label
+                      key={index}
+                      className={`button is-fullwidth mb-2 ${selectedOption === option ? 'is-primary' : 'is-light'}`}
+                      style={{ display: 'block', cursor: 'pointer' }}
+                    >
+                      <input
+                        type="radio"
+                        id={`option-${index}`}
+                        name="answer-option"
+                        value={option}
+                        checked={selectedOption === option}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                        required
+                        style={{ marginRight: '8px' }}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="button is-primary is-fullwidth is-large">
               Submit Answer
             </button>
           </form>
@@ -326,40 +338,35 @@ export function PlayerPage() {
       )}
 
       {section === 'submitted' && (
-        <div className="player-section">
-          <div className="success-message">
-            <h2>Answer Submitted!</h2>
-            <div className="submitted-answer">
-              <p>
-                <strong>You said:</strong>
-              </p>
-              <p>{submittedAnswer}</p>
-            </div>
-            {partner && (
-              <div className="partner-status">
-                <p>
-                  <strong>{partner.name}:</strong>{' '}
-                  <i>{gameState?.currentRound?.answers?.[partner.name] ? '✓ Submitted' : 'is thinking...'}</i>
-                </p>
-              </div>
-            )}
-            {gameState?.currentRound?.answers && Object.keys(gameState.currentRound.answers).length < 4 && (
-              <p>Waiting for other players to finish...</p>
-            )}
+        <div className="box">
+          <h2 className="subtitle is-4 has-text-success mb-4">✓ Answer Submitted!</h2>
+          <div className="notification is-success is-light mb-4">
+            <p className="has-text-weight-semibold mb-2">You said:</p>
+            <p className="is-size-5">{submittedAnswer}</p>
           </div>
+          {myPartner && (
+            <div className="notification is-info is-light mb-4">
+              <p>
+                <strong>{myPartner.name}:</strong>{' '}
+                <i>{gameState?.currentRound?.answers?.[myPartner.name] ? '✓ Submitted' : 'is thinking...'}</i>
+              </p>
+            </div>
+          )}
+          {gameState?.currentRound?.answers && Object.keys(gameState.currentRound.answers).length < 4 && (
+            <p className="has-text-centered has-text-grey">Waiting for other players to finish...</p>
+          )}
         </div>
       )}
 
       {section === 'scoring' && (
-        <div className="player-section">
-          <div className="scoring-message">
-            <h2>All answers are in!</h2>
-            <p>The host is reviewing answers and awarding points...</p>
-          </div>
+        <div className="box has-text-centered">
+          <h2 className="subtitle is-4 mb-3">All answers are in!</h2>
+          <p className="has-text-grey">The host is reviewing answers and awarding points...</p>
         </div>
       )}
 
-      {error && <div className="error">{error}</div>}
-    </div>
+      {error && <div className="notification is-danger is-light mt-4">{error}</div>}
+      </div>
+    </section>
   );
 }

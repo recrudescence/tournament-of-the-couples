@@ -10,10 +10,12 @@ export function FinishGamePage() {
 
   if (!gameState) {
     return (
-      <div className="container">
-        <h1>Game Over</h1>
-        <p>Loading results...</p>
-      </div>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <h1 className="title has-text-centered">Game Over</h1>
+          <p className="has-text-centered">Loading results...</p>
+        </div>
+      </section>
     );
   }
 
@@ -38,75 +40,60 @@ export function FinishGamePage() {
   };
 
   return (
-    <div className="container">
-      <h1>Game Over</h1>
+    <section className="hero is-fullheight-with-navbar">
+      <div className="hero-body">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <h1 className="title is-2 has-text-centered mb-6">Game Over</h1>
 
-      <div className="form-section">
-        <h2>🏆 Winners!</h2>
-        <div className="winner-card" style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '30px',
-          borderRadius: '12px',
-          marginBottom: '30px',
-          textAlign: 'center'
-        }}>
-          <h3 style={{ fontSize: '2em', margin: '10px 0' }}>
-            {winningTeam ? getTeamNames(winningTeam) : '???'}
-          </h3>
-          <p style={{ fontSize: '3em', margin: '10px 0', fontWeight: 'bold' }}>
-            {winningTeam ? winningTeam.score : '???'} points
-          </p>
-        </div>
-
-        <h2>Final Standings</h2>
-        <div style={{ marginBottom: '30px' }}>
-          {sortedTeams.map((team, index) => (
-            <div
-              key={team.teamId}
-              style={{
-                padding: '15px',
-                marginBottom: '10px',
-                borderRadius: '8px',
-                background: index === 0 ? '#f0f9ff' : '#f9fafb',
-                border: index === 0 ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div>
-                <span style={{
-                  fontWeight: 'bold',
-                  fontSize: '1.2em',
-                  marginRight: '10px'
-                }}>
-                  #{index + 1}
-                </span>
-                <span style={{ fontSize: '1.1em' }}>
-                  {getTeamNames(team)}
-                </span>
-              </div>
-              <div style={{
-                fontSize: '1.5em',
-                fontWeight: 'bold',
-                color: index === 0 ? '#3b82f6' : '#6b7280'
-              }}>
-                {team.score}
-              </div>
+          <div className="mb-6">
+            <h2 className="subtitle is-4 has-text-centered mb-4">🏆 Winners!</h2>
+            <div className="box has-background-primary has-text-white has-text-centered p-6">
+              <h3 className="title is-3 has-text-white mb-3">
+                {winningTeam ? getTeamNames(winningTeam) : '???'}
+              </h3>
+              <p className="title is-1 has-text-white has-text-weight-bold">
+                {winningTeam ? winningTeam.score : '???'} points
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div>
-          <p style={{ marginBottom: '15px', color: '#6b7280' }}>
-            Thanks for playing! Click below to return to the home page.
-          </p>
-          <button className="primary" onClick={handleReturnHome}>
-            Return to Home
-          </button>
+          <div className="mb-6">
+            <h2 className="subtitle is-4 mb-4">Final Standings</h2>
+            <div>
+              {sortedTeams.map((team, index) => (
+                <div
+                  key={team.teamId}
+                  className={`box mb-3 is-flex is-justify-content-space-between is-align-items-center ${
+                    index === 0 ? 'has-background-link-light' : ''
+                  }`}
+                  style={index === 0 ? { borderLeft: '4px solid hsl(229, 53%, 53%)' } : {}}
+                >
+                  <div>
+                    <span className="has-text-weight-bold is-size-5 mr-3">
+                      #{index + 1}
+                    </span>
+                    <span className="is-size-5">
+                      {getTeamNames(team)}
+                    </span>
+                  </div>
+                  <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
+                    {team.score}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="box has-background-light">
+            <p className="mb-4 has-text-grey-dark has-text-centered">
+              Thanks for playing! Click below to return to the home page.
+            </p>
+            <button className="button is-primary is-fullwidth is-large" onClick={handleReturnHome}>
+              Return to Home
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -192,100 +192,110 @@ export function JoinPage() {
 
   if (!isConnected) {
     return (
-      <div className="container">
-        <h1>Tournament of the Couples</h1>
-        <p>Connecting...</p>
-      </div>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '600px' }}>
+          <h1 className="title has-text-centered">Tournament of the Couples</h1>
+          <p className="has-text-centered">Connecting...</p>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="container">
-      <h1>Tournament of the Couples</h1>
+    <section className="section">
+      <div className="container" style={{ maxWidth: '600px' }}>
+        <h1 className="title has-text-centered">Tournament of the Couples</h1>
 
       {step === 'menu' && !creatingNew && !joiningExisting && (
-        <div className="join-options">
-          <div className="games-section">
-            <div className="games-header">
-              <h2>Current Rooms</h2>
+        <div className="box">
+          <div className="mb-5">
+            <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
+              <h2 className="subtitle is-4 mb-0">Current Rooms</h2>
               <button
                 onClick={fetchGames}
                 disabled={isLoadingGames}
-                className="btn-refresh"
+                className={`button is-small ${isLoadingGames ? 'is-loading' : ''}`}
               >
-                {isLoadingGames ? 'Refreshing...' : 'Refresh'}
+                Refresh
               </button>
             </div>
 
             {availableGames.length === 0 ? (
-              <p className="empty-state">No games currently open. Start your own!</p>
+              <p className="has-text-centered has-text-grey-light py-4">No games currently open. Start your own!</p>
             ) : (
-              <div className="games-list">
+              <div className="buttons is-flex is-flex-direction-column">
                 {availableGames.map((game) => (
                   <button
                     key={game.roomCode}
                     onClick={() => handleSelectGame(game.roomCode, game.hostName, game.status)}
                     disabled={!game.canJoin}
-                    className={`game-button ${!game.canJoin ? 'disabled' : ''}`}
+                    className={`button is-fullwidth is-justify-content-space-between ${!game.canJoin ? '' : 'is-link is-light'}`}
                   >
-                    <div className="game-info">
-                      <span className="game-name">{game.hostName}'s Game</span>
-                      <span className="game-status">{formatGameStatus(game.status)}</span>
+                    <div>
+                      <span className="has-text-weight-semibold">{game.hostName}'s Game</span>
+                      <span className="ml-2 has-text-grey is-size-7">{formatGameStatus(game.status)}</span>
                     </div>
-                    {!game.canJoin && <span className="game-ended-badge">Ended</span>}
+                    {!game.canJoin && <span className="tag is-danger is-light">Ended</span>}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="divider">
-            <span>or</span>
+          <div className="has-text-centered my-4">
+            <span className="has-text-grey">or</span>
           </div>
 
-          <button onClick={handleStartOwnRoom} className="btn-primary btn-large">
+          <button onClick={handleStartOwnRoom} className="button is-primary is-fullwidth is-large">
             Create Room
           </button>
         </div>
       )}
 
       {(creatingNew || joiningExisting) && step === 'menu' && (
-        <div className="name-entry">
-          <h2>{creatingNew ? 'Create Your Room' : `Join ${selectedGameHost}'s Game`}</h2>
+        <div className="box">
+          <h2 className="subtitle is-4 mb-4">{creatingNew ? 'Create Your Room' : `Join ${selectedGameHost}'s Game`}</h2>
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="nameInput">Enter Your Name:</label>
-              <input
-                id="nameInput"
-                type="text"
-                placeholder="Enter your name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                required
-                autoFocus
-              />
+            <div className="field">
+              <label className="label" htmlFor="nameInput">Enter Your Name:</label>
+              <div className="control">
+                <input
+                  id="nameInput"
+                  className="input"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
             </div>
-            <div className="form-actions">
-              <button type="button" onClick={handleBack} className="btn-secondary" disabled={isLoading}>
-                Back
-              </button>
-              <button type="submit" className="btn-primary" disabled={isLoading}>
-                {creatingNew ? 'Create Room' : 'Join Game'}
-              </button>
+            <div className="field is-grouped">
+              <div className="control">
+                <button type="button" onClick={handleBack} className="button" disabled={isLoading}>
+                  Back
+                </button>
+              </div>
+              <div className="control">
+                <button type="submit" className={`button is-primary ${isLoading ? 'is-loading' : ''}`} disabled={isLoading}>
+                  {creatingNew ? 'Create Room' : 'Join Game'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
       )}
 
       {step === 'reconnect' && (
-        <div className="form-section">
-          <h2>Reconnect to Game</h2>
-          <p className="info-text">Game in progress. Select your name to reconnect:</p>
-          <div className="disconnected-players-list">
+        <div className="box">
+          <h2 className="subtitle is-4 mb-4">Reconnect to Game</h2>
+          <p className="notification is-info is-light">Game in progress. Select your name to reconnect:</p>
+          <div className="buttons is-flex is-flex-direction-column mb-4">
             {disconnectedPlayers.map((player) => (
               <button
                 key={player.socketId}
-                className="player-button"
+                className={`button is-fullwidth is-link is-light ${isLoading ? 'is-loading' : ''}`}
                 onClick={() => handleReconnect(player.name, player.isHost ?? false)}
                 disabled={isLoading}
               >
@@ -294,7 +304,7 @@ export function JoinPage() {
             ))}
           </div>
           <button
-            className="secondary"
+            className="button"
             onClick={() => {
               setStep('menu');
               setPlayerName('');
@@ -308,7 +318,8 @@ export function JoinPage() {
         </div>
       )}
 
-      {error && <div className="error">{error}</div>}
-    </div>
+      {error && <div className="notification is-danger is-light mt-4">{error}</div>}
+      </div>
+    </section>
   );
 }

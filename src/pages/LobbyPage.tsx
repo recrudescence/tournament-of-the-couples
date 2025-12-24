@@ -51,10 +51,12 @@ export function LobbyPage() {
 
   if (!playerInfo || !gameState) {
     return (
-      <div className="container">
-        <h1>Lobby</h1>
-        <p>Loading...</p>
-      </div>
+      <section className="section">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <h1 className="title">Lobby</h1>
+          <p>Loading...</p>
+        </div>
+      </section>
     );
   }
 
@@ -94,19 +96,19 @@ export function LobbyPage() {
     const canUnpair = isCurrentPlayerInTeam && !playerInfo.isHost;
 
     return (
-      <div key={team.teamId} className="player-card paired">
-        <div className={`player-name ${player1.name === currentPlayer?.name ? 'you' : ''}`}>
+      <div key={team.teamId} className="box has-background-link-light">
+        <div className={`has-text-weight-semibold ${player1.name === currentPlayer?.name ? 'has-text-primary' : ''}`}>
           {player1.name}
           {player1.name === currentPlayer?.name && ' (You)'}
-          {!player1.connected && <span className="disconnected-label"> - Disconnected</span>}
+          {!player1.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
         </div>
-        <div className="partner-info">
+        <div className="mt-2">
           ↔ {player2.name}
           {player2.name === currentPlayer?.name && ' (You)'}
-          {!player2.connected && <span className="disconnected-label"> - Disconnected</span>}
+          {!player2.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
         </div>
         {canUnpair && (
-          <button className="unpair-btn" onClick={handleUnpair}>
+          <button className="button is-small is-danger is-light mt-3" onClick={handleUnpair}>
             Unpair
           </button>
         )}
@@ -128,14 +130,15 @@ export function LobbyPage() {
     return (
       <div
         key={player.socketId}
-        className={`player-card ${canPair ? 'clickable' : ''}`}
+        className={`box ${canPair ? 'is-clickable has-background-white-ter' : ''}`}
         onClick={canPair ? () => handlePair(player.socketId) : undefined}
+        style={canPair ? { cursor: 'pointer' } : {}}
       >
-        <div className={`player-name ${isCurrentPlayer ? 'you' : ''}`}>
+        <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
           {player.name}
           {isCurrentPlayer && ' (You)'}
         </div>
-        {canPair && <div className="partner-info">Click to pair</div>}
+        {canPair && <div className="has-text-grey mt-2">Click to pair</div>}
       </div>
     );
   };
@@ -143,44 +146,46 @@ export function LobbyPage() {
   return (
     <>
       {playerInfo.isHost && <DebugSidebar />}
-      <div className="container">
-        <header>
-          <h1>Lobby</h1>
-          <div className="room-code-header">
-            Welcome, hosted by <strong>{gameState.host.name}</strong>!
-          </div>
-        </header>
-
-        <div className="info">
-          {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
-          {teamCount !== 1 ? 's' : ''} formed
-        </div>
-
-        <h2>Players</h2>
-        <div id="playersList">
-          {gameState.teams.map(renderTeamCard)}
-          {gameState.players.map(renderUnpairedPlayer)}
-        </div>
-
-        {playerInfo.isHost && (
-          <div className="host-controls">
-            <button
-              className="primary"
-              onClick={handleStartGame}
-              disabled={!allPaired}
-            >
-              Start Game
-            </button>
-            <p className="info host-message">
-              {allPaired
-                ? 'Ready to start!'
-                : 'All connected players must be paired before starting the game.'}
+      <section className="section">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <div className="block">
+            <h1 className="title has-text-centered">Lobby</h1>
+            <p className="subtitle is-6 has-text-centered">
+              Welcome, hosted by <strong>{gameState.host.name}</strong>!
             </p>
           </div>
-        )}
 
-        {error && <div className="error">{error}</div>}
-      </div>
+          <div className="notification is-info is-light has-text-centered">
+            {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
+            {teamCount !== 1 ? 's' : ''} formed
+          </div>
+
+          <h2 className="subtitle is-4 mb-3">Players</h2>
+          <div className="mb-5">
+            {gameState.teams.map(renderTeamCard)}
+            {gameState.players.map(renderUnpairedPlayer)}
+          </div>
+
+          {playerInfo.isHost && (
+            <div className="box has-background-primary-light">
+              <button
+                className="button is-primary is-fullwidth is-large mb-3"
+                onClick={handleStartGame}
+                disabled={!allPaired}
+              >
+                Start Game
+              </button>
+              <p className={`notification ${allPaired ? 'is-success' : 'is-warning'} is-light has-text-centered mb-0`}>
+                {allPaired
+                  ? 'Ready to start!'
+                  : 'All connected players must be paired before starting the game.'}
+              </p>
+            </div>
+          )}
+
+          {error && <div className="notification is-danger is-light">{error}</div>}
+        </div>
+      </section>
     </>
   );
 }
