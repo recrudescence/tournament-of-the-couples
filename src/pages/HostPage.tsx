@@ -4,6 +4,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
+import { ExitButton } from '../components/common/ExitButton';
 import { type GameState } from '../types/game';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
@@ -308,7 +309,7 @@ export function HostPage() {
     return (
       <section className="section">
         <div className="container" style={{ maxWidth: '900px' }}>
-          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Loading...</p>
         </div>
       </section>
@@ -318,10 +319,11 @@ export function HostPage() {
   return (
     <>
       <DebugSidebar />
+      <ExitButton />
       <section className="section">
         <div className="container" style={{ maxWidth: '900px' }}>
           <div className="block">
-            <h1 className="title has-text-centered">Tournament of Couples</h1>
+            <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
             <div className="box">
               <div className="columns is-mobile has-text-centered">
                 <div className="column">

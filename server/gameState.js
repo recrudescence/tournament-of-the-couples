@@ -420,6 +420,7 @@ function returnToPlaying(roomCode) {
   const gameState = gameStates.get(roomCode);
   if (gameState) {
     gameState.status = 'playing';
+    gameState.currentRound = null; // Clear previous round data
   }
 }
 

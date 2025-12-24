@@ -26,6 +26,11 @@ See `context/react-migration.md` for full migration details.
 - When modifying socket events, update type definitions in `src/types/socket-events.ts`
 - When thinking, check in before opening or exploring a lot of files
 
+## Common Components
+
+- **ExitButton**: Floating red button in top-left corner (all game pages) - allows players/hosts to exit to home with confirmation
+- **DebugSidebar**: Host-only debug panel for viewing game state
+
 ## Styling Conventions
 
 **Bulma CSS Framework** (installed December 2025)

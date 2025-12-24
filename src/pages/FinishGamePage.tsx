@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { ExitButton } from '../components/common/ExitButton';
 import type { Team } from '../types/game';
 
 export function FinishGamePage() {
@@ -40,7 +41,9 @@ export function FinishGamePage() {
   };
 
   return (
-    <section className="hero is-fullheight-with-navbar">
+    <>
+      <ExitButton />
+      <section className="hero is-fullheight-with-navbar">
       <div className="hero-body">
         <div className="container" style={{ maxWidth: '800px' }}>
           <h1 className="title is-2 has-text-centered mb-6">Game Over</h1>
@@ -95,5 +98,6 @@ export function FinishGamePage() {
         </div>
       </div>
     </section>
+    </>
   );
 }

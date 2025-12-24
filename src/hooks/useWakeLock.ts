@@ -16,17 +16,19 @@ export function useWakeLock() {
 
   const requestWakeLock = async () => {
     if (!('wakeLock' in navigator)) {
-      console.log('[WakeLock] Wake Lock API not supported');
+      return;
+    }
+
+    // Only request wake lock if document is visible
+    if (document.visibilityState !== 'visible') {
       return;
     }
 
     try {
       wakeLockRef.current = await navigator.wakeLock.request('screen');
       setIsActive(true);
-      console.log('[WakeLock] Screen wake lock activated');
 
       wakeLockRef.current.addEventListener('release', () => {
-        console.log('[WakeLock] Screen wake lock released');
         setIsActive(false);
       });
     } catch (err) {
@@ -40,7 +42,6 @@ export function useWakeLock() {
         await wakeLockRef.current.release();
         wakeLockRef.current = null;
         setIsActive(false);
-        console.log('[WakeLock] Wake lock manually released');
       } catch (err) {
         console.error('[WakeLock] Failed to release wake lock:', err);
       }
@@ -51,7 +52,6 @@ export function useWakeLock() {
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && wakeLockRef.current === null && isSupported) {
-        console.log('[WakeLock] Page visible, re-acquiring wake lock');
         await requestWakeLock();
       }
     };

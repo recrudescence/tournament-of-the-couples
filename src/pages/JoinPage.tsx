@@ -194,7 +194,7 @@ export function JoinPage() {
     return (
       <section className="section">
         <div className="container" style={{ maxWidth: '600px' }}>
-          <h1 className="title has-text-centered">Tournament of the Couples</h1>
+          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Connecting...</p>
         </div>
       </section>
@@ -204,7 +204,7 @@ export function JoinPage() {
   return (
     <section className="section">
       <div className="container" style={{ maxWidth: '600px' }}>
-        <h1 className="title has-text-centered">Tournament of the Couples</h1>
+        <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
 
       {step === 'menu' && !creatingNew && !joiningExisting && (
         <div className="box">

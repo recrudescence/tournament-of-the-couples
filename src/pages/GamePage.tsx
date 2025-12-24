@@ -83,7 +83,7 @@ export function GamePage() {
   if (!gameState) {
     return (
       <div className="container">
-        <h1>Tournament of the Couples</h1>
+        <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
         <p>Loading game...</p>
       </div>
     );

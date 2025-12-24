@@ -4,6 +4,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { ExitButton } from '../components/common/ExitButton';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -34,6 +35,12 @@ export function PlayerPage() {
     console.log('[PlayerPage] Section changed to:', section);
   }, [section]);
 
+  // Debug team/partner updates
+  useEffect(() => {
+    console.log('[PlayerPage] myTeam updated:', myTeam);
+    console.log('[PlayerPage] myPartner updated:', myPartner);
+  }, [myTeam, myPartner]);
+
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
     if (gameState?.status === 'playing' && wakeLockSupported) {
@@ -49,24 +56,20 @@ export function PlayerPage() {
     console.log('[PlayerPage] Initializing from gameState', { status: gameState.status, currentRound: gameState.currentRound });
     dispatch({ type: 'SET_GAME_STATE', payload: gameState });
 
-    // Restore round state if there's an active round
-    if (gameState.currentRound) {
-      setVariant(gameState.currentRound.variant);
-      setOptions(gameState.currentRound.options);
+    // Check game status - now currentRound is null when status is 'playing'
+    if (gameState.status === 'playing') {
+      if (!gameState.currentRound) {
+        // Host is setting up the next round
+        console.log('[PlayerPage] Setting section to waiting (host setting up)');
+        setSection('waiting');
+      } else {
+        // Round is active - check if player has submitted
+        setVariant(gameState.currentRound.variant);
+        setOptions(gameState.currentRound.options);
+        const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
 
-      const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
-
-      if (gameState.status === 'scoring' || gameState.currentRound.status === 'complete') {
         if (previousAnswer) {
-          setSubmittedAnswer(previousAnswer.text);
-          setResponseTime(previousAnswer.responseTime);
-        }
-        console.log('[PlayerPage] Setting section to scoring');
-        setSection('scoring');
-        setTimerRunning(false);
-      } else if (gameState.currentRound.status === 'answering') {
-        if (previousAnswer) {
-          // Player has already submitted - restore submitted state
+          // Player has already submitted
           setAnswer(previousAnswer.text);
           setSubmittedAnswer(previousAnswer.text);
           setResponseTime(previousAnswer.responseTime);
@@ -81,18 +84,28 @@ export function PlayerPage() {
           console.log('[PlayerPage] Setting section to answering');
           setSection('answering');
         }
-      } else {
-        console.log('[PlayerPage] Setting section to waiting (other status)');
-        setSection('waiting');
       }
-    } else if (gameState.status === 'playing') {
-      // Game is playing but no currentRound - host is setting up
-      console.log('[PlayerPage] Setting section to waiting (no round, but playing)');
-      setSection('waiting');
-    } else {
-      console.log('[PlayerPage] Setting section to waiting (default)');
-      setSection('waiting');
+      return;
     }
+
+    // If we're in scoring status, show scoring screen
+    if (gameState.status === 'scoring' && gameState.currentRound) {
+      setVariant(gameState.currentRound.variant);
+      setOptions(gameState.currentRound.options);
+      const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
+      if (previousAnswer) {
+        setSubmittedAnswer(previousAnswer.text);
+        setResponseTime(previousAnswer.responseTime);
+      }
+      console.log('[PlayerPage] Setting section to scoring');
+      setSection('scoring');
+      setTimerRunning(false);
+      return;
+    }
+
+    // Default to waiting
+    console.log('[PlayerPage] Setting section to waiting (default)');
+    setSection('waiting');
   }, []); // Only run on mount
 
   // Timer effect
@@ -180,7 +193,12 @@ export function PlayerPage() {
       }),
 
       on('readyForNextRound', (state) => {
-        console.log('[PlayerPage] readyForNextRound event received', { status: state.status, currentRound: state.currentRound });
+        console.log('[PlayerPage] readyForNextRound event received', {
+          status: state.status,
+          currentRound: state.currentRound,
+          teams: state.teams,
+          players: state.players
+        });
         dispatch({ type: 'SET_GAME_STATE', payload: state });
         setSection('waiting');
       }),
@@ -254,7 +272,7 @@ export function PlayerPage() {
     return (
       <section className="section">
         <div className="container" style={{ maxWidth: '800px' }}>
-          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Loading...</p>
         </div>
       </section>
@@ -264,10 +282,12 @@ export function PlayerPage() {
   // Use computed values from context
 
   return (
-    <section className="section">
+    <>
+      <ExitButton />
+      <section className="section">
       <div className="container" style={{ maxWidth: '800px' }}>
         <div className="block">
-          <h1 className="title has-text-centered">Tournament of Couples</h1>
+          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <div className="box">
             <div className="columns is-mobile is-multiline has-text-centered">
               <div className="column is-half-mobile is-one-quarter-tablet">
@@ -295,14 +315,8 @@ export function PlayerPage() {
       {section === 'waiting' && (
         <div className="box has-text-centered">
           <h2 className="subtitle is-4 mb-4">🎄 Your host is setting up the next round!</h2>
-          <p className="has-text-grey mb-4">Get ready for Round {(gameState?.currentRound?.roundNumber || 0) + 1}...</p>
-          {myTeam && (
-            <div className="notification is-success is-light">
-              <p className="has-text-weight-semibold">
-                Your Team Score: <span className="is-size-4 has-text-success">{myTeam.score}</span> points
-              </p>
-            </div>
-          )}
+          <p className="has-text-grey mb-4">Get ready...</p>
+          <p className="has-text-grey is-size-7">Waiting for {gameState?.host.name} to start the round...</p>
         </div>
       )}
 
@@ -398,5 +412,6 @@ export function PlayerPage() {
       {error && <div className="notification is-danger is-light mt-4">{error}</div>}
       </div>
     </section>
+    </>
   );
 }

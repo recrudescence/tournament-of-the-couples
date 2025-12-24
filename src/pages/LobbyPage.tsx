@@ -4,6 +4,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
+import { ExitButton } from '../components/common/ExitButton';
 import type { Player, Team } from '../types/game';
 
 export function LobbyPage() {
@@ -145,6 +146,7 @@ export function LobbyPage() {
   return (
     <>
       {playerInfo.isHost && <DebugSidebar />}
+      <ExitButton />
       <section className="section">
         <div className="container" style={{ maxWidth: '800px' }}>
           <div className="block">
