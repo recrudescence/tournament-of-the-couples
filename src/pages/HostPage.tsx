@@ -5,7 +5,6 @@ import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import { type GameState } from '../types/game';
-import '../styles/host.css';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
 
@@ -87,7 +86,7 @@ export function HostPage() {
             ...prev,
             [playerName]: responseTime
           }));
-        }, 500);
+        }, 0);
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {

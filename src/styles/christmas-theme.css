@@ -1,0 +1,176 @@
+/* Christmas Theme for Tournament of the Couples */
+
+:root {
+  /* Christmas Color Palette */
+  --christmas-red: #C41E3A;
+  --christmas-green: #0F8B3A;
+  --christmas-gold: #DAA520;
+  --christmas-snow: #FFFAFA;
+  --christmas-dark-red: #8B0000;
+  --christmas-light-green: #90EE90;
+  --christmas-pine: #01411C;
+
+  /* Override Bulma's primary color with Christmas red */
+  --bulma-primary-h: 349deg;
+  --bulma-primary-s: 75%;
+  --bulma-primary-l: 44%;
+
+  /* Override Bulma's success color with Christmas green */
+  --bulma-success-h: 145deg;
+  --bulma-success-s: 80%;
+  --bulma-success-l: 31%;
+
+  /* Override Bulma's info color with Christmas gold */
+  --bulma-info-h: 43deg;
+  --bulma-info-s: 74%;
+  --bulma-info-l: 49%;
+
+  /* Override Bulma's link color with festive red */
+  --bulma-link-h: 349deg;
+  --bulma-link-s: 75%;
+  --bulma-link-l: 44%;
+
+  /* Body background - soft snow white */
+  --bulma-body-background-color: #F8F8FF;
+  --bulma-body-color: #2C3E50;
+}
+
+/* Add festive touches */
+.title, .subtitle {
+  color: var(--christmas-pine) !important;
+}
+
+/* Primary buttons - Christmas red with gold on hover */
+.button.is-primary {
+  background-color: var(--christmas-red);
+  border-color: var(--christmas-red);
+}
+
+.button.is-primary:hover {
+  background-color: var(--christmas-dark-red);
+  border-color: var(--christmas-dark-red);
+}
+
+.button.is-primary:focus {
+  border-color: var(--christmas-gold);
+  box-shadow: 0 0 0 0.125em rgba(218, 165, 32, 0.25);
+}
+
+/* Success buttons - Christmas green */
+.button.is-success {
+  background-color: var(--christmas-green);
+  border-color: var(--christmas-green);
+}
+
+.button.is-success:hover {
+  background-color: #0A6B2E;
+  border-color: #0A6B2E;
+}
+
+/* Info buttons/tags - Christmas gold */
+.button.is-info,
+.tag.is-info {
+  background-color: var(--christmas-gold);
+  color: #fff;
+  border-color: var(--christmas-gold);
+}
+
+.button.is-info:hover {
+  background-color: #C8960D;
+}
+
+/* Festive box styling */
+.box {
+  border: 2px solid rgba(196, 30, 58, 0.1);
+  box-shadow: 0 2px 8px rgba(196, 30, 58, 0.1);
+}
+
+.box.has-background-link-light {
+  background-color: rgba(196, 30, 58, 0.05) !important;
+  border-color: rgba(196, 30, 58, 0.2);
+}
+
+.box.has-background-primary-light {
+  background-color: rgba(196, 30, 58, 0.05) !important;
+}
+
+/* Notification styling */
+.notification.is-primary {
+  background-color: rgba(196, 30, 58, 0.1);
+  color: var(--christmas-dark-red);
+}
+
+.notification.is-success {
+  background-color: rgba(15, 139, 58, 0.1);
+  color: var(--christmas-green);
+}
+
+.notification.is-info {
+  background-color: rgba(218, 165, 32, 0.1);
+  color: #9B7A0D;
+}
+
+/* Tabs */
+.tabs.is-boxed a {
+  border-color: #dbdbdb;
+}
+
+.tabs.is-boxed li.is-active a {
+  background-color: var(--christmas-red);
+  border-color: var(--christmas-red);
+  color: #fff;
+}
+
+.tabs.is-boxed a:hover {
+  background-color: rgba(196, 30, 58, 0.05);
+  border-bottom-color: var(--christmas-red);
+}
+
+/* Add subtle festive accent to sections */
+.section {
+  background-color: var(--christmas-snow);
+}
+
+/* Make tags more festive */
+.tag.is-success {
+  background-color: var(--christmas-green);
+}
+
+.tag.is-warning {
+  background-color: var(--christmas-gold);
+  color: #fff;
+}
+
+/* Inputs and textareas */
+.input:focus,
+.textarea:focus {
+  border-color: var(--christmas-red);
+  box-shadow: 0 0 0 0.125em rgba(196, 30, 58, 0.25);
+}
+
+/* Progress indicators */
+.has-text-primary {
+  color: var(--christmas-red) !important;
+}
+
+.has-text-success {
+  color: var(--christmas-green) !important;
+}
+
+.has-text-info {
+  color: var(--christmas-gold) !important;
+}
+
+/* Festive hover effects for clickable boxes */
+.box.is-clickable:hover {
+  border-color: var(--christmas-gold);
+  box-shadow: 0 4px 12px rgba(218, 165, 32, 0.2);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+/* Add subtle Christmas decoration */
+body {
+  background: linear-gradient(180deg, #F8F8FF 0%, #FFF5F5 100%);
+  min-height: 100vh;
+}

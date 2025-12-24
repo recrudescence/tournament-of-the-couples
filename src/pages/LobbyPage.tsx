@@ -5,7 +5,6 @@ import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import type { Player, Team } from '../types/game';
-import '../styles/lobby.css';
 
 export function LobbyPage() {
   const { emit, on } = useSocket();
