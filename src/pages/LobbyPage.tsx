@@ -97,14 +97,9 @@ export function LobbyPage() {
 
     return (
       <div key={team.teamId} className="box has-background-link-light">
-        <div className={`has-text-weight-semibold ${player1.name === currentPlayer?.name ? 'has-text-primary' : ''}`}>
-          {player1.name}
-          {player1.name === currentPlayer?.name && ' (You)'}
+        <div className={`has-text-weight-semibold has-text-primary`}>
+          { currentPlayer?.name } 🤝🏼 { player1.name === currentPlayer?.name ? player2.name : player1.name }
           {!player1.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
-        </div>
-        <div className="mt-2">
-          ↔ {player2.name}
-          {player2.name === currentPlayer?.name && ' (You)'}
           {!player2.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
         </div>
         {canUnpair && (
