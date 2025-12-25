@@ -180,6 +180,40 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Player explicitly leaves the game
+    socket.on('leaveGame', () => {
+      console.log('[socket] leaveGame');
+      const roomCode = socket.roomCode;
+      if (!roomCode) return;
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) return;
+
+      // In lobby: remove player completely
+      // During game: mark as disconnected
+      if (state.status === 'lobby') {
+        // Check if this is the host or a player
+        if (state.host && state.host.socketId === socket.id) {
+          gameState.disconnectHost(roomCode);
+        } else {
+          gameState.removePlayer(roomCode, socket.id);
+        }
+        io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
+      } else {
+        // During active game, just mark as disconnected
+        if (state.host && state.host.socketId === socket.id) {
+          gameState.disconnectHost(roomCode);
+        } else {
+          gameState.disconnectPlayer(roomCode, socket.id);
+        }
+        io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
+      }
+
+      // Clean up socket's room association
+      socket.leave(roomCode);
+      socket.roomCode = null;
+    });
+
     // Get lobby state
     socket.on('getLobbyState', () => {
       console.log('[socket] getLobbyState')

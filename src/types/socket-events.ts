@@ -12,6 +12,7 @@ export interface ClientToServerEvents {
   requestPair: (data: { targetSocketId: string }) => void;
   unpair: () => void;
   kickPlayer: (data: { targetSocketId: string }) => void;
+  leaveGame: () => void;
   startGame: () => void;
   startRound: (data: { question: string; variant: string; options?: string[] }) => void;
   submitAnswer: (data: { answer: string; responseTime: number }) => void;
