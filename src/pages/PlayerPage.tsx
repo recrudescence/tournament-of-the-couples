@@ -26,7 +26,6 @@ export function PlayerPage() {
   const [options, setOptions] = useState<string[] | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>('');
 
-  const scoreRef = useRef<HTMLElement>(null);
   const timerStartRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
 
@@ -304,7 +303,7 @@ export function PlayerPage() {
               </div>
               <div className="column is-half-mobile is-one-quarter-tablet">
                 <p className="heading">Team Score</p>
-                <p className={`title is-6 ${isCelebrating ? 'has-text-success' : ''}`} ref={scoreRef}>
+                <p className={`title is-6 ${isCelebrating ? 'has-text-success' : ''}`}>
                   {myTeam?.score || 0}
                 </p>
               </div>

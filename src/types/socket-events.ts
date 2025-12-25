@@ -50,6 +50,7 @@ export interface ServerToClientEvents {
   }) => void;
   lobbyUpdate: (data: GameState) => void;
   playerKicked: () => void;
+  gameCancelled: (data: { reason: string }) => void;
   gameStarted: (data: GameState) => void;
   roundStarted: (data: {
     roundNumber: number;

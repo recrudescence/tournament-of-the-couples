@@ -194,11 +194,18 @@ function setupSocketHandlers(io) {
       if (state.status === 'lobby') {
         // Check if this is the host or a player
         if (state.host && state.host.socketId === socket.id) {
-          gameState.disconnectHost(roomCode);
+          // Host leaving lobby cancels the entire game
+          console.log(`Host leaving lobby, cancelling game ${roomCode}`);
+
+          // Notify all players that the game was cancelled
+          io.to(roomCode).emit('gameCancelled', { reason: 'Host left the lobby' });
+
+          // Delete the game state
+          gameState.deleteRoom(roomCode);
         } else {
           gameState.removePlayer(roomCode, socket.id);
+          io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
         }
-        io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
       } else {
         // During active game, just mark as disconnected
         if (state.host && state.host.socketId === socket.id) {
@@ -518,21 +525,26 @@ function setupSocketHandlers(io) {
       if (state) {
         // Check if this is the host
         if (state.host && state.host.socketId === socket.id) {
-          gameState.disconnectHost(roomCode);
+          // Host disconnecting in lobby cancels the game
+          if (state.status === 'lobby') {
+            console.log(`Host disconnected from lobby, cancelling game ${roomCode}`);
+            io.to(roomCode).emit('gameCancelled', { reason: 'Host disconnected' });
+            gameState.deleteRoom(roomCode);
+          } else {
+            // During active game, just mark as disconnected
+            gameState.disconnectHost(roomCode);
+            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
+          }
         } else {
           // In lobby: fully remove players so they must re-enter their name
           // During game: mark as disconnected to allow seamless reconnection
           if (state.status === 'lobby') {
             gameState.removePlayer(roomCode, socket.id);
+            io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
           } else {
             gameState.disconnectPlayer(roomCode, socket.id);
+            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
           }
-        }
-
-        if (state.status === 'lobby') {
-          io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
-        } else {
-          io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
         }
       }
     });

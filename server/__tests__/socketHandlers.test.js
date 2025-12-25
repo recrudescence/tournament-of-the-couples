@@ -31,9 +31,13 @@ describe('socketHandlers', () => {
       id: 'socket-123',
       emit: jest.fn(),
       join: jest.fn(),
+      leave: jest.fn(),
       roomCode: null,
       on: jest.fn(),
     };
+
+    // Create shared mock for room emissions
+    const mockRoomEmit = jest.fn();
 
     // Mock io
     io = {
@@ -44,9 +48,12 @@ describe('socketHandlers', () => {
         }
       }),
       to: jest.fn(() => ({
-        emit: jest.fn(),
+        emit: mockRoomEmit,
       })),
     };
+
+    // Store reference to room emit for test assertions
+    io.roomEmit = mockRoomEmit;
 
     // Set up socket handlers
     setupSocketHandlers(io);
@@ -425,7 +432,7 @@ describe('socketHandlers', () => {
       gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
     });
 
-    it('should mark player as disconnected', () => {
+    it('should remove player from lobby when they disconnect', () => {
       socket.roomCode = roomCode;
       socket.id = 'socket-1';
 
@@ -438,7 +445,49 @@ describe('socketHandlers', () => {
 
       const state = gameState.getGameState(roomCode);
       const player = state.players.find(p => p.socketId === 'socket-1');
-      expect(player.connected).toBe(false);
+      expect(player).toBeUndefined(); // Player should be completely removed
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+      expect(io.roomEmit).toHaveBeenCalledWith('lobbyUpdate', expect.any(Object));
+    });
+
+    it('should cancel game when host disconnects from lobby', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const disconnectHandler = socket.on.mock.calls.find(
+        call => call[0] === 'disconnect'
+      )[1];
+
+      disconnectHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state).toBeUndefined(); // Game should be deleted
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+      expect(io.roomEmit).toHaveBeenCalledWith('gameCancelled', { reason: 'Host disconnected' });
+    });
+
+    it('should mark player as disconnected during active game', () => {
+      // Start the game
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      io.connectionHandler(socket);
+      const disconnectHandler = socket.on.mock.calls.find(
+        call => call[0] === 'disconnect'
+      )[1];
+
+      disconnectHandler();
+
+      const state = gameState.getGameState(roomCode);
+      const player = state.players.find(p => p.socketId === 'socket-1');
+      expect(player.connected).toBe(false); // Player marked as disconnected, not removed
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1' });
     });
   });
 });

@@ -37,6 +37,12 @@ export function LobbyPage() {
         navigate('/');
       }),
 
+      on('gameCancelled', ({ reason }) => {
+        // Game was cancelled (host left lobby) - clear info and redirect
+        clearPlayerInfo();
+        navigate('/');
+      }),
+
       on('error', ({ message }) => {
         showError(message);
       }),
