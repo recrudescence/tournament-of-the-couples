@@ -315,8 +315,7 @@ export function PlayerPage() {
       {section === 'waiting' && (
         <div className="box has-text-centered">
           <h2 className="subtitle is-4 mb-4">🎄 Your host is setting up the next round!</h2>
-          <p className="has-text-grey mb-4">Get ready...</p>
-          <p className="has-text-grey is-size-7">Waiting for {gameState?.host.name} to start the round...</p>
+          <p className="has-text-grey">Waiting for {gameState?.host.name} to start the round...</p>
         </div>
       )}
 

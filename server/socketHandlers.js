@@ -130,6 +130,56 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host kicks a player from the lobby
+    socket.on('kickPlayer', ({ targetSocketId }) => {
+      console.log('[socket] kickPlayer', { targetSocketId });
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can kick players' });
+        return;
+      }
+
+      // Only allow kicking in lobby
+      if (state.status !== 'lobby') {
+        socket.emit('error', { message: 'Can only kick players in lobby' });
+        return;
+      }
+
+      try {
+        // Get the player's info before removing them
+        const targetPlayer = state.players.find(p => p.socketId === targetSocketId);
+        if (!targetPlayer) {
+          socket.emit('error', { message: 'Player not found' });
+          return;
+        }
+
+        // Remove the player from the game
+        gameState.removePlayer(roomCode, targetSocketId);
+        const updatedState = gameState.getGameState(roomCode);
+
+        // Notify the kicked player
+        io.to(targetSocketId).emit('playerKicked');
+
+        // Update all other players in the lobby
+        io.to(roomCode).emit('lobbyUpdate', updatedState);
+      } catch (err) {
+        console.error('Kick player error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Get lobby state
     socket.on('getLobbyState', () => {
       console.log('[socket] getLobbyState')
@@ -436,9 +486,13 @@ function setupSocketHandlers(io) {
         if (state.host && state.host.socketId === socket.id) {
           gameState.disconnectHost(roomCode);
         } else {
-          // Always mark player as disconnected (don't remove from lobby)
-          // This allows for seamless reconnection on page transitions
-          gameState.disconnectPlayer(roomCode, socket.id);
+          // In lobby: fully remove players so they must re-enter their name
+          // During game: mark as disconnected to allow seamless reconnection
+          if (state.status === 'lobby') {
+            gameState.removePlayer(roomCode, socket.id);
+          } else {
+            gameState.disconnectPlayer(roomCode, socket.id);
+          }
         }
 
         if (state.status === 'lobby') {

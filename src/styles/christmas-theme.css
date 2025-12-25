@@ -37,13 +37,14 @@
 
 /* Add festive touches */
 .title, .subtitle {
-  color: var(--christmas-pine) !important;
+  color: var(--christmas-pine);
 }
 
 /* Primary buttons - Christmas red with gold on hover */
 .button.is-primary {
   background-color: var(--christmas-red);
   border-color: var(--christmas-red);
+  color: var(--bulma-white);
 }
 
 .button.is-primary:hover {
@@ -60,6 +61,7 @@
 .button.is-success {
   background-color: var(--christmas-green);
   border-color: var(--christmas-green);
+  color: var(--bulma-white);
 }
 
 .button.is-success:hover {

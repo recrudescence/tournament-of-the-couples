@@ -11,6 +11,7 @@ export interface ClientToServerEvents {
   checkRoomStatus: (data: { roomCode: string }) => void;
   requestPair: (data: { targetSocketId: string }) => void;
   unpair: () => void;
+  kickPlayer: (data: { targetSocketId: string }) => void;
   startGame: () => void;
   startRound: (data: { question: string; variant: string; options?: string[] }) => void;
   submitAnswer: (data: { answer: string; responseTime: number }) => void;
@@ -47,6 +48,7 @@ export interface ServerToClientEvents {
     canJoinAsNew: boolean;
   }) => void;
   lobbyUpdate: (data: GameState) => void;
+  playerKicked: () => void;
   gameStarted: (data: GameState) => void;
   roundStarted: (data: {
     roundNumber: number;

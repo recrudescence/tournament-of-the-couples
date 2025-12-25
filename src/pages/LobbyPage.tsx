@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -8,8 +9,9 @@ import { ExitButton } from '../components/common/ExitButton';
 import type { Player, Team } from '../types/game';
 
 export function LobbyPage() {
+  const navigate = useNavigate();
   const { emit, on } = useSocket();
-  const { playerInfo } = usePlayerInfo();
+  const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
 
@@ -29,13 +31,33 @@ export function LobbyPage() {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
+      on('playerKicked', () => {
+        // Player was kicked by host - clear their info and redirect to join page
+        clearPlayerInfo();
+        navigate('/');
+      }),
+
       on('error', ({ message }) => {
         showError(message);
       }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError]);
+  }, [on, dispatch, showError, clearPlayerInfo, navigate]);
+
+  // Check if player has been removed from the lobby (disconnect/refresh)
+  useEffect(() => {
+    if (!playerInfo || !gameState) return;
+
+    // Skip check for host
+    if (playerInfo.isHost) return;
+
+    // If player is no longer in the game state, they were removed
+    if (!myPlayer) {
+      clearPlayerInfo();
+      navigate('/');
+    }
+  }, [playerInfo, gameState, myPlayer, clearPlayerInfo, navigate]);
 
   const handlePair = (targetSocketId: string) => {
     emit('requestPair', { targetSocketId });
@@ -43,6 +65,12 @@ export function LobbyPage() {
 
   const handleUnpair = () => {
     emit('unpair');
+  };
+
+  const handleKick = (targetSocketId: string, playerName: string) => {
+    if (window.confirm(`Are you sure you want to kick ${playerName}?`)) {
+      emit('kickPlayer', { targetSocketId });
+    }
   };
 
   const handleStartGame = () => {
@@ -95,18 +123,51 @@ export function LobbyPage() {
 
     const canUnpair = isCurrentPlayerInTeam && !playerInfo.isHost;
 
+    const player1Display =
+        player1.name === currentPlayer?.name
+            ? player1.name + ' (you!)'
+            : player1.name;
+    const player2Display =
+        player2.name === currentPlayer?.name
+            ? player2.name + ' (you!)'
+            : player2.name;
+    const playerDisplay =
+        (player1.name === currentPlayer?.name || playerInfo.isHost)
+            ? player1Display + ' 🤝🏼 ' + player2Display
+            : player2Display + ' 🤝🏼 ' + player1Display;
+
+    const unpairBtn = canUnpair && (
+        <button className="button is-small is-danger is-light" onClick={handleUnpair}>
+          Unpair
+        </button>
+    )
+
+    const kickBtns = playerInfo.isHost && (
+        <>
+          <button
+              className="button is-small is-danger"
+              onClick={() => handleKick(player1.socketId, player1.name)}
+          >
+            Kick {player1.name}
+          </button>
+          <button
+              className="button is-small is-danger"
+              onClick={() => handleKick(player2.socketId, player2.name)}
+          >
+            Kick {player2.name}
+          </button>
+        </>
+    )
+
     return (
       <div key={team.teamId} className="box has-background-link-light">
         <div className={`has-text-weight-semibold has-text-primary`}>
-          { currentPlayer?.name } 🤝🏼 { player1.name === currentPlayer?.name ? player2.name : player1.name }
-          {!player1.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
-          {!player2.connected && <span className="tag is-warning is-light ml-2">Disconnected</span>}
+          { playerDisplay }
         </div>
-        {canUnpair && (
-          <button className="button is-small is-danger is-light mt-3" onClick={handleUnpair}>
-            Unpair
-          </button>
-        )}
+        <div className="is-flex is-flex-wrap-wrap mt-3" style={{ gap: '0.5rem' }}>
+          { unpairBtn }
+          { kickBtns }
+        </div>
       </div>
     );
   };
@@ -129,9 +190,22 @@ export function LobbyPage() {
         onClick={canPair ? () => handlePair(player.socketId) : undefined}
         style={canPair ? { cursor: 'pointer' } : {}}
       >
-        <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
-          {player.name}
-          {isCurrentPlayer && ' (You)'}
+        <div className="is-flex is-justify-content-space-between is-align-items-center">
+          <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
+            {player.name}
+            {isCurrentPlayer && ' (You)'}
+          </div>
+          {playerInfo.isHost && !isCurrentPlayer && (
+            <button
+              className="button is-small is-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleKick(player.socketId, player.name);
+              }}
+            >
+              Kick
+            </button>
+          )}
         </div>
         {canPair && <div className="has-text-grey mt-2">Click to pair</div>}
       </div>
@@ -164,6 +238,11 @@ export function LobbyPage() {
 
           {playerInfo.isHost && (
             <div className="box has-background-primary-light">
+              <p className={`notification ${allPaired ? 'is-success' : 'is-warning'} is-light has-text-centered mt-0`}>
+                {allPaired
+                    ? 'Ready to start!'
+                    : 'All connected players must be paired before starting the game.'}
+              </p>
               <button
                 className="button is-primary is-fullwidth is-large mb-3"
                 onClick={handleStartGame}
@@ -171,11 +250,6 @@ export function LobbyPage() {
               >
                 Start Game
               </button>
-              <p className={`notification ${allPaired ? 'is-success' : 'is-warning'} is-light has-text-centered mb-0`}>
-                {allPaired
-                  ? 'Ready to start!'
-                  : 'All connected players must be paired before starting the game.'}
-              </p>
             </div>
           )}
 

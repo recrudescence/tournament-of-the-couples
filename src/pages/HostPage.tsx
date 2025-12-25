@@ -553,7 +553,7 @@ export function HostPage() {
               )}
               {showStartScoringBtn && (
                 <div className="control">
-                  <button className="button is-primary is-large" onClick={handleStartScoring}>
+                  <button className="button is-primary" onClick={handleStartScoring}>
                     Begin Scoring
                   </button>
                 </div>
