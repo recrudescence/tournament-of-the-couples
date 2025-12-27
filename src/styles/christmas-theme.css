@@ -1,6 +1,8 @@
 /* Christmas Theme for Tournament of the Couples */
 
 :root {
+  color-scheme: light-only;
+
   /* Christmas Color Palette */
   --christmas-red: #C41E3A;
   --christmas-green: #0F8B3A;

@@ -228,7 +228,7 @@ export function LobbyPage() {
           <div className="block">
             <h1 className="title has-text-centered">Lobby</h1>
             <p className="subtitle is-6 has-text-centered">
-              Welcome, hosted by <strong>{gameState.host.name}</strong>!
+              Welcome to <strong>{gameState.host.name}</strong>'s game!
             </p>
           </div>
 
