@@ -31,7 +31,12 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
     gameState.host = { socketId, name, connected: true };
     console.log(`Host added: ${name}`);
   } else {
-    // Check if player name already exists
+    // Check if player name matches host name
+    if (gameState.host && gameState.host.name === name) {
+      throw new Error('This name is already taken by the host');
+    }
+
+    // Check if player name already exists among other players
     const existing = gameState.players.find(p => p.name === name);
     if (existing) {
       throw new Error('Player name already exists');
