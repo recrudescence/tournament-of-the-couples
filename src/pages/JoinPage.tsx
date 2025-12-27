@@ -279,6 +279,7 @@ export function JoinPage() {
                   onChange={(e) => setPlayerName(e.target.value)}
                   required
                   autoFocus
+                  autoComplete="off"
                 />
               </div>
             </div>

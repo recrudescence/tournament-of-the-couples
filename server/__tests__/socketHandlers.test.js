@@ -490,4 +490,581 @@ describe('socketHandlers', () => {
       expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1' });
     });
   });
+
+  describe('unpair', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+    });
+
+    it('should unpair players successfully', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      io.connectionHandler(socket);
+      const unpairHandler = socket.on.mock.calls.find(
+        call => call[0] === 'unpair'
+      )[1];
+
+      unpairHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.teams).toHaveLength(0);
+      const player1 = state.players.find(p => p.socketId === 'socket-1');
+      const player2 = state.players.find(p => p.socketId === 'socket-2');
+      expect(player1.partnerId).toBeNull();
+      expect(player2.partnerId).toBeNull();
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+    });
+
+    it('should reject unpairing when not in a room', () => {
+      io.connectionHandler(socket);
+      const unpairHandler = socket.on.mock.calls.find(
+        call => call[0] === 'unpair'
+      )[1];
+
+      unpairHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('kickPlayer', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+    });
+
+    it('should allow host to kick a player from lobby', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const kickHandler = socket.on.mock.calls.find(
+        call => call[0] === 'kickPlayer'
+      )[1];
+
+      kickHandler({ targetSocketId: 'socket-1' });
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.players.find(p => p.socketId === 'socket-1')).toBeUndefined();
+      expect(io.to).toHaveBeenCalledWith('socket-1');
+      expect(io.roomEmit).toHaveBeenCalledWith('playerKicked');
+    });
+
+    it('should reject kick when not host', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      io.connectionHandler(socket);
+      const kickHandler = socket.on.mock.calls.find(
+        call => call[0] === 'kickPlayer'
+      )[1];
+
+      kickHandler({ targetSocketId: 'socket-1' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Only the host can kick players',
+        })
+      );
+    });
+
+    it('should reject kick when not in lobby', () => {
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const kickHandler = socket.on.mock.calls.find(
+        call => call[0] === 'kickPlayer'
+      )[1];
+
+      kickHandler({ targetSocketId: 'socket-1' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Can only kick players in lobby',
+        })
+      );
+    });
+
+    it('should reject kick when player not found', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const kickHandler = socket.on.mock.calls.find(
+        call => call[0] === 'kickPlayer'
+      )[1];
+
+      kickHandler({ targetSocketId: 'nonexistent' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Player not found',
+        })
+      );
+    });
+  });
+
+  describe('leaveGame', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+    });
+
+    it('should remove player from lobby when they leave', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      io.connectionHandler(socket);
+      const leaveHandler = socket.on.mock.calls.find(
+        call => call[0] === 'leaveGame'
+      )[1];
+
+      leaveHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.players.find(p => p.socketId === 'socket-1')).toBeUndefined();
+      expect(socket.leave).toHaveBeenCalledWith(roomCode);
+      expect(socket.roomCode).toBeNull();
+    });
+
+    it('should cancel game when host leaves lobby', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const leaveHandler = socket.on.mock.calls.find(
+        call => call[0] === 'leaveGame'
+      )[1];
+
+      leaveHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state).toBeUndefined();
+      expect(io.roomEmit).toHaveBeenCalledWith('gameCancelled', { reason: 'Host left the lobby' });
+    });
+
+    it('should mark player as disconnected when leaving active game', () => {
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      io.connectionHandler(socket);
+      const leaveHandler = socket.on.mock.calls.find(
+        call => call[0] === 'leaveGame'
+      )[1];
+
+      leaveHandler();
+
+      const state = gameState.getGameState(roomCode);
+      const player = state.players.find(p => p.socketId === 'socket-1');
+      expect(player.connected).toBe(false);
+      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1' });
+    });
+  });
+
+  describe('getLobbyState', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+    });
+
+    it('should return lobby state', () => {
+      socket.roomCode = roomCode;
+
+      io.connectionHandler(socket);
+      const getLobbyHandler = socket.on.mock.calls.find(
+        call => call[0] === 'getLobbyState'
+      )[1];
+
+      getLobbyHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith('lobbyUpdate', expect.objectContaining({
+        roomCode,
+        status: 'lobby',
+      }));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const getLobbyHandler = socket.on.mock.calls.find(
+        call => call[0] === 'getLobbyState'
+      )[1];
+
+      getLobbyHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('checkRoomStatus', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+    });
+
+    it('should return room status for valid room', () => {
+      io.connectionHandler(socket);
+      const checkHandler = socket.on.mock.calls.find(
+        call => call[0] === 'checkRoomStatus'
+      )[1];
+
+      checkHandler({ roomCode: 'test' });
+
+      expect(socket.emit).toHaveBeenCalledWith('roomStatus', expect.objectContaining({
+        found: true,
+        roomCode: 'test',
+        status: 'lobby',
+        canJoinAsNew: true,
+      }));
+    });
+
+    it('should return not found for invalid room code', () => {
+      io.connectionHandler(socket);
+      const checkHandler = socket.on.mock.calls.find(
+        call => call[0] === 'checkRoomStatus'
+      )[1];
+
+      checkHandler({ roomCode: '' });
+
+      expect(socket.emit).toHaveBeenCalledWith('roomStatus', expect.objectContaining({
+        found: false,
+        error: 'Invalid room code format',
+      }));
+    });
+
+    it('should return not found for nonexistent room', () => {
+      io.connectionHandler(socket);
+      const checkHandler = socket.on.mock.calls.find(
+        call => call[0] === 'checkRoomStatus'
+      )[1];
+
+      checkHandler({ roomCode: 'nonexistent' });
+
+      expect(socket.emit).toHaveBeenCalledWith('roomStatus', expect.objectContaining({
+        found: false,
+        error: 'Room not found',
+      }));
+    });
+
+    it('should include disconnected players for in-progress game', () => {
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+      gameState.disconnectPlayer(roomCode, 'socket-1');
+
+      io.connectionHandler(socket);
+      const checkHandler = socket.on.mock.calls.find(
+        call => call[0] === 'checkRoomStatus'
+      )[1];
+
+      checkHandler({ roomCode: 'test' });
+
+      expect(socket.emit).toHaveBeenCalledWith('roomStatus', expect.objectContaining({
+        found: true,
+        inProgress: true,
+        disconnectedPlayers: expect.arrayContaining([
+          expect.objectContaining({ name: 'Alice' })
+        ]),
+      }));
+    });
+  });
+
+  describe('revealAnswer', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+      gameState.startRound(roomCode, 'Test question', 'open_ended', null);
+      gameState.submitAnswer(roomCode, 'socket-1', 'Blue', 2000);
+    });
+
+    it('should reveal an answer', () => {
+      socket.roomCode = roomCode;
+
+      io.connectionHandler(socket);
+      const revealHandler = socket.on.mock.calls.find(
+        call => call[0] === 'revealAnswer'
+      )[1];
+
+      revealHandler({ playerName: 'Alice' });
+
+      expect(io.roomEmit).toHaveBeenCalledWith('answerRevealed', expect.objectContaining({
+        playerName: 'Alice',
+        answer: 'Blue',
+        responseTime: 2000,
+      }));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const revealHandler = socket.on.mock.calls.find(
+        call => call[0] === 'revealAnswer'
+      )[1];
+
+      revealHandler({ playerName: 'Alice' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('awardPoint', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+    });
+
+    it('should award point to team', () => {
+      socket.roomCode = roomCode;
+
+      const state = gameState.getGameState(roomCode);
+      const teamId = state.teams[0].teamId;
+
+      io.connectionHandler(socket);
+      const awardHandler = socket.on.mock.calls.find(
+        call => call[0] === 'awardPoint'
+      )[1];
+
+      awardHandler({ teamId });
+
+      const updatedState = gameState.getGameState(roomCode);
+      expect(updatedState.teams[0].score).toBe(1);
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 1 });
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const awardHandler = socket.on.mock.calls.find(
+        call => call[0] === 'awardPoint'
+      )[1];
+
+      awardHandler({ teamId: 'team1' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('removePoint', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+    });
+
+    it('should remove point from team', () => {
+      socket.roomCode = roomCode;
+
+      const state = gameState.getGameState(roomCode);
+      const teamId = state.teams[0].teamId;
+
+      // First award a point
+      gameState.updateTeamScore(roomCode, teamId, 1);
+
+      io.connectionHandler(socket);
+      const removeHandler = socket.on.mock.calls.find(
+        call => call[0] === 'removePoint'
+      )[1];
+
+      removeHandler({ teamId });
+
+      const updatedState = gameState.getGameState(roomCode);
+      expect(updatedState.teams[0].score).toBe(0);
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0 });
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const removeHandler = socket.on.mock.calls.find(
+        call => call[0] === 'removePoint'
+      )[1];
+
+      removeHandler({ teamId: 'team1' });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('nextRound', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+      gameState.startRound(roomCode, 'Question 1', 'open_ended', null);
+      gameState.submitAnswer(roomCode, 'socket-1', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'socket-2', 'Answer2', 1000);
+      gameState.completeRound(roomCode);
+    });
+
+    it('should move to next round', () => {
+      socket.roomCode = roomCode;
+
+      io.connectionHandler(socket);
+      const nextRoundHandler = socket.on.mock.calls.find(
+        call => call[0] === 'nextRound'
+      )[1];
+
+      nextRoundHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.status).toBe('playing');
+      expect(io.roomEmit).toHaveBeenCalledWith('readyForNextRound', expect.any(Object));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const nextRoundHandler = socket.on.mock.calls.find(
+        call => call[0] === 'nextRound'
+      )[1];
+
+      nextRoundHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('backToAnswering', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+      gameState.startRound(roomCode, 'Question 1', 'open_ended', null);
+      gameState.submitAnswer(roomCode, 'socket-1', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'socket-2', 'Answer2', 1000);
+      gameState.completeRound(roomCode);
+    });
+
+    it('should return to answering phase', () => {
+      socket.roomCode = roomCode;
+
+      io.connectionHandler(socket);
+      const backHandler = socket.on.mock.calls.find(
+        call => call[0] === 'backToAnswering'
+      )[1];
+
+      backHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.status).toBe('playing');
+      expect(io.roomEmit).toHaveBeenCalledWith('returnedToAnswering', expect.any(Object));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const backHandler = socket.on.mock.calls.find(
+        call => call[0] === 'backToAnswering'
+      )[1];
+
+      backHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('endGame', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.startGame(roomCode);
+    });
+
+    it('should end the game', () => {
+      socket.roomCode = roomCode;
+
+      io.connectionHandler(socket);
+      const endGameHandler = socket.on.mock.calls.find(
+        call => call[0] === 'endGame'
+      )[1];
+
+      endGameHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.status).toBe('ended');
+      expect(io.roomEmit).toHaveBeenCalledWith('gameEnded', expect.any(Object));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const endGameHandler = socket.on.mock.calls.find(
+        call => call[0] === 'endGame'
+      )[1];
+
+      endGameHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
 });

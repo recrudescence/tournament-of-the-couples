@@ -26,10 +26,40 @@ See `context/react-migration.md` for full migration details.
 - When modifying socket events, update type definitions in `src/types/socket-events.ts`
 - When thinking, check in before opening or exploring a lot of files
 
-## Common Components
+## Component Organization
 
-- **ExitButton**: Floating red button in top-left corner (all game pages) - allows players/hosts to exit to home with confirmation
-- **DebugSidebar**: Host-only debug panel for viewing game state
+**Component Structure** (December 2025 - Post Component Decomposition)
+- `/src/components/common/` - Shared components used across multiple pages
+  - **ExitButton**: Floating red button in top-left corner (all game pages) - allows players/hosts to exit to home with confirmation
+  - **DebugSidebar**: Host-only debug panel for viewing game state
+  - **PlayerCard**: Unpaired player display with click-to-pair interaction and host kick functionality
+  - **TeamCard**: Paired team display with unpair/kick actions
+
+- `/src/components/host/` - Host-specific components (used by HostPage)
+  - **QuestionForm**: Question input with variant selection (open_ended, multiple_choice, binary)
+  - **AnsweringPhase**: Answer submission status display during answering phase
+  - **ScoringInterface**: Team-by-team answer review and scoring interface
+  - **TeamScoreboard**: Team list with scores
+  - **RoundControls**: End game button
+
+- `/src/components/player/` - Player-specific components (used by PlayerPage)
+  - **PlayerHeader**: Host, player, partner, team score display
+  - **WaitingStatus**: Waiting for round screen
+  - **AnswerSubmissionForm**: Question display, timer, and variant-specific input forms
+  - **SubmittedStatus**: Submitted answer display with partner status
+  - **ScoringStatus**: Scoring in progress message
+
+**Custom Hooks:**
+- `/src/hooks/useSocket.ts` - Type-safe Socket.io integration
+- `/src/hooks/usePlayerInfo.ts` - SessionStorage-based player info management
+- `/src/hooks/useGameError.ts` - Auto-dismissing error notifications
+- `/src/hooks/useTimer.ts` - Response time tracking for player answers
+- `/src/hooks/useWakeLock.ts` - Prevent mobile screen sleep during gameplay
+
+**Page Components:**
+- All major pages (HostPage, PlayerPage, LobbyPage) are kept under 400 lines
+- Pages coordinate components and manage socket event subscriptions
+- Business logic is delegated to custom hooks and components
 
 ## Styling Conventions
 
