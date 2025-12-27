@@ -6,6 +6,8 @@ import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import { ExitButton } from '../components/common/ExitButton';
+import { PlayerCard } from '../components/common/PlayerCard';
+import { TeamCard } from '../components/common/TeamCard';
 import type { Player, Team } from '../types/game';
 
 export function LobbyPage() {
@@ -130,52 +132,17 @@ export function LobbyPage() {
 
     const canUnpair = isCurrentPlayerInTeam && !playerInfo.isHost;
 
-    const player1Display =
-        player1.name === currentPlayer?.name
-            ? player1.name + ' (you!)'
-            : player1.name;
-    const player2Display =
-        player2.name === currentPlayer?.name
-            ? player2.name + ' (you!)'
-            : player2.name;
-    const playerDisplay =
-        (player1.name === currentPlayer?.name || playerInfo.isHost)
-            ? player1Display + ' 🤝🏼 ' + player2Display
-            : player2Display + ' 🤝🏼 ' + player1Display;
-
-    const unpairBtn = canUnpair && (
-        <button className="button is-small is-danger is-light" onClick={handleUnpair}>
-          Unpair
-        </button>
-    )
-
-    const kickBtns = playerInfo.isHost && (
-        <>
-          <button
-              className="button is-small is-danger"
-              onClick={() => handleKick(player1.socketId, player1.name)}
-          >
-            Kick {player1.name}
-          </button>
-          <button
-              className="button is-small is-danger"
-              onClick={() => handleKick(player2.socketId, player2.name)}
-          >
-            Kick {player2.name}
-          </button>
-        </>
-    )
-
     return (
-      <div key={team.teamId} className="box has-background-link-light">
-        <div className={`has-text-weight-semibold has-text-primary`}>
-          { playerDisplay }
-        </div>
-        <div className="is-flex is-flex-wrap-wrap mt-3" style={{ gap: '0.5rem' }}>
-          { unpairBtn }
-          { kickBtns }
-        </div>
-      </div>
+      <TeamCard
+        key={team.teamId}
+        player1={player1}
+        player2={player2}
+        currentPlayerName={currentPlayer?.name || null}
+        isHost={playerInfo.isHost}
+        canUnpair={canUnpair}
+        onUnpair={handleUnpair}
+        onKick={handleKick}
+      />
     );
   };
 
@@ -191,31 +158,15 @@ export function LobbyPage() {
       !currentPlayer.partnerId;
 
     return (
-      <div
+      <PlayerCard
         key={player.socketId}
-        className={`box ${canPair ? 'is-clickable has-background-white-ter' : ''}`}
-        onClick={canPair ? () => handlePair(player.socketId) : undefined}
-        style={canPair ? { cursor: 'pointer' } : {}}
-      >
-        <div className="is-flex is-justify-content-space-between is-align-items-center">
-          <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
-            {player.name}
-            {isCurrentPlayer && ' (You)'}
-          </div>
-          {playerInfo.isHost && !isCurrentPlayer && (
-            <button
-              className="button is-small is-danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleKick(player.socketId, player.name);
-              }}
-            >
-              Kick
-            </button>
-          )}
-        </div>
-        {canPair && <div className="has-text-grey mt-2">Click to pair</div>}
-      </div>
+        player={player}
+        isCurrentPlayer={isCurrentPlayer}
+        canPair={canPair}
+        isHost={playerInfo.isHost}
+        onPair={handlePair}
+        onKick={handleKick}
+      />
     );
   };
 
