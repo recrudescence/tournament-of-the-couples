@@ -24,6 +24,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.tag.is-mono {
+  font-family: monospace;
+}
+
 /* Custom utility classes not in Bulma */
 .is-clickable {
   cursor: pointer;
