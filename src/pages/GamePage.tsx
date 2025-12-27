@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
+import { useGameError } from '../hooks/useGameError';
 import { LobbyPage } from './LobbyPage';
 import { HostPage } from './HostPage';
 import { PlayerPage } from './PlayerPage';
@@ -12,10 +13,12 @@ export function GamePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isConnected, emit, on } = useSocket();
-  const { playerInfo } = usePlayerInfo();
+  const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
+  const { showError } = useGameError();
 
   const [hasJoined, setHasJoined] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const roomCode = searchParams.get('room');
 
@@ -49,15 +52,34 @@ export function GamePage() {
     const unsubscribers = [
       on('joinSuccess', ({ gameState: state }) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
+        setJoinError(null); // Clear any previous errors
       }),
 
       on('gameEnded', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
+
+      on('error', ({ message }) => {
+        // If we haven't joined yet (no gameState), this is a join error
+        if (!gameState) {
+          setJoinError(message);
+        } else {
+          // For other errors, just show them
+          showError(message);
+        }
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch]);
+  }, [on, dispatch, gameState, showError]);
+
+  // Handle join errors - redirect to home with error message
+  useEffect(() => {
+    if (joinError) {
+      clearPlayerInfo();
+      navigate('/', { state: { error: joinError } });
+    }
+  }, [joinError, navigate, clearPlayerInfo]);
 
   // Auto-rejoin on mount/refresh (only if we don't have gameState yet)
   useEffect(() => {

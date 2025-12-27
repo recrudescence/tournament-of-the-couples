@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -23,6 +23,7 @@ interface DisconnectedPlayer {
 
 export function JoinPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isConnected, emit, on } = useSocket();
   const { savePlayerInfo } = usePlayerInfo();
   const { dispatch } = useGameContext();
@@ -38,6 +39,16 @@ export function JoinPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [creatingNew, setCreatingNew] = useState(false);
   const [joiningExisting, setJoiningExisting] = useState(false);
+
+  // Show error from location state if present (e.g., from failed join attempt)
+  useEffect(() => {
+    const state = location.state as { error?: string } | null;
+    if (state?.error) {
+      showError(state.error);
+      // Clear the location state to prevent showing the error again on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, showError, navigate]);
 
   // Fetch available games
   const fetchGames = async () => {
