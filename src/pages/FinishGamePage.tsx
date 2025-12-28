@@ -1,12 +1,14 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { ExitButton } from '../components/common/ExitButton';
+import confetti from 'canvas-confetti';
 import type { Team } from '../types/game';
 
 export function FinishGamePage() {
   const navigate = useNavigate();
-  const { clearPlayerInfo } = usePlayerInfo();
+  const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState } = useGameContext();
 
   if (!gameState) {
@@ -39,6 +41,51 @@ export function FinishGamePage() {
     clearPlayerInfo();
     navigate('/');
   };
+
+  // Trigger confetti for host and winning team
+  useEffect(() => {
+    if (!playerInfo || !gameState || !winningTeam) return;
+
+    const shouldShowConfetti =
+      playerInfo.isHost || // Host always gets confetti
+      gameState.players.find(p => p.name === playerInfo.name)?.teamId === winningTeam.teamId; // Player is on winning team
+
+    if (shouldShowConfetti) {
+      // Fire confetti multiple times for effect
+      const duration = 5000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 15, spread: 1960, ticks: 260, zIndex: 0 };
+
+      function randomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        // Fire confetti from random positions
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        });
+      }, 250);
+
+      return () => clearInterval(interval);
+    }
+  }, [playerInfo, gameState, winningTeam]);
 
   return (
     <>
