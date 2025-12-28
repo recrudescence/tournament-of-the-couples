@@ -4,6 +4,7 @@ import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
+import { useSnowEffect } from '../hooks/useConfetti';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -27,6 +28,9 @@ export function JoinPage() {
   const { isConnected, emit, on } = useSocket();
   const { savePlayerInfo } = usePlayerInfo();
   const { dispatch } = useGameContext();
+
+  // Add snow effect
+  useSnowEffect();
 
   const [step, setStep] = useState<JoinStep>('menu');
   const [availableGames, setAvailableGames] = useState<GameListItem[]>([]);
