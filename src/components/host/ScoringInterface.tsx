@@ -104,30 +104,34 @@ export function ScoringInterface({
 
               {isExpanded && (
                 <div className="content">
-                  {players.map(({ player }) =>
-                    player ? (
-                      <div key={player.socketId} className="box has-background-white-ter mb-3">
-                        <h4 className="subtitle is-6">{player.name} said...</h4>
-                        {!revealedAnswers.has(player.name) ? (
-                          <button
-                            className="button is-link"
-                            onClick={() => onRevealAnswer(player.name)}
-                          >
-                            Reveal Answer
-                          </button>
-                        ) : (
-                          <div className="notification is-light">
-                            <strong>{currentRound?.answers[player.name]?.text || 'No answer'}</strong>
-                            {revealedResponseTimes[player.name] !== undefined && (
-                              <span className="has-text-grey ml-2">
-                                (took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s)
-                              </span>
+                  <div className="columns">
+                    {players.map(({ player }) =>
+                      player ? (
+                        <div key={player.socketId} className="column">
+                          <div className="box has-background-white-ter">
+                            <h4 className="subtitle is-6">{player.name} said...</h4>
+                            {!revealedAnswers.has(player.name) ? (
+                              <button
+                                className="button is-link"
+                                onClick={() => onRevealAnswer(player.name)}
+                              >
+                                Reveal Answer
+                              </button>
+                            ) : (
+                              <div className="notification is-light">
+                                <strong>{currentRound?.answers[player.name]?.text || 'No answer'}</strong>
+                                {revealedResponseTimes[player.name] !== undefined && (
+                                  <span className="has-text-grey ml-2">
+                                    (took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s)
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ) : null
-                  )}
+                        </div>
+                      ) : null
+                    )}
+                  </div>
 
                   <div className="field is-grouped is-grouped-centered mt-4">
                     <div className="control">
