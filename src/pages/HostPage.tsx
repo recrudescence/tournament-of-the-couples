@@ -295,7 +295,7 @@ export function HostPage() {
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
-        <div className="container container-lg">
+        <div className="container container-md">
           <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Loading...</p>
         </div>
@@ -308,7 +308,7 @@ export function HostPage() {
       <DebugSidebar />
       <ExitButton />
       <section className="section">
-        <div className="container container-lg">
+        <div className="container container-md">
           <div className="block">
             <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
             <div className="box">

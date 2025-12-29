@@ -80,13 +80,13 @@ input[type="radio"] {
 
 /* Container max-width utilities */
 .container-sm {
-  max-width: 600px;
+  max-width: 600px !important;
 }
 
 .container-md {
-  max-width: 800px;
+  max-width: 800px !important;
 }
 
 .container-lg {
-  max-width: 900px;
+  max-width: 900px !important;
 }

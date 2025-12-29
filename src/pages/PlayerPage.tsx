@@ -51,20 +51,31 @@ export function PlayerPage() {
         // Host is setting up the next round
         setSection('waiting');
       } else {
-        // Round is active - check if player has submitted
-        setVariant(gameState.currentRound.variant);
-        setOptions(gameState.currentRound.options);
-        const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
+        // Round is active - check if player has submitted in current phase
+        const roundVariant = gameState.currentRound.variant;
+        setVariant(roundVariant);
 
-        if (previousAnswer) {
-          // Player has already submitted
-          setAnswer(previousAnswer.text);
-          setSubmittedAnswer(previousAnswer.text);
+        // For binary: replace placeholders with actual team member names
+        if (roundVariant === 'binary' && gameState.currentRound.options && myPlayer && myTeam) {
+          const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
+          const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
+          setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
+        } else {
+          setOptions(gameState.currentRound.options);
+        }
+
+        const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
+        const hasSubmittedInCurrentPhase = gameState.currentRound.submittedInCurrentPhase.includes(playerInfo.name);
+
+        if (hasSubmittedInCurrentPhase) {
+          // Player has submitted in the current phase
+          setAnswer(previousAnswer?.text ?? '');
+          setSubmittedAnswer(previousAnswer?.text ?? '');
           setHasSubmitted(true);
           setSection('submitted');
         } else {
-          // Player hasn't submitted yet
-          setAnswer('');
+          // Player hasn't submitted in current phase (may have old answer from reopened round)
+          setAnswer(previousAnswer?.text ?? ''); // Pre-fill with previous answer if exists
           setHasSubmitted(false);
           setSection('answering');
         }
@@ -74,8 +85,18 @@ export function PlayerPage() {
 
     // If we're in scoring status, show scoring screen
     if (gameState.status === 'scoring' && gameState.currentRound) {
-      setVariant(gameState.currentRound.variant);
-      setOptions(gameState.currentRound.options);
+      const roundVariant = gameState.currentRound.variant;
+      setVariant(roundVariant);
+
+      // For binary: replace placeholders with actual team member names
+      if (roundVariant === 'binary' && gameState.currentRound.options && myPlayer && myTeam) {
+        const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
+        const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
+        setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
+      } else {
+        setOptions(gameState.currentRound.options);
+      }
+
       const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
       if (previousAnswer) {
         setSubmittedAnswer(previousAnswer.text);
@@ -219,7 +240,7 @@ export function PlayerPage() {
     <>
       <ExitButton />
       <section className="section">
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="container container-md">
         <div className="block">
           <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <PlayerHeader
