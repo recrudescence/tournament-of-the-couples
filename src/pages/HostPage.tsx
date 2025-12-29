@@ -253,11 +253,6 @@ export function HostPage() {
     return gameState.currentRound.submittedInCurrentPhase.length;
   }, [gameState?.currentRound]);
 
-  const sortedTeams = useMemo(() => {
-    if (!gameState?.teams) return [];
-    return [...gameState.teams].sort((a, b) => b.score - a.score);
-  }, [gameState?.teams]);
-
   // Sort teams by total response time for scoring phase
   const teamsSortedByResponseTime = useMemo(() => {
     if (!gameState?.teams || !gameState?.currentRound) return [];

@@ -134,7 +134,7 @@ export function LobbyPage() {
       currentPlayer &&
       (player1.name === currentPlayer.name || player2.name === currentPlayer.name);
 
-    const canUnpair = isCurrentPlayerInTeam && !playerInfo.isHost;
+    const canUnpair = Boolean(isCurrentPlayerInTeam && !playerInfo.isHost);
 
     return (
       <TeamCard
@@ -165,8 +165,8 @@ export function LobbyPage() {
       <PlayerCard
         key={player.socketId}
         player={player}
-        isCurrentPlayer={isCurrentPlayer}
-        canPair={canPair}
+        isCurrentPlayer={Boolean(isCurrentPlayer)}
+        canPair={Boolean(canPair)}
         isHost={playerInfo.isHost}
         onPair={handlePair}
         onKick={handleKick}

@@ -153,7 +153,7 @@ describe('Component Smoke Tests', () => {
   describe('Player Components', () => {
     describe('PlayerHeader', () => {
       it('renders all player info', () => {
-        const { container } = render(
+        render(
           <PlayerHeader
             hostName="GameHost"
             playerName="Alice"
@@ -170,7 +170,7 @@ describe('Component Smoke Tests', () => {
       });
 
       it('applies celebration style when isCelebrating is true', () => {
-        const { container } = render(
+        render(
           <PlayerHeader
             hostName="GameHost"
             playerName="Alice"

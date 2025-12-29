@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { GameProvider, useGameContext } from '../GameContext';
 import type { GameState, Player, Team } from '../../types/game';
+import { GameStatus, RoundPhase } from '../../types/game';
 
 // Wrapper component for testing
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -34,10 +35,11 @@ describe('GameContext', () => {
 
   const mockGameState: GameState = {
     roomCode: 'test',
-    host: { socketId: 'host1', name: 'Host', connected: true },
+    gameId: 'game1',
+    host: { socketId: 'host1', name: 'Host' },
     players: [mockPlayer1, mockPlayer2],
     teams: [mockTeam],
-    status: 'lobby',
+    status: GameStatus.LOBBY,
     currentRound: null
   };
 
@@ -113,10 +115,10 @@ describe('GameContext', () => {
       const { result } = renderHook(() => useGameContext(), { wrapper });
 
       act(() => {
-        result.current.dispatch({ type: 'SET_ROUND_PHASE', payload: 'answering' });
+        result.current.dispatch({ type: 'SET_ROUND_PHASE', payload: RoundPhase.IN_PROGRESS });
       });
 
-      expect(result.current.roundPhase).toBe('answering');
+      expect(result.current.roundPhase).toBe(RoundPhase.IN_PROGRESS);
     });
   });
 
@@ -135,7 +137,7 @@ describe('GameContext', () => {
         result.current.dispatch({ type: 'UPDATE_PLAYERS', payload: newPlayers });
       });
 
-      expect(result.current.gameState?.players[0].connected).toBe(false);
+      expect(result.current.gameState?.players[0]?.connected).toBe(false);
     });
 
     it('does nothing when gameState is null', () => {
@@ -160,7 +162,7 @@ describe('GameContext', () => {
         result.current.dispatch({ type: 'UPDATE_TEAMS', payload: [newTeam] });
       });
 
-      expect(result.current.gameState?.teams[0].score).toBe(10);
+      expect(result.current.gameState?.teams[0]?.score).toBe(10);
     });
 
     it('does nothing when gameState is null', () => {
@@ -183,7 +185,7 @@ describe('GameContext', () => {
         result.current.dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId: 'team1', newScore: 15 } });
       });
 
-      expect(result.current.gameState?.teams[0].score).toBe(15);
+      expect(result.current.gameState?.teams[0]?.score).toBe(15);
     });
 
     it('only updates the specified team', () => {
@@ -202,8 +204,8 @@ describe('GameContext', () => {
         result.current.dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId: 'team1', newScore: 20 } });
       });
 
-      expect(result.current.gameState?.teams[0].score).toBe(20);
-      expect(result.current.gameState?.teams[1].score).toBe(3);
+      expect(result.current.gameState?.teams[0]?.score).toBe(20);
+      expect(result.current.gameState?.teams[1]?.score).toBe(3);
     });
 
     it('does nothing when gameState is null', () => {
@@ -224,7 +226,7 @@ describe('GameContext', () => {
       act(() => {
         result.current.dispatch({ type: 'SET_GAME_STATE', payload: mockGameState });
         result.current.dispatch({ type: 'SET_PLAYER_INFO', payload: { name: 'Alice', isHost: false, roomCode: 'test' } });
-        result.current.dispatch({ type: 'SET_ROUND_PHASE', payload: 'answering' });
+        result.current.dispatch({ type: 'SET_ROUND_PHASE', payload: RoundPhase.IN_PROGRESS });
 
         result.current.dispatch({ type: 'RESET' });
       });

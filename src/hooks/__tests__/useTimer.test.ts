@@ -138,8 +138,6 @@ describe('useTimer', () => {
       result.current.startTimer();
     });
 
-    const timeBeforeUnmount = result.current.responseTime;
-
     unmount();
 
     // Advance time - timer should be cleaned up

@@ -16,9 +16,9 @@ describe('useSocket', () => {
     mockOff = vi.fn();
 
     mockSocket = {
-      emit: mockEmit,
-      on: mockOn,
-      off: mockOff,
+      emit: mockEmit as any,
+      on: mockOn as any,
+      off: mockOff as any,
     };
 
     vi.spyOn(SocketContext, 'useSocketContext').mockReturnValue({
@@ -132,13 +132,13 @@ describe('useSocket', () => {
 
     act(() => {
       result.current.emit('createGame', { name: 'Alice' });
-      result.current.emit('startGame', {});
+      result.current.emit('startGame');
       result.current.emit('submitAnswer', { answer: 'test', responseTime: 1000 });
     });
 
     expect(mockEmit).toHaveBeenCalledTimes(3);
     expect(mockEmit).toHaveBeenNthCalledWith(1, 'createGame', { name: 'Alice' });
-    expect(mockEmit).toHaveBeenNthCalledWith(2, 'startGame', {});
+    expect(mockEmit).toHaveBeenNthCalledWith(2, 'startGame');
     expect(mockEmit).toHaveBeenNthCalledWith(3, 'submitAnswer', { answer: 'test', responseTime: 1000 });
   });
 

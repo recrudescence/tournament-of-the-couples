@@ -8,6 +8,7 @@ import { HostPage } from '../HostPage';
 import { PlayerPage } from '../PlayerPage';
 import { FinishGamePage } from '../FinishGamePage';
 import type { GameState, Player, Team } from '../../types/game';
+import { GameStatus } from '../../types/game';
 
 // Mock implementations
 const mockNavigate = vi.fn();
@@ -132,10 +133,11 @@ describe('Page Smoke Tests', () => {
 
       mockGameState = {
         roomCode: 'test',
-        host: { socketId: 'host1', name: 'Host', connected: true },
+        gameId: 'game1',
+        host: { socketId: 'host1', name: 'Host' },
         players: [player],
         teams: [],
-        status: 'lobby',
+        status: GameStatus.LOBBY,
         currentRound: null,
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
@@ -171,10 +173,11 @@ describe('Page Smoke Tests', () => {
     it('renders lobby page when status is lobby', () => {
       mockGameState = {
         roomCode: 'test',
-        host: { socketId: 'host1', name: 'Host', connected: true },
+        gameId: 'game1',
+        host: { socketId: 'host1', name: 'Host' },
         players: [],
         teams: [],
-        status: 'lobby',
+        status: GameStatus.LOBBY,
         currentRound: null,
       };
 
@@ -196,10 +199,11 @@ describe('Page Smoke Tests', () => {
     it('renders without crashing', () => {
       mockGameState = {
         roomCode: 'test',
-        host: { socketId: 'host1', name: 'Host', connected: true },
+        gameId: 'game1',
+        host: { socketId: 'host1', name: 'Host' },
         players: [],
         teams: [],
-        status: 'playing',
+        status: GameStatus.PLAYING,
         currentRound: null,
       };
       mockPlayerInfo = { name: 'Host', isHost: true, roomCode: 'test' };
@@ -242,10 +246,11 @@ describe('Page Smoke Tests', () => {
 
       mockGameState = {
         roomCode: 'test',
-        host: { socketId: 'host1', name: 'Host', connected: true },
+        gameId: 'game1',
+        host: { socketId: 'host1', name: 'Host' },
         players: [player, partner],
         teams: [team],
-        status: 'playing',
+        status: GameStatus.PLAYING,
         currentRound: null,
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
@@ -290,10 +295,11 @@ describe('Page Smoke Tests', () => {
 
       mockGameState = {
         roomCode: 'test',
-        host: { socketId: 'host1', name: 'Host', connected: true },
+        gameId: 'game1',
+        host: { socketId: 'host1', name: 'Host' },
         players: [player1, player2],
         teams: [team],
-        status: 'ended',
+        status: GameStatus.ENDED,
         currentRound: null,
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
