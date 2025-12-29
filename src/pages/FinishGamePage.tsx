@@ -15,7 +15,7 @@ export function FinishGamePage() {
   if (!gameState) {
     return (
       <section className="section">
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container container-md">
           <h1 className="title has-text-centered">Game Over</h1>
           <p className="has-text-centered">Loading results...</p>
         </div>
@@ -58,7 +58,7 @@ export function FinishGamePage() {
       <ExitButton />
       <section className="hero is-fullheight-with-navbar">
       <div className="hero-body">
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container container-md">
           <h1 className="title is-2 has-text-centered mb-6">Game Over</h1>
 
           <div className="mb-6">
@@ -80,9 +80,8 @@ export function FinishGamePage() {
                 <div
                   key={team.teamId}
                   className={`box mb-3 is-flex is-justify-content-space-between is-align-items-center ${
-                    index === 0 ? 'has-background-link-light' : ''
+                    index === 0 ? 'has-background-link-light winning-team-border' : ''
                   }`}
-                  style={index === 0 ? { borderLeft: '4px solid hsl(229, 53%, 53%)' } : {}}
                 >
                   <div>
                     <span className="has-text-weight-bold is-size-5 mr-3">

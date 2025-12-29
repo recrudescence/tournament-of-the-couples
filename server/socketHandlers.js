@@ -224,13 +224,6 @@ function setupSocketHandlers(io) {
       socket.emit('lobbyUpdate', state);
     });
 
-    // Get disconnected players (for reconnection UI) - DEPRECATED but kept for compatibility
-    socket.on('getDisconnectedPlayers', () => {
-      // This is now only used when no room code is known (initial connection)
-      // Return empty list to show join form
-      socket.emit('disconnectedPlayers', { players: [], canJoinAsNew: true });
-    });
-
     // Check room status for join flow
     socket.on('checkRoomStatus', ({ roomCode }) => {
       if (!roomCode || !roomCodeGenerator.validateRoomCode(roomCode.toLowerCase())) {

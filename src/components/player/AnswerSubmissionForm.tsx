@@ -58,8 +58,7 @@ export function AnswerSubmissionForm({
               {options?.map((option, index) => (
                 <label
                   key={index}
-                  className={`button is-fullwidth mb-2 ${selectedOption === option ? 'is-primary' : 'is-light'}`}
-                  style={{ display: 'block', cursor: 'pointer' }}
+                  className={`button is-fullwidth mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
                 >
                   <input
                     type="radio"
@@ -69,7 +68,6 @@ export function AnswerSubmissionForm({
                     checked={selectedOption === option}
                     onChange={(e) => onOptionChange(e.target.value)}
                     required
-                    style={{ marginRight: '8px' }}
                   />
                   {option}
                 </label>

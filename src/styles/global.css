@@ -55,4 +55,38 @@ body {
 /* Radio button styling for answer options */
 input[type="radio"] {
   cursor: pointer;
+  margin-right: 8px;
+}
+
+/* Answer option label styling */
+.answer-option-label {
+  display: block;
+  cursor: pointer;
+}
+
+/* Fixed exit button in top-left corner */
+.exit-button-fixed {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Winning team highlight border */
+.winning-team-border {
+  border-left: 4px solid hsl(229, 53%, 53%);
+}
+
+/* Container max-width utilities */
+.container-sm {
+  max-width: 600px;
+}
+
+.container-md {
+  max-width: 800px;
+}
+
+.container-lg {
+  max-width: 900px;
 }

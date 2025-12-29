@@ -208,7 +208,7 @@ export function JoinPage() {
   if (!isConnected) {
     return (
       <section className="section">
-        <div className="container" style={{ maxWidth: '600px' }}>
+        <div className="container container-sm">
           <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Connecting...</p>
         </div>

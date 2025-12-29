@@ -44,7 +44,7 @@ export function LobbyPage() {
         navigate('/');
       }),
 
-      on('gameCancelled', ({ reason }) => {
+      on('gameCancelled', () => {
         // Game was canceled (host left lobby) - clear info and redirect
         clearPlayerInfo();
         navigate('/');
@@ -93,7 +93,7 @@ export function LobbyPage() {
   if (!playerInfo || !gameState) {
     return (
       <section className="section">
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container container-md">
           <h1 className="title">Lobby</h1>
           <p>Loading...</p>
         </div>
@@ -190,7 +190,7 @@ export function LobbyPage() {
       {playerInfo.isHost && <DebugSidebar />}
       <ExitButton />
       <section className="section">
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container container-md">
           <div className="block">
             <h1 className="title has-text-centered">Lobby</h1>
             <p className="subtitle is-6 has-text-centered">

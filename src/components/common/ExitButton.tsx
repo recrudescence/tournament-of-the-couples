@@ -21,14 +21,7 @@ export function ExitButton() {
   return (
     <button
       onClick={handleExit}
-      className="button is-info is-small"
-      style={{
-        position: 'fixed',
-        top: '1rem',
-        left: '1rem',
-        zIndex: 1000,
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-      }}
+      className="button is-info is-small exit-button-fixed"
       title="Exit to home"
     >
       ← Exit

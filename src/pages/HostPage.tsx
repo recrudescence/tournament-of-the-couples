@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -295,7 +295,7 @@ export function HostPage() {
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
-        <div className="container" style={{ maxWidth: '900px' }}>
+        <div className="container container-lg">
           <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Loading...</p>
         </div>
@@ -308,7 +308,7 @@ export function HostPage() {
       <DebugSidebar />
       <ExitButton />
       <section className="section">
-        <div className="container" style={{ maxWidth: '900px' }}>
+        <div className="container container-lg">
           <div className="block">
             <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
             <div className="box">

@@ -205,7 +205,7 @@ export function PlayerPage() {
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container container-md">
           <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
           <p className="has-text-centered">Loading...</p>
         </div>
