@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useCelebrationConfetti } from '../hooks/useConfetti';
 import { ExitButton } from '../components/common/ExitButton';
 import type { Team } from '../types/game';
+import { findPlayerBySocketId } from '../utils/playerUtils';
 
 export function FinishGamePage() {
   const navigate = useNavigate();
@@ -22,18 +24,17 @@ export function FinishGamePage() {
   }
 
   // Sort teams by score (descending)
-  const sortedTeams = [...gameState.teams].sort((a, b) => b.score - a.score);
+  const sortedTeams = useMemo(
+    () => [...gameState.teams].sort((a, b) => b.score - a.score),
+    [gameState.teams]
+  );
+
   const winningTeam = sortedTeams[0];
 
-  const getPlayerName = (socketId: string) => {
-    const player = gameState.players.find((p) => p.socketId === socketId);
-    return player?.name || 'Unknown';
-  };
-
   const getTeamNames = (team: Team) => {
-    const player1 = getPlayerName(team.player1Id);
-    const player2 = getPlayerName(team.player2Id);
-    return `${player1} & ${player2}`;
+    const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
+    const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
+    return `${player1?.name ?? 'Unknown'} & ${player2?.name ?? 'Unknown'}`;
   };
 
   const handleReturnHome = () => {
@@ -42,9 +43,12 @@ export function FinishGamePage() {
   };
 
   // Determine if confetti should be shown
-  const shouldShowConfetti =
-    playerInfo?.isHost || // Host always gets confetti
-    (playerInfo && gameState.players.find(p => p.name === playerInfo.name)?.teamId === winningTeam?.teamId); // Player is on winning team
+  const shouldShowConfetti = useMemo(
+    () =>
+      playerInfo?.isHost || // Host always gets confetti
+      (playerInfo && gameState.players.find(p => p.name === playerInfo.name)?.teamId === winningTeam?.teamId), // Player is on winning team
+    [playerInfo, gameState.players, winningTeam?.teamId]
+  );
 
   // Trigger confetti for host and winning team
   useCelebrationConfetti(!!shouldShowConfetti);

@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 
+// Confetti animation constants
+const CELEBRATION_DURATION_MS = 5000;
+const CELEBRATION_START_VELOCITY = 15;
+const CELEBRATION_SPREAD = 360;
+const CELEBRATION_TICKS = 260;
+
+const SNOW_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 /**
  * Hook for celebration confetti effect
  */
@@ -9,9 +17,13 @@ export function useCelebrationConfetti(shouldTrigger: boolean) {
     if (!shouldTrigger) return;
 
     // Fire confetti multiple times for effect
-    const duration = 5000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 15, spread: 360, ticks: 260, zIndex: 0 };
+    const animationEnd = Date.now() + CELEBRATION_DURATION_MS;
+    const defaults = {
+      startVelocity: CELEBRATION_START_VELOCITY,
+      spread: CELEBRATION_SPREAD,
+      ticks: CELEBRATION_TICKS,
+      zIndex: 0
+    };
 
     function randomInRange(min: number, max: number) {
       return Math.random() * (max - min) + min;
@@ -25,7 +37,7 @@ export function useCelebrationConfetti(shouldTrigger: boolean) {
         return;
       }
 
-      const particleCount = 50 * (timeLeft / duration);
+      const particleCount = 50 * (timeLeft / CELEBRATION_DURATION_MS);
 
       // Fire confetti from random positions
       confetti({
@@ -51,8 +63,7 @@ export function useSnowEffect(enabled: boolean = true) {
   useEffect(() => {
     if (!enabled) return;
 
-    const duration = 15 * 60 * 1000; // 15 minutes
-    const animationEnd = Date.now() + duration;
+    const animationEnd = Date.now() + SNOW_DURATION_MS;
     let skew = 1;
 
     function randomInRange(min: number, max: number) {
@@ -61,7 +72,7 @@ export function useSnowEffect(enabled: boolean = true) {
 
     const interval = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
-      const ticks = Math.max(200, 500 * (timeLeft / duration));
+      const ticks = Math.max(200, 500 * (timeLeft / SNOW_DURATION_MS));
 
       if (timeLeft <= 0) {
         clearInterval(interval);

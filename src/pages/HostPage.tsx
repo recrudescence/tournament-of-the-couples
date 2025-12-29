@@ -11,6 +11,7 @@ import { ScoringInterface } from '../components/host/ScoringInterface';
 import { TeamScoreboard } from '../components/host/TeamScoreboard';
 import { RoundControls } from '../components/host/RoundControls';
 import { type GameState } from '../types/game';
+import { findPlayerBySocketId } from '../utils/playerUtils';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
 
@@ -228,9 +229,9 @@ export function HostPage() {
 
     // Clear revealed answers and response times for this team's players
     const team = gameState?.teams.find(t => t.teamId === teamId);
-    if (team) {
-      const player1 = getPlayerBySocketId(team.player1Id);
-      const player2 = getPlayerBySocketId(team.player2Id);
+    if (team && gameState?.players) {
+      const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
+      const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
 
       const newRevealedAnswers = new Set(revealedAnswers);
       if (player1) newRevealedAnswers.delete(player1.name);
@@ -257,11 +258,6 @@ export function HostPage() {
   };
 
   // Computed values
-  const getPlayerBySocketId = useCallback(
-    (socketId: string) => gameState?.players.find((p) => p.socketId === socketId),
-    [gameState?.players]
-  );
-
   const submittedCount = useMemo(() => {
     if (!gameState?.currentRound) return 0;
 
@@ -276,8 +272,8 @@ export function HostPage() {
     if (!gameState?.teams || !gameState?.currentRound) return [];
 
     return gameState.teams.map((team, originalIndex) => {
-      const player1 = getPlayerBySocketId(team.player1Id);
-      const player2 = getPlayerBySocketId(team.player2Id);
+      const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
+      const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
 
       const player1Answer = player1 ? gameState.currentRound!.answers[player1.name] : null;
       const player2Answer = player2 ? gameState.currentRound!.answers[player2.name] : null;
@@ -294,7 +290,7 @@ export function HostPage() {
         player2Time
       };
     }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
-  }, [gameState?.teams, gameState?.currentRound, getPlayerBySocketId]);
+  }, [gameState?.teams, gameState?.currentRound, gameState?.players]);
 
   if (!playerInfo || !isConnected) {
     return (

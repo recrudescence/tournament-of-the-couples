@@ -23,9 +23,12 @@ export function useSocket() {
       handler: ServerToClientEvents[E]
     ) => {
       if (!socket) return () => {};
-      socket.on(event, handler as never);
+      // Socket.io's internal typing requires this assertion
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      socket.on(event, handler as any);
       return () => {
-        socket.off(event, handler as never);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        socket.off(event, handler as any);
       };
     },
     [socket]

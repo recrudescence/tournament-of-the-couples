@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
@@ -10,6 +10,7 @@ import { ExitButton } from '../components/common/ExitButton';
 import { PlayerCard } from '../components/common/PlayerCard';
 import { TeamCard } from '../components/common/TeamCard';
 import type { Player, Team } from '../types/game';
+import { findPlayerBySocketId } from '../utils/playerUtils';
 
 export function LobbyPage() {
   const navigate = useNavigate();
@@ -105,7 +106,11 @@ export function LobbyPage() {
     ? { ...gameState.host, isHost: true, partnerId: null, teamId: null, connected: true, name: gameState.host.name, socketId: gameState.host.socketId }
     : myPlayer;
 
-  const connectedPlayers = gameState.players.filter((p) => p.connected);
+  const connectedPlayers = useMemo(
+    () => gameState.players.filter((p) => p.connected),
+    [gameState.players]
+  );
+
   const playerCount = connectedPlayers.length;
   const teamCount = gameState.teams.length;
 
@@ -113,16 +118,23 @@ export function LobbyPage() {
   const renderedPlayerIds = new Set<string>();
 
   // Check if game can start
-  const connectedNonHostPlayers = gameState.players.filter(
-    (p) => p.name !== gameState.host?.name && p.connected
+  const connectedNonHostPlayers = useMemo(
+    () => gameState.players.filter(
+      (p) => p.name !== gameState.host?.name && p.connected
+    ),
+    [gameState.players, gameState.host?.name]
   );
-  const allPaired =
-    connectedNonHostPlayers.length > 0 &&
-    connectedNonHostPlayers.length === gameState.teams.length * 2;
+
+  const allPaired = useMemo(
+    () =>
+      connectedNonHostPlayers.length > 0 &&
+      connectedNonHostPlayers.length === gameState.teams.length * 2,
+    [connectedNonHostPlayers.length, gameState.teams.length]
+  );
 
   const renderTeamCard = (team: Team) => {
-    const player1 = gameState.players.find((p) => p.socketId === team.player1Id);
-    const player2 = gameState.players.find((p) => p.socketId === team.player2Id);
+    const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
+    const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
 
     if (!player1 || !player2) return null;
 

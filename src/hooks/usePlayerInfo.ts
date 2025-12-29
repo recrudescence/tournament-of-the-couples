@@ -8,7 +8,8 @@ export function usePlayerInfo() {
     try {
       const stored = sessionStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : null;
-    } catch {
+    } catch (error) {
+      console.error('[usePlayerInfo] Failed to load player info from storage:', error);
       return null;
     }
   });
@@ -18,7 +19,8 @@ export function usePlayerInfo() {
       try {
         const stored = sessionStorage.getItem(STORAGE_KEY);
         setPlayerInfo(stored ? JSON.parse(stored) : null);
-      } catch {
+      } catch (error) {
+        console.error('[usePlayerInfo] Failed to parse player info from storage:', error);
         setPlayerInfo(null);
       }
     };

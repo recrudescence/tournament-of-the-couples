@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+const DEFAULT_ERROR_DURATION_MS = 5000;
+
 export function useGameError() {
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showError = useCallback((message: string, duration = 5000) => {
+  const showError = useCallback((message: string, duration = DEFAULT_ERROR_DURATION_MS) => {
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);

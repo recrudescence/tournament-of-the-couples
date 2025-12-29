@@ -1,4 +1,5 @@
 import { type Player, type CurrentRound } from '../../types/game';
+import { findPlayerBySocketId } from '../../utils/playerUtils';
 
 interface TeamWithTiming {
   team: {
@@ -45,9 +46,6 @@ export function ScoringInterface({
   onReopenTeamScoring,
   onFinishRound
 }: ScoringInterfaceProps) {
-  const getPlayerBySocketId = (socketId: string) =>
-    players.find((p) => p.socketId === socketId);
-
   return (
     <div className="box">
       <button className="button is-info is-small mb-3" onClick={onBackToAnswering}>
@@ -57,13 +55,13 @@ export function ScoringInterface({
 
       <div className="mb-4">
         {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
-          const player1 = getPlayerBySocketId(team.player1Id);
-          const player2 = getPlayerBySocketId(team.player2Id);
+          const player1 = findPlayerBySocketId(players, team.player1Id);
+          const player2 = findPlayerBySocketId(players, team.player2Id);
           const isScored = team.teamId in teamPointsAwarded;
           const isExpanded = originalIndex === currentTeamIndex && !isScored;
 
           // Sort players by response time (ascending)
-          const players = [
+          const sortedPlayers = [
             { player: player1, time: player1Time },
             { player: player2, time: player2Time }
           ].sort((a, b) => a.time - b.time);
@@ -75,7 +73,7 @@ export function ScoringInterface({
             >
               <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
                 <div className="has-text-weight-bold is-size-5">
-                  {player1?.name || '?'} & {player2?.name || '?'}
+                  {player1?.name ?? '?'} & {player2?.name ?? '?'}
                 </div>
                 <div className="is-flex is-align-items-center">
                   {isScored && (
@@ -105,7 +103,7 @@ export function ScoringInterface({
               {isExpanded && (
                 <div className="content">
                   <div className="columns">
-                    {players.map(({ player }) =>
+                    {sortedPlayers.map(({ player }) =>
                       player ? (
                         <div key={player.socketId} className="column">
                           <div className="box has-background-white-ter">

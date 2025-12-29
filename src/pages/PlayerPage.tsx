@@ -11,6 +11,7 @@ import { WaitingStatus } from '../components/player/WaitingStatus';
 import { AnswerSubmissionForm } from '../components/player/AnswerSubmissionForm';
 import { SubmittedStatus } from '../components/player/SubmittedStatus';
 import { ScoringStatus } from '../components/player/ScoringStatus';
+import { findPlayerBySocketId } from '../utils/playerUtils';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -102,10 +103,10 @@ export function PlayerPage() {
         setVariant(v);
 
         // For binary: replace placeholders with actual team member names
-        if (v === 'binary' && opts && myPlayer && myTeam) {
-          const player1 = gameState?.players.find(p => p.socketId === myTeam.player1Id);
-          const player2 = gameState?.players.find(p => p.socketId === myTeam.player2Id);
-          setOptions([player1?.name || 'Player 1', player2?.name || 'Player 2']);
+        if (v === 'binary' && opts && myPlayer && myTeam && gameState?.players) {
+          const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
+          const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
+          setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
         } else {
           setOptions(opts);
         }
@@ -252,9 +253,9 @@ export function PlayerPage() {
       {section === 'submitted' && (
         <SubmittedStatus
           submittedAnswer={submittedAnswer}
-          partnerName={myPartner?.name || null}
-          partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name || ''] !== undefined}
-          totalAnswersCount={Object.keys(gameState?.currentRound?.answers || {}).length}
+          partnerName={myPartner?.name ?? null}
+          partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
+          totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
         />
       )}
 
