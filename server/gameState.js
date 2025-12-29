@@ -318,6 +318,11 @@ function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
     throw new Error('Round not accepting answers');
   }
 
+  // Validate answer is not empty
+  if (!answerText || answerText.trim() === '') {
+    throw new Error('Answer cannot be empty');
+  }
+
   // Find the player submitting this answer
   const player = gameState.players.find(p => p.socketId === socketId);
   if (!player) {
@@ -330,7 +335,7 @@ function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
     responseTime: responseTime
   };
 
-  // Mark player as having submitted in the current answering phase
+  // Mark player as having submitted in the current answering phase (avoid duplicates)
   if (!gameState.currentRound.submittedInCurrentPhase.includes(player.name)) {
     gameState.currentRound.submittedInCurrentPhase.push(player.name);
   }
