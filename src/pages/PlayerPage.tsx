@@ -31,21 +31,9 @@ export function PlayerPage() {
   const [options, setOptions] = useState<string[] | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>('');
 
-  // Debug section changes
-  useEffect(() => {
-    console.log('[PlayerPage] Section changed to:', section);
-  }, [section]);
-
-  // Debug team/partner updates
-  useEffect(() => {
-    console.log('[PlayerPage] myTeam updated:', myTeam);
-    console.log('[PlayerPage] myPartner updated:', myPartner);
-  }, [myTeam, myPartner]);
-
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
     if (gameState?.status === 'playing' && wakeLockSupported) {
-      console.log('[PlayerPage] Game is playing, requesting wake lock');
       requestWakeLock();
     }
   }, [gameState?.status, wakeLockSupported, requestWakeLock]);
@@ -54,14 +42,12 @@ export function PlayerPage() {
   useEffect(() => {
     if (!gameState || !playerInfo) return;
 
-    console.log('[PlayerPage] Initializing from gameState', { status: gameState.status, currentRound: gameState.currentRound });
     dispatch({ type: 'SET_GAME_STATE', payload: gameState });
 
     // Check game status - now currentRound is null when status is 'playing'
     if (gameState.status === 'playing') {
       if (!gameState.currentRound) {
         // Host is setting up the next round
-        console.log('[PlayerPage] Setting section to waiting (host setting up)');
         setSection('waiting');
       } else {
         // Round is active - check if player has submitted
@@ -74,13 +60,11 @@ export function PlayerPage() {
           setAnswer(previousAnswer.text);
           setSubmittedAnswer(previousAnswer.text);
           setHasSubmitted(true);
-          console.log('[PlayerPage] Setting section to submitted');
           setSection('submitted');
         } else {
           // Player hasn't submitted yet
           setAnswer('');
           setHasSubmitted(false);
-          console.log('[PlayerPage] Setting section to answering');
           setSection('answering');
         }
       }
@@ -95,13 +79,11 @@ export function PlayerPage() {
       if (previousAnswer) {
         setSubmittedAnswer(previousAnswer.text);
       }
-      console.log('[PlayerPage] Setting section to scoring');
       setSection('scoring');
       return;
     }
 
     // Default to waiting
-    console.log('[PlayerPage] Setting section to waiting (default)');
     setSection('waiting');
   }, []); // Only run on mount
 
@@ -161,12 +143,6 @@ export function PlayerPage() {
       }),
 
       on('readyForNextRound', (state) => {
-        console.log('[PlayerPage] readyForNextRound event received', {
-          status: state.status,
-          currentRound: state.currentRound,
-          teams: state.teams,
-          players: state.players
-        });
         dispatch({ type: 'SET_GAME_STATE', payload: state });
         setSection('waiting');
       }),

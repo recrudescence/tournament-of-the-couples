@@ -8,7 +8,6 @@ function setupSocketHandlers(io) {
 
     // Create a new game (host only)
     socket.on('createGame', async ({ name }) => {
-      console.log('[socket] createGame');
       try {
         // Generate room code
         const roomCode = roomCodeGenerator.generateRoomCode();
@@ -38,7 +37,6 @@ function setupSocketHandlers(io) {
 
     // Join existing game (new player or reconnect)
     socket.on('joinGame', async ({ name, isHost, isReconnect, roomCode }) => {
-      console.log('[socket] joinGame')
       try {
         // Validate room code
         if (!roomCode || !roomCodeGenerator.validateRoomCode(roomCode)) {
@@ -60,8 +58,6 @@ function setupSocketHandlers(io) {
 
         let result;
 
-        console.log('debug:', roomCode, isHost, isReconnect, name)
-
         // Route to appropriate handler based on join type
         if (isHost) {
           result = handleHostJoin(roomCode, socket, name, state);
@@ -73,7 +69,6 @@ function setupSocketHandlers(io) {
           if (existingPlayer && !existingPlayer.connected) {
             result = handlePlayerReconnect(roomCode, socket, name, state);
           } else {
-            console.log('x')
             result = handleNewPlayerJoin(roomCode, socket, name, isHost, state);
           }
         }
@@ -94,7 +89,6 @@ function setupSocketHandlers(io) {
 
     // Request to pair with another player
     socket.on('requestPair', ({ targetSocketId }) => {
-      console.log('[socket] requestPair')
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -113,7 +107,6 @@ function setupSocketHandlers(io) {
 
     // Unpair from partner
     socket.on('unpair', () => {
-      console.log('[socket] unpair')
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -132,7 +125,6 @@ function setupSocketHandlers(io) {
 
     // Host kicks a player from the lobby
     socket.on('kickPlayer', ({ targetSocketId }) => {
-      console.log('[socket] kickPlayer', { targetSocketId });
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -182,7 +174,6 @@ function setupSocketHandlers(io) {
 
     // Player explicitly leaves the game
     socket.on('leaveGame', () => {
-      console.log('[socket] leaveGame');
       const roomCode = socket.roomCode;
       if (!roomCode) return;
 
@@ -223,7 +214,6 @@ function setupSocketHandlers(io) {
 
     // Get lobby state
     socket.on('getLobbyState', () => {
-      console.log('[socket] getLobbyState')
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -236,7 +226,6 @@ function setupSocketHandlers(io) {
 
     // Get disconnected players (for reconnection UI) - DEPRECATED but kept for compatibility
     socket.on('getDisconnectedPlayers', () => {
-      console.log('getDisconnectedPlayers');
       // This is now only used when no room code is known (initial connection)
       // Return empty list to show join form
       socket.emit('disconnectedPlayers', { players: [], canJoinAsNew: true });
@@ -244,7 +233,6 @@ function setupSocketHandlers(io) {
 
     // Check room status for join flow
     socket.on('checkRoomStatus', ({ roomCode }) => {
-      console.log('[socket] checkRoomStatus')
       if (!roomCode || !roomCodeGenerator.validateRoomCode(roomCode.toLowerCase())) {
         socket.emit('roomStatus', {
           found: false,
@@ -285,7 +273,6 @@ function setupSocketHandlers(io) {
 
     // Host starts the game
     socket.on('startGame', () => {
-      console.log('[socket] startGame')
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -295,7 +282,6 @@ function setupSocketHandlers(io) {
       try {
         gameState.startGame(roomCode);
         const state = gameState.getGameState(roomCode);
-        console.log('Emitting gameStarted to room', roomCode, '. Players:', state.players.map(p => p.name));
         io.to(roomCode).emit('gameStarted', state);
       } catch (err) {
         console.error('Start game error:', err);
@@ -305,7 +291,6 @@ function setupSocketHandlers(io) {
 
     // Host starts a new round
     socket.on('startRound', async ({ question, variant, options }) => {
-      console.log('[socket] startRound', { variant, optionsCount: options?.length });
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -341,7 +326,6 @@ function setupSocketHandlers(io) {
 
     // Player submits an answer
     socket.on('submitAnswer', async ({ answer, responseTime }) => {
-      console.log('[socket] submitAnswer');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -390,7 +374,6 @@ function setupSocketHandlers(io) {
 
     // Host reveals an answer
     socket.on('revealAnswer', ({ playerName }) => {
-      console.log('[socket] revealAnswer:');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -416,7 +399,6 @@ function setupSocketHandlers(io) {
 
     // Host awards point to team
     socket.on('awardPoint', ({ teamId }) => {
-      console.log('[socket] awardPoint');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -437,7 +419,6 @@ function setupSocketHandlers(io) {
 
     // Host removes point from team (for reopening scoring)
     socket.on('removePoint', ({ teamId }) => {
-      console.log('[socket] removePoint');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -476,18 +457,15 @@ function setupSocketHandlers(io) {
 
     // Host returns to answering phase
     socket.on('backToAnswering', () => {
-      console.log('[socket] backToAnswering');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
         return;
       }
 
-      console.log('backToAnswering event received for room', roomCode);
       try {
         gameState.returnToAnswering(roomCode);
         const state = gameState.getGameState(roomCode);
-        console.log('Emitting returnedToAnswering to room', roomCode);
         io.to(roomCode).emit('returnedToAnswering', state);
       } catch (err) {
         console.error('Back to answering error:', err);
@@ -497,7 +475,6 @@ function setupSocketHandlers(io) {
 
     // Host ends the game
     socket.on('endGame', () => {
-      console.log('[socket] endGame');
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -507,7 +484,6 @@ function setupSocketHandlers(io) {
       try {
         gameState.endGame(roomCode);
         const state = gameState.getGameState(roomCode);
-        console.log('Game ended, emitting to room', roomCode);
         io.to(roomCode).emit('gameEnded', state);
       } catch (err) {
         console.error('End game error:', err);
@@ -517,7 +493,6 @@ function setupSocketHandlers(io) {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      console.log('[socket] disconnect');
       const roomCode = socket.roomCode;
       if (!roomCode) return;
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Hook to prevent screen from sleeping on mobile devices
@@ -14,7 +14,7 @@ export function useWakeLock() {
     setIsSupported('wakeLock' in navigator);
   }, []);
 
-  const requestWakeLock = async () => {
+  const requestWakeLock = useCallback(async () => {
     if (!('wakeLock' in navigator)) {
       return;
     }
@@ -34,9 +34,9 @@ export function useWakeLock() {
     } catch (err) {
       console.error('[WakeLock] Failed to acquire wake lock:', err);
     }
-  };
+  }, []);
 
-  const releaseWakeLock = async () => {
+  const releaseWakeLock = useCallback(async () => {
     if (wakeLockRef.current) {
       try {
         await wakeLockRef.current.release();
@@ -46,7 +46,7 @@ export function useWakeLock() {
         console.error('[WakeLock] Failed to release wake lock:', err);
       }
     }
-  };
+  }, []);
 
   // Re-acquire wake lock when page becomes visible again
   useEffect(() => {
@@ -60,7 +60,7 @@ export function useWakeLock() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isSupported]);
+  }, [isSupported, requestWakeLock]);
 
   // Cleanup on unmount
   useEffect(() => {

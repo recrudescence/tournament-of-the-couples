@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -20,6 +20,11 @@ export function HostPage() {
   const { gameState, dispatch } = useGameContext();
   const { error, showError } = useGameError();
 
+  // Ref to access latest gameState in socket handlers without causing re-subscriptions
+  const gameStateRef = useRef(gameState);
+  // Ref to track pending timeouts for cleanup
+  const pendingTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [gameStatus, setGameStatus] = useState('Setting Up');
   const [showAllAnswersNotification, setShowAllAnswersNotification] = useState(false);
@@ -32,6 +37,11 @@ export function HostPage() {
   // UI-only state
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
+
+  // Keep ref in sync with gameState
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   // Initialize phase from gameState on mount
   useEffect(() => {
@@ -83,13 +93,15 @@ export function HostPage() {
       on('answerRevealed', ({ playerName, responseTime }) => {
         setRevealedAnswers((prev) => new Set([...prev, playerName]));
 
-        // Reveal response time with a delay (500ms) for emphasis
-        setTimeout(() => {
+        // Reveal response time with a delay for emphasis
+        const timeoutId = setTimeout(() => {
           setRevealedResponseTimes((prev) => ({
             ...prev,
             [playerName]: responseTime
           }));
+          pendingTimeoutsRef.current.delete(timeoutId);
         }, 0);
+        pendingTimeoutsRef.current.add(timeoutId);
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {
@@ -120,8 +132,9 @@ export function HostPage() {
       }),
 
       on('playerDisconnected', ({ socketId }) => {
-        if (!gameState) return;
-        const updatedPlayers = gameState.players.map((p) =>
+        const currentState = gameStateRef.current;
+        if (!currentState) return;
+        const updatedPlayers = currentState.players.map((p) =>
           p.socketId === socketId ? { ...p, connected: false } : p
         );
         dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
@@ -132,8 +145,13 @@ export function HostPage() {
       }),
     ];
 
-    return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError, gameState]);
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+      // Clear all pending timeouts
+      pendingTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      pendingTimeoutsRef.current.clear();
+    };
+  }, [on, dispatch, showError]);
 
   const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[]) => {
     emit('startRound', {

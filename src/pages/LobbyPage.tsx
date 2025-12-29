@@ -47,7 +47,6 @@ export function LobbyPage() {
         // Game was canceled (host left lobby) - clear info and redirect
         clearPlayerInfo();
         navigate('/');
-        console.log('Game cancelled: ', reason);
       }),
 
       on('error', ({ message }) => {
