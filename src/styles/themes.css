@@ -81,6 +81,103 @@
 }
 
 /* ======================
+   HALLOWEEN THEME
+   ====================== */
+[data-theme="halloween"] {
+  --theme-primary: #FF6600;
+  --theme-primary-dark: #CC5200;
+  --theme-success: #8B00FF;
+  --theme-info: #FFD700;
+  --theme-accent: #8B00FF;
+  --theme-bg: #1A1A2E;
+  --theme-bg-gradient: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
+  --theme-title-color: #FF6600;
+  --theme-box-border: rgba(255, 102, 0, 0.3);
+  --theme-box-shadow: rgba(139, 0, 255, 0.2);
+
+  /* Bulma overrides for halloween */
+  --bulma-primary-h: 24deg;
+  --bulma-primary-s: 100%;
+  --bulma-primary-l: 50%;
+  --bulma-success-h: 270deg;
+  --bulma-success-s: 100%;
+  --bulma-success-l: 50%;
+  --bulma-info-h: 51deg;
+  --bulma-info-s: 100%;
+  --bulma-info-l: 50%;
+  --bulma-link-h: 24deg;
+  --bulma-link-s: 100%;
+  --bulma-link-l: 50%;
+
+  /* Dark theme needs light text */
+  --bulma-body-background-color: #1A1A2E;
+  --bulma-body-color: #E8E8E8;
+  --bulma-text: #E8E8E8;
+  --bulma-text-strong: #FFFFFF;
+}
+
+/* Halloween-specific overrides for dark background */
+[data-theme="halloween"] .box {
+  background-color: #16213E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .subtitle,
+[data-theme="halloween"] .label {
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .notification.is-primary,
+[data-theme="halloween"] .notification.is-info {
+  background-color: rgba(255, 102, 0, 0.15);
+  color: #FFD700;
+}
+
+[data-theme="halloween"] .notification.is-light {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .input,
+[data-theme="halloween"] .textarea {
+  background-color: #0F0F1A;
+  border-color: #FF6600;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .input::placeholder,
+[data-theme="halloween"] .textarea::placeholder {
+  color: #888;
+}
+
+[data-theme="halloween"] .button.is-light {
+  background-color: #2A2A4E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .button.is-link.is-light {
+  background-color: rgba(255, 102, 0, 0.2);
+  color: #FF6600;
+}
+
+[data-theme="halloween"] .has-text-grey,
+[data-theme="halloween"] .has-text-grey-light {
+  color: #999 !important;
+}
+
+[data-theme="halloween"] .has-background-white,
+[data-theme="halloween"] .has-background-white-ter,
+[data-theme="halloween"] .has-background-white-bis,
+[data-theme="halloween"] .has-background-light,
+[data-theme="halloween"] .has-background-link-light,
+[data-theme="halloween"] .has-background-primary-light,
+[data-theme="halloween"] .notification.is-light,
+[data-theme="halloween"] .tag.is-light {
+  background-color: #2A2A4E !important;
+  color: #E8E8E8;
+}
+
+/* ======================
    SHARED THEME STYLES
    ====================== */
 
@@ -136,12 +233,12 @@ body {
 }
 
 .box.has-background-link-light {
-  background-color: color-mix(in srgb, var(--theme-primary) 5%, white) !important;
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, white);
   border-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .box.has-background-primary-light {
-  background-color: color-mix(in srgb, var(--theme-primary) 5%, white) !important;
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, white);
 }
 
 /* Notifications */

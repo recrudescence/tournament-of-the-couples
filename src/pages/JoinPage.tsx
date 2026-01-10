@@ -344,7 +344,7 @@ export function JoinPage() {
         <div className="theme-picker">
           <span className="theme-picker-label">Themes:</span>
           <span className="theme-picker-buttons">
-            {(['holiday', 'valentines', 'default'] as Theme[]).map((t) => (
+            {(['holiday', 'valentines', 'halloween', 'default'] as Theme[]).map((t) => (
               <button
                 key={t}
                 className={`theme-picker-button ${theme === t ? 'is-active' : ''}`}
