@@ -1,0 +1,243 @@
+/* Theme System for Tournament of the Couples */
+
+:root {
+  color-scheme: light only;
+}
+
+/* ======================
+   DEFAULT THEME
+   ====================== */
+[data-theme="default"] {
+  --theme-primary: #485fc7;
+  --theme-primary-dark: #3850b7;
+  --theme-success: #48c78e;
+  --theme-info: #3e8ed0;
+  --theme-accent: #485fc7;
+  --theme-bg: #ffffff;
+  --theme-bg-gradient: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+  --theme-title-color: #363636;
+  --theme-box-border: rgba(0, 0, 0, 0.1);
+  --theme-box-shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* ======================
+   HOLIDAY (CHRISTMAS) THEME
+   ====================== */
+[data-theme="holiday"] {
+  --theme-primary: #C41E3A;
+  --theme-primary-dark: #8B0000;
+  --theme-success: #0F8B3A;
+  --theme-info: #DAA520;
+  --theme-accent: #DAA520;
+  --theme-bg: #FFFAFA;
+  --theme-bg-gradient: linear-gradient(180deg, #F8F8FF 0%, #FFF5F5 100%);
+  --theme-title-color: #01411C;
+  --theme-box-border: rgba(196, 30, 58, 0.1);
+  --theme-box-shadow: rgba(196, 30, 58, 0.1);
+
+  /* Bulma overrides for holiday */
+  --bulma-primary-h: 349deg;
+  --bulma-primary-s: 75%;
+  --bulma-primary-l: 44%;
+  --bulma-success-h: 145deg;
+  --bulma-success-s: 80%;
+  --bulma-success-l: 31%;
+  --bulma-info-h: 43deg;
+  --bulma-info-s: 74%;
+  --bulma-info-l: 49%;
+  --bulma-link-h: 349deg;
+  --bulma-link-s: 75%;
+  --bulma-link-l: 44%;
+}
+
+/* ======================
+   VALENTINES THEME
+   ====================== */
+[data-theme="valentines"] {
+  --theme-primary: #E91E63;
+  --theme-primary-dark: #C2185B;
+  --theme-success: #EC407A;
+  --theme-info: #F48FB1;
+  --theme-accent: #FF4081;
+  --theme-bg: #FFF0F5;
+  --theme-bg-gradient: linear-gradient(180deg, #FFF0F5 0%, #FFE4EC 100%);
+  --theme-title-color: #880E4F;
+  --theme-box-border: rgba(233, 30, 99, 0.15);
+  --theme-box-shadow: rgba(233, 30, 99, 0.1);
+
+  /* Bulma overrides for valentines */
+  --bulma-primary-h: 340deg;
+  --bulma-primary-s: 82%;
+  --bulma-primary-l: 52%;
+  --bulma-success-h: 340deg;
+  --bulma-success-s: 82%;
+  --bulma-success-l: 59%;
+  --bulma-info-h: 340deg;
+  --bulma-info-s: 82%;
+  --bulma-info-l: 76%;
+  --bulma-link-h: 340deg;
+  --bulma-link-s: 82%;
+  --bulma-link-l: 52%;
+}
+
+/* ======================
+   SHARED THEME STYLES
+   ====================== */
+
+/* Background */
+body {
+  background: var(--theme-bg-gradient, var(--theme-bg));
+  min-height: 100vh;
+}
+
+/* Titles */
+.title, .subtitle {
+  color: var(--theme-title-color);
+}
+
+/* Primary buttons */
+.button.is-primary {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.button.is-primary:hover {
+  background-color: var(--theme-primary-dark);
+  border-color: var(--theme-primary-dark);
+}
+
+.button.is-primary:focus {
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 0 0.125em color-mix(in srgb, var(--theme-accent) 25%, transparent);
+}
+
+/* Success buttons */
+.button.is-success {
+  background-color: var(--theme-success);
+  border-color: var(--theme-success);
+}
+
+/* Info buttons/tags */
+.button.is-info,
+.tag.is-info {
+  background-color: var(--theme-info);
+  border-color: var(--theme-info);
+}
+
+/* Tags */
+.tag.is-success {
+  background-color: var(--theme-success);
+}
+
+/* Box styling */
+.box {
+  border: 2px solid var(--theme-box-border);
+  box-shadow: 0 2px 8px var(--theme-box-shadow);
+}
+
+.box.has-background-link-light {
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, white) !important;
+  border-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+}
+
+.box.has-background-primary-light {
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, white) !important;
+}
+
+/* Notifications */
+.notification.is-primary {
+  background-color: color-mix(in srgb, var(--theme-primary) 10%, white);
+  color: var(--theme-primary-dark);
+}
+
+.notification.is-success {
+  background-color: color-mix(in srgb, var(--theme-success) 10%, white);
+  color: var(--theme-success);
+}
+
+/* Tabs */
+.tabs.is-boxed li.is-active a {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+  color: #fff;
+}
+
+.tabs.is-boxed a:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, white);
+  border-bottom-color: var(--theme-primary);
+}
+
+/* Sections */
+.section {
+  background-color: var(--theme-bg);
+}
+
+/* Inputs */
+.input:focus,
+.textarea:focus {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 0.125em color-mix(in srgb, var(--theme-primary) 25%, transparent);
+}
+
+/* Text colors */
+.has-text-primary {
+  color: var(--theme-primary) !important;
+}
+
+.has-text-success {
+  color: var(--theme-success) !important;
+}
+
+.has-text-info {
+  color: var(--theme-info) !important;
+}
+
+/* Clickable boxes */
+.box.is-clickable:hover {
+  border-color: var(--theme-accent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-accent) 20%, transparent);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+/* ======================
+   THEME PICKER STYLES
+   ====================== */
+.theme-picker {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dbdbdb;
+  text-align: center;
+}
+
+.theme-picker-label {
+  color: #7a7a7a;
+  font-size: 0.875rem;
+  margin-right: 0.5rem;
+}
+
+.theme-picker-buttons {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.theme-picker-button {
+  background: none;
+  border: none;
+  color: #7a7a7a;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.theme-picker-button:hover {
+  color: var(--theme-primary);
+  background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+}
+
+.theme-picker-button.is-active {
+  color: var(--theme-primary);
+  font-weight: 600;
+}

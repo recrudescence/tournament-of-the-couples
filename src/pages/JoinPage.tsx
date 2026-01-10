@@ -5,6 +5,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { useSnowEffect } from '../hooks/useConfetti';
+import { useTheme, Theme } from '../hooks/useTheme';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -29,8 +30,11 @@ export function JoinPage() {
   const { savePlayerInfo } = usePlayerInfo();
   const { dispatch } = useGameContext();
 
-  // Add snow effect
-  useSnowEffect();
+  // Theme
+  const { theme, setTheme } = useTheme();
+
+  // Add snow effect for holiday theme
+  useSnowEffect(theme === 'holiday');
 
   const [step, setStep] = useState<JoinStep>('menu');
   const [availableGames, setAvailableGames] = useState<GameListItem[]>([]);
@@ -335,6 +339,21 @@ export function JoinPage() {
       )}
 
       {error && <div className="notification is-danger is-light mt-4">{error}</div>}
+
+        <div className="theme-picker">
+          <span className="theme-picker-label">Themes:</span>
+          <span className="theme-picker-buttons">
+            {(['holiday', 'valentines', 'default'] as Theme[]).map((t) => (
+              <button
+                key={t}
+                className={`theme-picker-button ${theme === t ? 'is-active' : ''}`}
+                onClick={() => setTheme(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </span>
+        </div>
       </div>
     </section>
   );

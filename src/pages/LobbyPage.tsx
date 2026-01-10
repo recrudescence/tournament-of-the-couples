@@ -5,6 +5,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { useSnowEffect } from '../hooks/useConfetti';
+import { useTheme } from '../hooks/useTheme';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import { ExitButton } from '../components/common/ExitButton';
 import { PlayerCard } from '../components/common/PlayerCard';
@@ -18,9 +19,10 @@ export function LobbyPage() {
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
+  const { theme } = useTheme();
 
-  // Add snow effect
-  useSnowEffect();
+  // Add snow effect for holiday theme
+  useSnowEffect(theme === 'holiday');
 
   // Socket event handlers
   useEffect(() => {
