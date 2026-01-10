@@ -125,10 +125,21 @@ export function PlayerPage() {
         setVariant(v);
 
         // For binary: replace placeholders with actual team member names
-        if (v === 'binary' && opts && myPlayer && myTeam && gameState?.players) {
-          const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
-          const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
-          setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
+        if (v === 'binary' && opts && playerInfo) {
+          const players = state?.players ?? gameState?.players ?? [];
+          const teams = state?.teams ?? gameState?.teams ?? [];
+          const currentPlayer = players.find(p => p.name === playerInfo.name);
+          const currentTeam = currentPlayer
+            ? teams.find(t => t.player1Id === currentPlayer.socketId || t.player2Id === currentPlayer.socketId)
+            : null;
+
+          if (currentTeam) {
+            const player1 = findPlayerBySocketId(players, currentTeam.player1Id);
+            const player2 = findPlayerBySocketId(players, currentTeam.player2Id);
+            setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
+          } else {
+            setOptions(opts);
+          }
         } else {
           setOptions(opts);
         }
