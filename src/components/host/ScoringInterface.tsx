@@ -1,5 +1,6 @@
 import { type Player, type CurrentRound } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
+import { fireBoomBurst } from '../../hooks/useConfetti';
 
 interface TeamWithTiming {
   team: {
@@ -121,7 +122,10 @@ export function ScoringInterface({
                             {!revealedAnswers.has(player.name) ? (
                               <button
                                 className="button is-link"
-                                onClick={() => onRevealAnswer(player.name)}
+                                onClick={(e) => {
+                                  fireBoomBurst(e);
+                                  onRevealAnswer(player.name);
+                                }}
                               >
                                 Reveal Answer
                               </button>

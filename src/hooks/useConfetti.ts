@@ -10,6 +10,29 @@ const CELEBRATION_TICKS = 260;
 const SNOW_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
+ * Fire a burst of boom emojis from a specific point
+ */
+export function fireBoomBurst(event?: React.MouseEvent) {
+  const boom = confetti.shapeFromText({ text: '💥' });
+
+  // Convert click position to 0-1 coordinates, or use center as fallback
+  const origin = event
+    ? { x: event.clientX / window.innerWidth, y: event.clientY / window.innerHeight }
+    : { x: 0.5, y: 0.5 };
+
+  confetti({
+    particleCount: 32,
+    startVelocity: 10,
+    spread: 180,
+    ticks: 60,
+    origin,
+    shapes: [boom],
+    scalar: 2,
+    flat: true
+  });
+}
+
+/**
  * Hook for celebration confetti effect
  */
 export function useCelebrationConfetti(shouldTrigger: boolean) {
