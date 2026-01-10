@@ -9,6 +9,7 @@ interface TeamWithTiming {
     score: number;
   };
   originalIndex: number;
+  totalResponseTime: number;
   player1Time: number;
   player2Time: number;
 }
@@ -54,7 +55,7 @@ export function ScoringInterface({
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
       <div className="mb-4">
-        {teamsSortedByResponseTime.map(({ team, originalIndex, player1Time, player2Time }) => {
+        {teamsSortedByResponseTime.map(({ team, originalIndex, totalResponseTime, player1Time, player2Time }) => {
           const player1 = findPlayerBySocketId(players, team.player1Id);
           const player2 = findPlayerBySocketId(players, team.player2Id);
           const isScored = team.teamId in teamPointsAwarded;
@@ -66,6 +67,10 @@ export function ScoringInterface({
             { player: player2, time: player2Time }
           ].sort((a, b) => a.time - b.time);
 
+          // Only show total time after both individual times are revealed
+          const bothRevealed = player1?.name && player2?.name &&
+            revealedAnswers.has(player1.name) && revealedAnswers.has(player2.name);
+
           return (
             <div
               key={team.teamId}
@@ -74,6 +79,11 @@ export function ScoringInterface({
               <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
                 <div className="has-text-weight-bold is-size-5">
                   {player1?.name ?? '?'} & {player2?.name ?? '?'}
+                  {bothRevealed && totalResponseTime < Infinity && (
+                    <span className="has-text-grey is-size-6 ml-2">
+                      took {(totalResponseTime / 1000).toFixed(1)} seconds!
+                    </span>
+                  )}
                 </div>
                 <div className="is-flex is-align-items-center">
                   {isScored && (

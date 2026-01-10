@@ -289,7 +289,7 @@ export function HostPage() {
         player1Time,
         player2Time
       };
-    }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
+    }).sort((a, b) => b.totalResponseTime - a.totalResponseTime);
   }, [gameState?.teams, gameState?.currentRound, gameState?.players]);
 
   if (!playerInfo || !isConnected) {
