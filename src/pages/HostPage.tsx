@@ -12,6 +12,7 @@ import { TeamScoreboard } from '../components/host/TeamScoreboard';
 import { RoundControls } from '../components/host/RoundControls';
 import { type GameState } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
+import { GameTitle } from '../components/common/GameTitle';
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
 
@@ -296,7 +297,7 @@ export function HostPage() {
     return (
       <section className="section">
         <div className="container container-md">
-          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+          <GameTitle />
           <p className="has-text-centered">Loading...</p>
         </div>
       </section>
@@ -310,7 +311,7 @@ export function HostPage() {
       <section className="section">
         <div className="container container-md">
           <div className="block">
-            <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+            <GameTitle />
             <div className="box">
               <div className="columns is-mobile has-text-centered">
                 <div className="column">

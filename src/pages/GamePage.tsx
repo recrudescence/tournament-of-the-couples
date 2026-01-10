@@ -8,6 +8,7 @@ import { LobbyPage } from './LobbyPage';
 import { HostPage } from './HostPage';
 import { PlayerPage } from './PlayerPage';
 import { FinishGamePage } from './FinishGamePage';
+import { GameTitle } from '../components/common/GameTitle';
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ export function GamePage() {
   if (!gameState) {
     return (
       <div className="container">
-        <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+        <GameTitle />
         <p>Loading game...</p>
       </div>
     );

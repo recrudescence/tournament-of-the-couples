@@ -6,6 +6,7 @@ import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { useSnowEffect } from '../hooks/useConfetti';
 import { useTheme, Theme } from '../hooks/useTheme';
+import { GameTitle } from '../components/common/GameTitle';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -213,7 +214,7 @@ export function JoinPage() {
     return (
       <section className="section">
         <div className="container container-sm">
-          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+          <GameTitle />
           <p className="has-text-centered">Connecting...</p>
         </div>
       </section>
@@ -223,7 +224,7 @@ export function JoinPage() {
   return (
     <section className="section">
       <div className="container container-sm">
-        <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+        <GameTitle />
 
       {step === 'menu' && !creatingNew && !joiningExisting && (
         <div className="box">

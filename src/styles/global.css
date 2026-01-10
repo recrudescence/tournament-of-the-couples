@@ -28,6 +28,14 @@ body {
   font-family: monospace;
 }
 
+/* Game title font */
+.game-title {
+  font-family: "Metal Mania", system-ui;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 4rem;
+}
+
 /* Custom utility classes not in Bulma */
 .is-clickable {
   cursor: pointer;

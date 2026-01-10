@@ -12,6 +12,7 @@ import { AnswerSubmissionForm } from '../components/player/AnswerSubmissionForm'
 import { SubmittedStatus } from '../components/player/SubmittedStatus';
 import { ScoringStatus } from '../components/player/ScoringStatus';
 import { findPlayerBySocketId } from '../utils/playerUtils';
+import { GameTitle } from '../components/common/GameTitle';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -227,7 +228,7 @@ export function PlayerPage() {
     return (
       <section className="section">
         <div className="container container-md">
-          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+          <GameTitle />
           <p className="has-text-centered">Loading...</p>
         </div>
       </section>
@@ -242,7 +243,7 @@ export function PlayerPage() {
       <section className="section">
       <div className="container container-md">
         <div className="block">
-          <h1 className="title has-text-centered">💝 Tournament of the Couples 💝</h1>
+          <GameTitle />
           <PlayerHeader
             hostName={gameState?.host.name ?? '-'}
             playerName={playerInfo.name}
