@@ -196,6 +196,7 @@ body {
 .button.is-primary {
   background-color: var(--theme-primary);
   border-color: var(--theme-primary);
+  color: var(--theme-bg)
 }
 
 .button.is-primary:hover {

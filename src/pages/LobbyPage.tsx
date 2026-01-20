@@ -116,8 +116,37 @@ export function LobbyPage() {
   const playerCount = connectedPlayers.length;
   const teamCount = gameState.teams.length;
 
-  // Track rendered players to avoid duplicates
-  const renderedPlayerIds = new Set<string>();
+  // Separate unpaired players from paired ones
+  const unpairedPlayers = useMemo(() => {
+    const pairedIds = new Set<string>();
+    gameState.teams.forEach((team) => {
+      pairedIds.add(team.player1Id);
+      pairedIds.add(team.player2Id);
+    });
+    return connectedPlayers.filter((p) => !pairedIds.has(p.socketId));
+  }, [connectedPlayers, gameState.teams]);
+
+  // Sort unpaired players: current player first, then alpha descending (Z-A)
+  const sortedUnpairedPlayers = useMemo(() => {
+    const currentPlayerSocketId = currentPlayer?.socketId;
+    return [...unpairedPlayers].sort((a, b) => {
+      if (a.socketId === currentPlayerSocketId) return -1;
+      if (b.socketId === currentPlayerSocketId) return 1;
+      return b.name.localeCompare(a.name); // descending
+    });
+  }, [unpairedPlayers, currentPlayer?.socketId]);
+
+  // Sort teams: current player's team first, then by team name
+  const sortedTeams = useMemo(() => {
+    const currentPlayerSocketId = currentPlayer?.socketId;
+    return [...gameState.teams].sort((a, b) => {
+      const aHasCurrent = a.player1Id === currentPlayerSocketId || a.player2Id === currentPlayerSocketId;
+      const bHasCurrent = b.player1Id === currentPlayerSocketId || b.player2Id === currentPlayerSocketId;
+      if (aHasCurrent && !bHasCurrent) return -1;
+      if (bHasCurrent && !aHasCurrent) return 1;
+      return 0;
+    });
+  }, [gameState.teams, currentPlayer?.socketId]);
 
   // Check if game can start
   const connectedNonHostPlayers = useMemo(
@@ -140,12 +169,9 @@ export function LobbyPage() {
 
     if (!player1 || !player2) return null;
 
-    renderedPlayerIds.add(player1.socketId);
-    renderedPlayerIds.add(player2.socketId);
-
     const isCurrentPlayerInTeam =
       currentPlayer &&
-      (player1.name === currentPlayer.name || player2.name === currentPlayer.name);
+      (player1.socketId === currentPlayer.socketId || player2.socketId === currentPlayer.socketId);
 
     const canUnpair = Boolean(isCurrentPlayerInTeam && !playerInfo.isHost);
 
@@ -164,10 +190,7 @@ export function LobbyPage() {
   };
 
   const renderUnpairedPlayer = (player: Player) => {
-    if (renderedPlayerIds.has(player.socketId)) return null;
-    if (!player.connected) return null;
-
-    const isCurrentPlayer = currentPlayer && player.name === currentPlayer.name;
+    const isCurrentPlayer = currentPlayer && player.socketId === currentPlayer.socketId;
     const canPair =
       !isCurrentPlayer &&
       currentPlayer &&
@@ -205,10 +228,23 @@ export function LobbyPage() {
             {teamCount !== 1 ? 's' : ''} formed
           </div>
 
-          <h2 className="subtitle is-4 mb-3">Players</h2>
-          <div className="mb-5">
-            {gameState.teams.map(renderTeamCard)}
-            {gameState.players.map(renderUnpairedPlayer)}
+          <div className="columns mb-5">
+            <div className="column">
+              <h2 className="subtitle is-5 mb-3">Singles</h2>
+              {sortedUnpairedPlayers.length > 0 ? (
+                sortedUnpairedPlayers.map(renderUnpairedPlayer)
+              ) : (
+                <p className="has-text-grey-light is-italic">No singles mingling</p>
+              )}
+            </div>
+            <div className="column">
+              <h2 className="subtitle is-5 mb-3">Couples</h2>
+              {sortedTeams.length > 0 ? (
+                sortedTeams.map(renderTeamCard)
+              ) : (
+                <p className="has-text-grey-light is-italic">No teams coupled up yet</p>
+              )}
+            </div>
           </div>
 
           {playerInfo.isHost && (

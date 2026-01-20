@@ -40,7 +40,7 @@ export function PlayerCard({
           </button>
         )}
       </div>
-      {canPair && <div className="has-text-grey mt-2">Click to pair</div>}
+      {canPair && <div className="has-text-grey mt-2">Tap to pair</div>}
     </div>
   );
 }

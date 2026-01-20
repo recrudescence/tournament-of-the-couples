@@ -62,7 +62,7 @@ describe('Component Smoke Tests', () => {
           />
         );
 
-        expect(screen.getByText('Click to pair')).toBeInTheDocument();
+        expect(screen.getByText('Tap to pair')).toBeInTheDocument();
       });
 
       it('shows kick button for host', () => {

@@ -47,5 +47,5 @@ const initialTheme = getCookie(THEME_COOKIE_NAME);
 if (isValidTheme(initialTheme)) {
   applyTheme(initialTheme);
 } else {
-  applyTheme('default');
+  applyTheme('valentines');
 }

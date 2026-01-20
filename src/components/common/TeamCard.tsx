@@ -19,51 +19,47 @@ export function TeamCard({
   onUnpair,
   onKick
 }: TeamCardProps) {
-  const player1Display =
-    player1.name === currentPlayerName
-      ? player1.name + ' (you!)'
-      : player1.name;
-  const player2Display =
-    player2.name === currentPlayerName
-      ? player2.name + ' (you!)'
-      : player2.name;
-  const playerDisplay =
-    player1.name === currentPlayerName || isHost
-      ? player1Display + ' 🤝🏼 ' + player2Display
-      : player2Display + ' 🤝🏼 ' + player1Display;
+  const isPlayer1Current = player1.name === currentPlayerName;
 
-  const unpairBtn = canUnpair && (
-    <button className="button is-small is-danger is-light" onClick={onUnpair}>
-      Unpair
-    </button>
-  );
+  // Show current player on the left
+  const [leftPlayer, rightPlayer] = (isPlayer1Current || isHost)
+    ? [player1, player2]
+    : [player2, player1];
 
-  const kickBtns = isHost && (
-    <>
-      <button
-        className="button is-small is-danger"
-        onClick={() => onKick(player1.socketId, player1.name)}
-      >
-        Kick {player1.name}
-      </button>
-      <button
-        className="button is-small is-danger"
-        onClick={() => onKick(player2.socketId, player2.name)}
-      >
-        Kick {player2.name}
-      </button>
-    </>
-  );
+  const renderPlayerMiniCard = (player: Player) => {
+    const isCurrent = player.name === currentPlayerName;
+    return (
+      <div className="box mb-0 p-3" style={{ flex: '1 1 0', minWidth: 0 }}>
+        <div className={`has-text-weight-semibold ${isCurrent ? 'has-text-primary' : ''}`}>
+          {player.name}
+          {isCurrent && <span className="has-text-grey-light"> (you)</span>}
+        </div>
+        {isHost && (
+          <button
+            className="button is-small is-danger mt-2"
+            onClick={() => onKick(player.socketId, player.name)}
+          >
+            Kick
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="box has-background-link-light">
-      <div className="has-text-weight-semibold has-text-primary">
-        {playerDisplay}
+      <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+        {renderPlayerMiniCard(leftPlayer)}
+        <span className="is-size-4">🤝🏼</span>
+        {renderPlayerMiniCard(rightPlayer)}
       </div>
-      <div className="is-flex is-flex-wrap-wrap mt-3" style={{ gap: '0.5rem' }}>
-        {unpairBtn}
-        {kickBtns}
-      </div>
+      {canUnpair && (
+        <div className="mt-3">
+          <button className="button is-small is-danger is-light" onClick={onUnpair}>
+            Break up
+          </button>
+        </div>
+      )}
     </div>
   );
 }
