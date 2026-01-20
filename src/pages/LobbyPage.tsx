@@ -92,6 +92,10 @@ export function LobbyPage() {
     emit('startGame');
   };
 
+  const handleRandomizeAvatar = () => {
+    emit('randomizeAvatar');
+  };
+
   if (!playerInfo || !gameState) {
     return (
       <section className="section">
@@ -186,6 +190,7 @@ export function LobbyPage() {
         canUnpair={canUnpair}
         onUnpair={handleUnpair}
         onKick={handleKick}
+        onRandomizeAvatar={isCurrentPlayerInTeam ? handleRandomizeAvatar : undefined}
       />
     );
   };
@@ -207,6 +212,7 @@ export function LobbyPage() {
         isHost={playerInfo.isHost}
         onPair={handlePair}
         onKick={handleKick}
+        onRandomizeAvatar={isCurrentPlayer ? handleRandomizeAvatar : undefined}
       />
     );
   };

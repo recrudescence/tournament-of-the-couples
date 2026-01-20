@@ -60,6 +60,20 @@ body {
   }
 }
 
+/* Avatar bump animation */
+.avatar-bump {
+  animation: bump 0.2s ease;
+}
+
+@keyframes bump {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
 /* Radio button styling for answer options */
 input[type="radio"] {
   cursor: pointer;

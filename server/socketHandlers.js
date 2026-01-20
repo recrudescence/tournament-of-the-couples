@@ -123,6 +123,24 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Randomize player's avatar
+    socket.on('randomizeAvatar', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.randomizePlayerAvatar(roomCode, socket.id);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('lobbyUpdate', state);
+      } catch (err) {
+        console.error('Randomize avatar error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Host kicks a player from the lobby
     socket.on('kickPlayer', ({ targetSocketId }) => {
       const roomCode = socket.roomCode;

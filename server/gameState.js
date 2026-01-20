@@ -3,17 +3,29 @@ const roomCodeGenerator = require('./roomCodeGenerator');
 // In-memory game states - Map of roomCode -> gameState
 const gameStates = new Map();
 
-// Avatar generation helpers
+// Avatar generation helpers - cohesive pastel palette
 const PASTEL_COLORS = [
-  '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF',
-  '#E0BBE4', '#FEC8D8', '#D4F0F0', '#CCE2CB', '#B6CFB6',
-  '#FFDAC1', '#E2F0CB', '#C7CEEA', '#F0E6EF', '#D5E8D4',
+  // Pinks & Roses
+  '#F8C8DC', '#F4A4C0',
+  // Peaches & Corals
+  '#FFD4B8', '#FFCBA4',
+  // Yellows & Creams
+  '#FFF5BA', '#F8E8A0',
+  // Greens & Mints
+  '#C8E8D4', '#B4E4C8',
+  // Blues & Aquas
+  '#B4D8E8', '#A4D0E8',
+  // Purples & Lavenders
+  '#D4C4E8', '#E0D0F0',
+  // Neutrals
+  '#E8E4E0', '#F0E8E4',
 ];
 
 const AVATAR_EMOJIS = [
   '😀', '😎', '🥳', '🤠', '🦊', '🐱', '🐶', '🐼', '🦁', '🐯',
   '🐸', '🐵', '🦄', '🐲', '🌸', '🌻', '🍀', '🌈', '⭐', '🔥',
   '💎', '🎈', '🎨', '🎭', '🎪', '🚀', '🌙', '☀️', '🍕', '🧁',
+  '🦋', '🍄', '🌴', '🎸', '🎯', '🧸', '🦩', '🐝', '🍩', '🎀',
 ];
 
 function generateRandomAvatar() {
@@ -504,6 +516,22 @@ function getAllGames() {
   return games;
 }
 
+// Randomize a player's avatar
+function randomizePlayerAvatar(roomCode, socketId) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  const player = gameState.players.find(p => p.socketId === socketId);
+  if (!player) {
+    throw new Error('Player not found');
+  }
+
+  player.avatar = generateRandomAvatar();
+  return player.avatar;
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -531,5 +559,6 @@ module.exports = {
   hasRoom,
   deleteRoom,
   getRoomCodes,
-  getAllGames
+  getAllGames,
+  randomizePlayerAvatar
 };

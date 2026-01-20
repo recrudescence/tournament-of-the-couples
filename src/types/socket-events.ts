@@ -14,6 +14,7 @@ export interface ClientToServerEvents {
   // player
   requestPair: (data: { targetSocketId: string }) => void;
   unpair: () => void;
+  randomizeAvatar: () => void;
 
   // host
   createGame: (data: { name: string }) => void;
