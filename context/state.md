@@ -36,7 +36,11 @@ Understanding the in-memory game state structure is critical for working with th
       name: "...",                    // Stable identifier for reconnection
       partnerId: "..." | null,        // Socket ID of partner (if paired)
       teamId: "..." | null,           // team code (e.g., "team")
-      connected: true | false         // Disconnection tracking
+      connected: true | false,        // Disconnection tracking
+      avatar: {                       // Random avatar assigned on join, can be randomized by player
+        color: "#F8C8DC",             // Pastel hex color from server palette
+        emoji: "🦊"                   // Random emoji from server list
+      }
     }
   ],
 

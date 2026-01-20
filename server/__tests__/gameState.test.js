@@ -523,6 +523,72 @@ describe('GameState - Player and Host Management', () => {
       }).toThrow('Game not initialized');
     });
   });
+
+  describe('player avatar', () => {
+    test('assigns avatar with color and emoji when player is added', () => {
+      const state = gameState.getGameState(roomCode);
+      const alice = state.players.find(p => p.name === 'Alice');
+
+      expect(alice.avatar).toBeDefined();
+      expect(alice.avatar.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(alice.avatar.emoji).toBeDefined();
+      expect(typeof alice.avatar.emoji).toBe('string');
+    });
+
+    test('each player gets their own avatar', () => {
+      const state = gameState.getGameState(roomCode);
+      const alice = state.players.find(p => p.name === 'Alice');
+      const bob = state.players.find(p => p.name === 'Bob');
+
+      // Both have avatars (they may or may not be the same due to randomness)
+      expect(alice.avatar).toBeDefined();
+      expect(bob.avatar).toBeDefined();
+    });
+  });
+
+  describe('randomizePlayerAvatar', () => {
+    test('changes player avatar', () => {
+      const stateBefore = gameState.getGameState(roomCode);
+      const aliceBefore = stateBefore.players.find(p => p.name === 'Alice');
+      const originalAvatar = { ...aliceBefore.avatar };
+
+      // Randomize multiple times to ensure at least one change (due to randomness)
+      let changed = false;
+      for (let i = 0; i < 10; i++) {
+        gameState.randomizePlayerAvatar(roomCode, 'socket1');
+        const stateAfter = gameState.getGameState(roomCode);
+        const aliceAfter = stateAfter.players.find(p => p.name === 'Alice');
+
+        if (aliceAfter.avatar.color !== originalAvatar.color ||
+            aliceAfter.avatar.emoji !== originalAvatar.emoji) {
+          changed = true;
+          break;
+        }
+      }
+
+      expect(changed).toBe(true);
+    });
+
+    test('returns the new avatar', () => {
+      const newAvatar = gameState.randomizePlayerAvatar(roomCode, 'socket1');
+
+      expect(newAvatar).toBeDefined();
+      expect(newAvatar.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(newAvatar.emoji).toBeDefined();
+    });
+
+    test('throws error if game not initialized', () => {
+      expect(() => {
+        gameState.randomizePlayerAvatar('nonexistent', 'socket1');
+      }).toThrow('Game not initialized');
+    });
+
+    test('throws error if player not found', () => {
+      expect(() => {
+        gameState.randomizePlayerAvatar(roomCode, 'nonexistent-socket');
+      }).toThrow('Player not found');
+    });
+  });
 });
 
 describe('GameState - Team Management', () => {

@@ -1067,4 +1067,49 @@ describe('socketHandlers', () => {
       );
     });
   });
+
+  describe('randomizeAvatar', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+    });
+
+    it('should randomize player avatar and broadcast update', () => {
+      socket.roomCode = roomCode;
+      socket.id = 'socket-1';
+
+      const stateBefore = gameState.getGameState(roomCode);
+      const aliceBefore = stateBefore.players.find(p => p.name === 'Alice');
+      const originalAvatar = { ...aliceBefore.avatar };
+
+      io.connectionHandler(socket);
+      const randomizeHandler = socket.on.mock.calls.find(
+        call => call[0] === 'randomizeAvatar'
+      )[1];
+
+      // Randomize multiple times to ensure change (due to randomness)
+      for (let i = 0; i < 10; i++) {
+        randomizeHandler();
+      }
+
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+      expect(io.roomEmit).toHaveBeenCalledWith('lobbyUpdate', expect.any(Object));
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const randomizeHandler = socket.on.mock.calls.find(
+        call => call[0] === 'randomizeAvatar'
+      )[1];
+
+      randomizeHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
 });

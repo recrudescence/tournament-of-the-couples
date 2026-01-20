@@ -30,8 +30,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `/src/components/common/` - Shared components used across multiple pages
   - **ExitButton**: Floating red button in top-left corner (all game pages) - allows players/hosts to exit to home with confirmation
   - **DebugSidebar**: Host-only debug panel for viewing game state
-  - **PlayerCard**: Unpaired player display with click-to-pair interaction and host kick functionality
-  - **TeamCard**: Paired team display with unpair/kick actions
+  - **PlayerCard**: Unpaired player display with avatar, click-to-pair interaction, and host kick functionality. Players can tap their own avatar to randomize it.
+  - **TeamCard**: Paired team display showing two player mini-cards side-by-side with avatars, break-up/kick actions. Avatar tap-to-randomize supported.
 
 - `/src/components/host/` - Host-specific components (used by HostPage)
   - **QuestionForm**: Question input with variant selection (open_ended, multiple_choice, binary)
@@ -53,6 +53,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `/src/hooks/useGameError.ts` - Auto-dismissing error notifications
 - `/src/hooks/useTimer.ts` - Response time tracking for player answers
 - `/src/hooks/useWakeLock.ts` - Prevent mobile screen sleep during gameplay
+- `/src/hooks/usePrevious.ts` - Track previous value of a variable (used for avatar change detection)
 
 **Page Components:**
 - All major pages (HostPage, PlayerPage, LobbyPage) are kept under 400 lines
