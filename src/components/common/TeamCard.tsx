@@ -5,6 +5,7 @@ interface TeamCardProps {
   player2: Player;
   currentPlayerName: string | null;
   isHost: boolean;
+  isViewerTeam: boolean;
   canUnpair: boolean;
   onUnpair: () => void;
   onKick: (socketId: string, playerName: string) => void;
@@ -15,6 +16,7 @@ export function TeamCard({
   player2,
   currentPlayerName,
   isHost,
+  isViewerTeam,
   canUnpair,
   onUnpair,
   onKick
@@ -29,8 +31,23 @@ export function TeamCard({
   const renderPlayerMiniCard = (player: Player) => {
     const isCurrent = player.name === currentPlayerName;
     return (
-      <div className="box mb-0 p-3" style={{ flex: '1 1 0', minWidth: 0 }}>
-        <div className={`has-text-weight-semibold ${isCurrent ? 'has-text-primary' : ''}`}>
+      <div className="box mb-0 p-3 has-text-centered" style={{ flex: '1 1 0', minWidth: 0 }}>
+        <div
+          className="is-flex is-align-items-center is-justify-content-center mx-auto"
+          style={{
+            width: '2.5rem',
+            height: '2.5rem',
+            borderRadius: '50%',
+            backgroundColor: player.avatar.color,
+            fontSize: '1.25rem',
+          }}
+        >
+          {player.avatar.emoji}
+        </div>
+        <div
+          className={`has-text-weight-semibold mt-2 ${isCurrent ? 'has-text-primary' : ''}`}
+          style={{ wordBreak: 'break-word' }}
+        >
           {player.name}
           {isCurrent && <span className="has-text-grey-light"> (you)</span>}
         </div>
@@ -46,8 +63,10 @@ export function TeamCard({
     );
   };
 
+  const cardBackground = isViewerTeam ? 'has-background-link-light' : 'has-background-white-ter';
+
   return (
-    <div className="box has-background-link-light">
+    <div className={`box ${cardBackground}`}>
       <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
         {renderPlayerMiniCard(leftPlayer)}
         <span className="is-size-4">🤝🏼</span>

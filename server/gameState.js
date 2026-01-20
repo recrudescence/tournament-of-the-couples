@@ -3,6 +3,25 @@ const roomCodeGenerator = require('./roomCodeGenerator');
 // In-memory game states - Map of roomCode -> gameState
 const gameStates = new Map();
 
+// Avatar generation helpers
+const PASTEL_COLORS = [
+  '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF',
+  '#E0BBE4', '#FEC8D8', '#D4F0F0', '#CCE2CB', '#B6CFB6',
+  '#FFDAC1', '#E2F0CB', '#C7CEEA', '#F0E6EF', '#D5E8D4',
+];
+
+const AVATAR_EMOJIS = [
+  '😀', '😎', '🥳', '🤠', '🦊', '🐱', '🐶', '🐼', '🦁', '🐯',
+  '🐸', '🐵', '🦄', '🐲', '🌸', '🌻', '🍀', '🌈', '⭐', '🔥',
+  '💎', '🎈', '🎨', '🎭', '🎪', '🚀', '🌙', '☀️', '🍕', '🧁',
+];
+
+function generateRandomAvatar() {
+  const color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
+  const emoji = AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)];
+  return { color, emoji };
+}
+
 // Initialize a new game
 function initializeGame(roomCode) {
   const gameState = {
@@ -47,7 +66,8 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
       name,
       partnerId: null,
       teamId: null,
-      connected: true
+      connected: true,
+      avatar: generateRandomAvatar()
     });
     console.log(`Player added: ${name}`);
   }

@@ -23,10 +23,26 @@ export function PlayerCard({
       onClick={canPair ? () => onPair(player.socketId) : undefined}
       style={canPair ? { cursor: 'pointer' } : {}}
     >
-      <div className="is-flex is-justify-content-space-between is-align-items-center">
-        <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
-          {player.name}
-          {isCurrentPlayer && ' (You)'}
+      <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
+        <div
+          className="is-flex is-align-items-center is-justify-content-center"
+          style={{
+            width: '3rem',
+            height: '3rem',
+            borderRadius: '50%',
+            backgroundColor: player.avatar.color,
+            fontSize: '1.5rem',
+            flexShrink: 0,
+          }}
+        >
+          {player.avatar.emoji}
+        </div>
+        <div className="is-flex-grow-1">
+          <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
+            {player.name}
+            {isCurrentPlayer && ' (You)'}
+          </div>
+          {canPair && <div className="has-text-grey is-size-7">Tap to pair</div>}
         </div>
         {isHost && !isCurrentPlayer && (
           <button
@@ -40,7 +56,6 @@ export function PlayerCard({
           </button>
         )}
       </div>
-      {canPair && <div className="has-text-grey mt-2">Tap to pair</div>}
     </div>
   );
 }

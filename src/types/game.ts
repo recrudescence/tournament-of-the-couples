@@ -27,12 +27,18 @@ export interface Host {
   name: string;
 }
 
+export interface PlayerAvatar {
+  color: string;
+  emoji: string;
+}
+
 export interface Player {
   socketId: string;
   name: string;
   partnerId: string | null;
   teamId: string | null;
   connected: boolean;
+  avatar: PlayerAvatar;
 }
 
 export interface Team {

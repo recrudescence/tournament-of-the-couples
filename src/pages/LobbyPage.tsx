@@ -182,6 +182,7 @@ export function LobbyPage() {
         player2={player2}
         currentPlayerName={currentPlayer?.name || null}
         isHost={playerInfo.isHost}
+        isViewerTeam={Boolean(isCurrentPlayerInTeam)}
         canUnpair={canUnpair}
         onUnpair={handleUnpair}
         onKick={handleKick}
