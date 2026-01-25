@@ -155,11 +155,12 @@ export function HostPage() {
     };
   }, [on, dispatch, showError]);
 
-  const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[]) => {
+  const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => {
     emit('startRound', {
       question,
       variant,
-      options
+      options,
+      answerForBoth
     });
   };
 

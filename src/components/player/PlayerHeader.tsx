@@ -1,7 +1,12 @@
+import { PlayerAvatar } from '../common/PlayerAvatar';
+import type { PlayerAvatar as PlayerAvatarType } from '../../types/game';
+
 interface PlayerHeaderProps {
   hostName: string;
   playerName: string;
+  playerAvatar: PlayerAvatarType | null;
   partnerName: string;
+  partnerAvatar: PlayerAvatarType | null;
   teamScore: number;
   isCelebrating: boolean;
 }
@@ -9,7 +14,9 @@ interface PlayerHeaderProps {
 export function PlayerHeader({
   hostName,
   playerName,
+  playerAvatar,
   partnerName,
+  partnerAvatar,
   teamScore,
   isCelebrating
 }: PlayerHeaderProps) {
@@ -22,11 +29,17 @@ export function PlayerHeader({
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">You</p>
-          <p className="title is-6 has-text-primary">{playerName}</p>
+          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
+            {playerAvatar && <PlayerAvatar avatar={playerAvatar} size="small" />}
+            <span className="title is-6 has-text-primary mb-0">{playerName}</span>
+          </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Partner</p>
-          <p className="title is-6">{partnerName}</p>
+          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
+            {partnerAvatar && <PlayerAvatar avatar={partnerAvatar} size="small" />}
+            <span className="title is-6 mb-0">{partnerName}</span>
+          </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Team Score</p>

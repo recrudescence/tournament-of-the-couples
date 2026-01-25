@@ -296,7 +296,7 @@ function endGame(roomCode) {
 }
 
 // Start a new round
-function startRound(roomCode, question, variant = 'open_ended', options = null) {
+function startRound(roomCode, question, variant = 'open_ended', options = null, answerForBoth = false) {
   const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
@@ -331,6 +331,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null) 
     question,
     variant,
     options,
+    answerForBoth, // When true, players answer for both themselves and their partner
     status: 'answering',
     answers: {},
     submittedInCurrentPhase: [] // Track who has submitted in THIS answering session

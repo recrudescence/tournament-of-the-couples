@@ -32,6 +32,8 @@ export function PlayerPage() {
   const [variant, setVariant] = useState<string>('open_ended');
   const [options, setOptions] = useState<string[] | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>('');
+  // Dual answer mode state (when answerForBoth is true)
+  const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
 
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
@@ -146,6 +148,7 @@ export function PlayerPage() {
 
         setAnswer('');
         setSelectedOption('');
+        setDualAnswers({ self: '', partner: '' });
         setHasSubmitted(false);
         setSection('answering');
         startTimer();
@@ -219,18 +222,37 @@ export function PlayerPage() {
       return;
     }
 
-    const finalAnswer = variant === 'open_ended' ? answer : selectedOption;
+    const answerForBoth = gameState?.currentRound?.answerForBoth ?? false;
+    let finalAnswer: string;
 
-    if (!finalAnswer.trim()) {
-      showError('Please provide an answer');
-      return;
+    if (answerForBoth) {
+      // Dual mode: validate both answers
+      if (!dualAnswers.self.trim() || !dualAnswers.partner.trim()) {
+        showError('Please provide answers for both players');
+        return;
+      }
+      // Serialize as JSON with player names as keys
+      const playerName = myPlayer?.name ?? '';
+      const partnerName = myPartner?.name ?? '';
+      finalAnswer = JSON.stringify({
+        [playerName]: dualAnswers.self.trim(),
+        [partnerName]: dualAnswers.partner.trim()
+      });
+    } else {
+      // Single mode
+      finalAnswer = variant === 'open_ended' ? answer : selectedOption;
+      if (!finalAnswer.trim()) {
+        showError('Please provide an answer');
+        return;
+      }
+      finalAnswer = finalAnswer.trim();
     }
 
     stopTimer();
     const finalResponseTime = getFinalTime();
 
     emit('submitAnswer', {
-      answer: finalAnswer.trim(),
+      answer: finalAnswer,
       responseTime: finalResponseTime
     });
   };
@@ -258,7 +280,9 @@ export function PlayerPage() {
           <PlayerHeader
             hostName={gameState?.host.name ?? '-'}
             playerName={playerInfo.name}
+            playerAvatar={myPlayer?.avatar ?? null}
             partnerName={myPartner?.name ?? '-'}
+            partnerAvatar={myPartner?.avatar ?? null}
             teamScore={myTeam?.score || 0}
             isCelebrating={isCelebrating}
           />
@@ -280,6 +304,11 @@ export function PlayerPage() {
           onAnswerChange={setAnswer}
           onOptionChange={setSelectedOption}
           onSubmit={handleSubmit}
+          answerForBoth={gameState?.currentRound?.answerForBoth ?? false}
+          playerName={myPlayer?.name ?? ''}
+          partnerName={myPartner?.name ?? ''}
+          dualAnswers={dualAnswers}
+          onDualAnswerChange={(key, value) => setDualAnswers(prev => ({ ...prev, [key]: value }))}
         />
       )}
 
@@ -287,8 +316,10 @@ export function PlayerPage() {
         <SubmittedStatus
           submittedAnswer={submittedAnswer}
           partnerName={myPartner?.name ?? null}
+          partnerAvatar={myPartner?.avatar ?? null}
           partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
           totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
+          totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
         />
       )}
 

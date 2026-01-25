@@ -9,6 +9,12 @@ interface AnswerSubmissionFormProps {
   onAnswerChange: (answer: string) => void;
   onOptionChange: (option: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  // Dual answer mode props
+  answerForBoth: boolean;
+  playerName: string;
+  partnerName: string;
+  dualAnswers: { self: string; partner: string };
+  onDualAnswerChange: (key: 'self' | 'partner', value: string) => void;
 }
 
 export function AnswerSubmissionForm({
@@ -21,7 +27,12 @@ export function AnswerSubmissionForm({
   selectedOption,
   onAnswerChange,
   onOptionChange,
-  onSubmit
+  onSubmit,
+  answerForBoth,
+  playerName,
+  partnerName,
+  dualAnswers,
+  onDualAnswerChange
 }: AnswerSubmissionFormProps) {
   return (
     <div className="box">
@@ -37,43 +48,129 @@ export function AnswerSubmissionForm({
       </div>
 
       <form onSubmit={onSubmit}>
-        {variant === 'open_ended' ? (
-          <div className="field">
-            <label className="label" htmlFor="answerInput">Your Answer:</label>
-            <div className="control">
-              <textarea
-                id="answerInput"
-                className="textarea"
-                rows={3}
-                placeholder="Type your answer here..."
-                value={answer}
-                onChange={(e) => onAnswerChange(e.target.value)}
-                required
-              />
+        {answerForBoth ? (
+          // Dual answer mode: answer for both players
+          <div className="dual-answer-sections">
+            {/* Answer for self */}
+            <div className="box has-background-light mb-4">
+              <h3 className="subtitle is-5 mb-3">{playerName}</h3>
+              {variant === 'open_ended' ? (
+                <div className="field">
+                  <div className="control">
+                    <textarea
+                      className="textarea"
+                      rows={2}
+                      placeholder={`Answer for ${playerName}...`}
+                      value={dualAnswers.self}
+                      onChange={(e) => onDualAnswerChange('self', e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="field">
+                  <div className="control">
+                    {options?.map((option, index) => (
+                      <label
+                        key={index}
+                        className={`button is-fullwidth mb-2 answer-option-label ${dualAnswers.self === option ? 'is-primary' : 'is-light'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="answer-self"
+                          value={option}
+                          checked={dualAnswers.self === option}
+                          onChange={(e) => onDualAnswerChange('self', e.target.value)}
+                          required
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Answer for partner */}
+            <div className="box has-background-light mb-4">
+              <h3 className="subtitle is-5 mb-3">{partnerName}</h3>
+              {variant === 'open_ended' ? (
+                <div className="field">
+                  <div className="control">
+                    <textarea
+                      className="textarea"
+                      rows={2}
+                      placeholder={`Answer for ${partnerName}...`}
+                      value={dualAnswers.partner}
+                      onChange={(e) => onDualAnswerChange('partner', e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="field">
+                  <div className="control">
+                    {options?.map((option, index) => (
+                      <label
+                        key={index}
+                        className={`button is-fullwidth mb-2 answer-option-label ${dualAnswers.partner === option ? 'is-primary' : 'is-light'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="answer-partner"
+                          value={option}
+                          checked={dualAnswers.partner === option}
+                          onChange={(e) => onDualAnswerChange('partner', e.target.value)}
+                          required
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="field">
-            <div className="control">
-              {options?.map((option, index) => (
-                <label
-                  key={index}
-                  className={`button is-fullwidth mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
-                >
-                  <input
-                    type="radio"
-                    id={`option-${index}`}
-                    name="answer-option"
-                    value={option}
-                    checked={selectedOption === option}
-                    onChange={(e) => onOptionChange(e.target.value)}
-                    required
-                  />
-                  {option}
-                </label>
-              ))}
+          // Single answer mode
+          variant === 'open_ended' ? (
+            <div className="field">
+              <label className="label" htmlFor="answerInput">Your Answer:</label>
+              <div className="control">
+                <textarea
+                  id="answerInput"
+                  className="textarea"
+                  rows={3}
+                  placeholder="Type your answer here..."
+                  value={answer}
+                  onChange={(e) => onAnswerChange(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="field">
+              <div className="control">
+                {options?.map((option, index) => (
+                  <label
+                    key={index}
+                    className={`button is-fullwidth mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
+                  >
+                    <input
+                      type="radio"
+                      id={`option-${index}`}
+                      name="answer-option"
+                      value={option}
+                      checked={selectedOption === option}
+                      onChange={(e) => onOptionChange(e.target.value)}
+                      required
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
         )}
         <button type="submit" className="button is-primary is-fullwidth is-large">
           Submit Answer

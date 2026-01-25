@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 interface QuestionFormProps {
-  onSubmit: (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[]) => void;
+  onSubmit: (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => void;
   onError: (message: string) => void;
 }
 
@@ -9,6 +9,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
   const [questionInput, setQuestionInput] = useState('');
   const [selectedVariant, setSelectedVariant] = useState<'open_ended' | 'multiple_choice' | 'binary'>('open_ended');
   const [mcOptions, setMcOptions] = useState<string[]>(['', '']);
+  const [answerForBoth, setAnswerForBoth] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +32,14 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
       options = ['Player 1', 'Player 2'];
     }
 
-    onSubmit(questionInput.trim(), selectedVariant, options);
+    // Only pass answerForBoth for non-binary variants
+    const shouldAnswerForBoth = selectedVariant !== 'binary' && answerForBoth;
+    onSubmit(questionInput.trim(), selectedVariant, options, shouldAnswerForBoth);
 
     // Reset form
     setQuestionInput('');
     setMcOptions(['', '']);
+    setAnswerForBoth(false);
   };
 
   return (
@@ -175,6 +179,24 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
               Note: Player names will be filled in dynamically for each team
             </p>
           </>
+        )}
+
+        {/* Answer for Both checkbox - only for non-binary */}
+        {selectedVariant !== 'binary' && (
+          <div className="field mb-4">
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={answerForBoth}
+                onChange={(e) => setAnswerForBoth(e.target.checked)}
+                className="mr-2"
+              />
+              Players answer for both parties
+            </label>
+            <p className="help">
+              Each player will answer the question for themselves AND their partner
+            </p>
+          </div>
         )}
 
         <button type="submit" className="button is-primary is-fullwidth is-large">

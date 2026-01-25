@@ -59,8 +59,9 @@ export interface CurrentRound {
   question: string;
   variant: RoundVariant;
   options: string[] | null;
+  answerForBoth: boolean; // When true, players answer for both themselves and their partner
   status: RoundStatus;
-  answers: Record<string, Answer>;
+  answers: Record<string, Answer>; // When answerForBoth, text is JSON: { [playerName]: answer }
   submittedInCurrentPhase: string[];
 }
 

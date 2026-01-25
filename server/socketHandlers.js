@@ -301,7 +301,7 @@ function setupSocketHandlers(io) {
     });
 
     // Host starts a new round
-    socket.on('startRound', async ({ question, variant, options }) => {
+    socket.on('startRound', async ({ question, variant, options, answerForBoth = false }) => {
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -309,7 +309,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.startRound(roomCode, question, variant, options);
+        gameState.startRound(roomCode, question, variant, options, answerForBoth);
         const state = gameState.getGameState(roomCode);
 
         // Persist round to database
@@ -327,6 +327,7 @@ function setupSocketHandlers(io) {
           question: state.currentRound.question,
           variant: state.currentRound.variant,
           options: state.currentRound.options,
+          answerForBoth: state.currentRound.answerForBoth,
           gameState: state
         });
       } catch (err) {
@@ -393,15 +394,30 @@ function setupSocketHandlers(io) {
 
       try {
         const state = gameState.getGameState(roomCode);
-        const answerObj = state.currentRound.answers[playerName];
-        const player = state.players.find(p => p.name === playerName);
 
-        io.to(roomCode).emit('answerRevealed', {
-          socketId: player.socketId,  // Still send socketId for client compatibility
-          playerName: playerName,
-          answer: answerObj.text,
-          responseTime: answerObj.responseTime
-        });
+        // For dual answer mode, playerName may be "Alice:Bob" format (answerer:subject)
+        // In that case, we just echo back the key - client handles parsing
+        const isDualKey = playerName.includes(':');
+
+        if (isDualKey) {
+          // Dual mode: just broadcast the reveal key
+          io.to(roomCode).emit('answerRevealed', {
+            playerName: playerName,
+            answer: null,
+            responseTime: null
+          });
+        } else {
+          // Single mode: look up the actual answer
+          const answerObj = state.currentRound.answers[playerName];
+          const player = state.players.find(p => p.name === playerName);
+
+          io.to(roomCode).emit('answerRevealed', {
+            socketId: player?.socketId,
+            playerName: playerName,
+            answer: answerObj?.text,
+            responseTime: answerObj?.responseTime
+          });
+        }
       } catch (err) {
         console.error('Reveal answer error:', err);
         socket.emit('error', { message: err.message });

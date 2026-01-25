@@ -3,6 +3,119 @@ import { findPlayerBySocketId } from '../../utils/playerUtils';
 import { fireBoomBurst } from '../../hooks/useConfetti';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
+// Helper to parse dual answer JSON
+function parseDualAnswer(text: string): Record<string, string> | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+// Component for dual answer mode scoring
+function DualAnswerScoring({
+  player1,
+  player2,
+  currentRound,
+  revealedAnswers,
+  onRevealAnswer
+}: {
+  player1: Player | undefined;
+  player2: Player | undefined;
+  currentRound: CurrentRound;
+  revealedAnswers: Set<string>;
+  onRevealAnswer: (key: string) => void;
+}) {
+  if (!player1 || !player2) return null;
+
+  const player1Answer = currentRound.answers[player1.name];
+  const player2Answer = currentRound.answers[player2.name];
+
+  // Parse JSON answers
+  const player1Parsed = player1Answer ? parseDualAnswer(player1Answer.text) : null;
+  const player2Parsed = player2Answer ? parseDualAnswer(player2Answer.text) : null;
+
+  // Subjects are both players (we show "What about Alice?" and "What about Bob?")
+  const subjects = [player1, player2];
+
+  return (
+    <div className="dual-answer-scoring">
+      {subjects.map((subject) => {
+        // Reveal keys: "Alice:Alice" means Alice's answer about Alice
+        const p1RevealKey = `${player1.name}:${subject.name}`;
+        const p2RevealKey = `${player2.name}:${subject.name}`;
+        const p1Revealed = revealedAnswers.has(p1RevealKey);
+        const p2Revealed = revealedAnswers.has(p2RevealKey);
+
+        // Get answers about this subject
+        const p1AnswerForSubject = player1Parsed?.[subject.name] ?? '(no answer)';
+        const p2AnswerForSubject = player2Parsed?.[subject.name] ?? '(no answer)';
+
+        return (
+          <div key={subject.socketId} className="box has-background-white-ter mb-3">
+            <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
+              <PlayerAvatar avatar={subject.avatar} size="medium" />
+              <span className="subtitle is-5 mb-0">Answer for {subject.name}:</span>
+            </div>
+
+            <div className="columns">
+              {/* Player 1's answer about this subject */}
+              <div className="column">
+                <div className="box mt-3">
+                  <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                    <PlayerAvatar avatar={player1.avatar} size="small" />
+                    <span className="is-size-7 has-text-grey">{player1.name} said:</span>
+                  </div>
+                  {!p1Revealed ? (
+                    <button
+                      className="button is-link is-small"
+                      onClick={(e) => {
+                        fireBoomBurst(e);
+                        onRevealAnswer(p1RevealKey);
+                      }}
+                    >
+                      Reveal
+                    </button>
+                  ) : (
+                    <div className="notification is-light is-small py-2 px-3">
+                      <strong>{p1AnswerForSubject}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Player 2's answer about this subject */}
+              <div className="column">
+                <div className="box mt-3">
+                  <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                    <PlayerAvatar avatar={player2.avatar} size="small" />
+                    <span className="is-size-7 has-text-grey">{player2.name} said:</span>
+                  </div>
+                  {!p2Revealed ? (
+                    <button
+                      className="button is-link is-small"
+                      onClick={(e) => {
+                        fireBoomBurst(e);
+                        onRevealAnswer(p2RevealKey);
+                      }}
+                    >
+                      Reveal
+                    </button>
+                  ) : (
+                    <div className="notification is-light is-small py-2 px-3">
+                      <strong>{p2AnswerForSubject}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface TeamWithTiming {
   team: {
     teamId: string;
@@ -116,40 +229,52 @@ export function ScoringInterface({
 
               {isExpanded && (
                 <div className="content">
-                  <div className="columns">
-                    {sortedPlayers.map(({ player }) =>
-                      player ? (
-                        <div key={player.socketId} className="column">
-                          <div className="box has-background-white-ter">
-                            <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
-                              <PlayerAvatar avatar={player.avatar} size="medium" />
-                              <span className="subtitle is-6 mb-0">{player.name} said...</span>
-                            </div>
-                            {!revealedAnswers.has(player.name) ? (
-                              <button
-                                className="button is-link"
-                                onClick={(e) => {
-                                  fireBoomBurst(e);
-                                  onRevealAnswer(player.name);
-                                }}
-                              >
-                                Reveal Answer
-                              </button>
-                            ) : (
-                              <div className="notification is-light">
-                                <strong>{currentRound?.answers[player.name]?.text || 'No answer'}</strong>
-                                {revealedResponseTimes[player.name] !== undefined && (
-                                  <span className="has-text-grey ml-2">
-                                    (took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s)
-                                  </span>
-                                )}
+                  {currentRound?.answerForBoth ? (
+                    // Dual answer mode: group by subject (who the answer is about)
+                    <DualAnswerScoring
+                      player1={player1}
+                      player2={player2}
+                      currentRound={currentRound}
+                      revealedAnswers={revealedAnswers}
+                      onRevealAnswer={onRevealAnswer}
+                    />
+                  ) : (
+                    // Single answer mode: show each player's answer
+                    <div className="columns">
+                      {sortedPlayers.map(({ player }) =>
+                        player ? (
+                          <div key={player.socketId} className="column">
+                            <div className="box has-background-white-ter">
+                              <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
+                                <PlayerAvatar avatar={player.avatar} size="medium" />
+                                <span className="subtitle is-6 mb-0">{player.name} said...</span>
                               </div>
-                            )}
+                              {!revealedAnswers.has(player.name) ? (
+                                <button
+                                  className="button is-link"
+                                  onClick={(e) => {
+                                    fireBoomBurst(e);
+                                    onRevealAnswer(player.name);
+                                  }}
+                                >
+                                  Reveal Answer
+                                </button>
+                              ) : (
+                                <div className="notification is-light">
+                                  <strong>{currentRound?.answers[player.name]?.text || 'No answer'}</strong>
+                                  {revealedResponseTimes[player.name] !== undefined && (
+                                    <span className="has-text-grey ml-2">
+                                      (took {(revealedResponseTimes[player.name]! / 1000).toFixed(2)}s)
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : null
-                    )}
-                  </div>
+                        ) : null
+                      )}
+                    </div>
+                  )}
 
                   <div className="field is-grouped is-grouped-centered mt-4">
                     <div className="control">
@@ -157,7 +282,7 @@ export function ScoringInterface({
                         className="button is-light is-large"
                         onClick={() => onAwardPoints(team.teamId, originalIndex, 0)}
                       >
-                        0 😔
+                        zero pts 😔
                       </button>
                     </div>
                     <div className="control">
@@ -165,7 +290,7 @@ export function ScoringInterface({
                         className="button is-success is-large"
                         onClick={() => onAwardPoints(team.teamId, originalIndex, 1)}
                       >
-                        1 ⭐
+                        one point ⭐
                       </button>
                     </div>
                     <div className="control">
@@ -173,7 +298,7 @@ export function ScoringInterface({
                         className="button is-warning is-large"
                         onClick={() => onAwardPoints(team.teamId, originalIndex, 2)}
                       >
-                        2 🌟
+                        🌟 two! ptz! 🌟
                       </button>
                     </div>
                   </div>
