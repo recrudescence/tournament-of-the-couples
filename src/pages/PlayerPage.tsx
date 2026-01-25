@@ -13,6 +13,7 @@ import { SubmittedStatus } from '../components/player/SubmittedStatus';
 import { ScoringStatus } from '../components/player/ScoringStatus';
 import { findPlayerBySocketId } from '../utils/playerUtils';
 import { GameTitle } from '../components/common/GameTitle';
+import { TeamScoreboard } from '../components/host/TeamScoreboard';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -273,61 +274,64 @@ export function PlayerPage() {
   return (
     <>
       <ExitButton />
+
       <section className="section">
-      <div className="container container-md">
-        <div className="block">
-          <GameTitle />
-          <PlayerHeader
-            hostName={gameState?.host.name ?? '-'}
-            playerName={playerInfo.name}
-            playerAvatar={myPlayer?.avatar ?? null}
-            partnerName={myPartner?.name ?? '-'}
-            partnerAvatar={myPartner?.avatar ?? null}
-            teamScore={myTeam?.score || 0}
-            isCelebrating={isCelebrating}
-          />
+        <div className="container container-md">
+          <div className="block">
+            <GameTitle />
+            <PlayerHeader
+              hostName={gameState?.host.name ?? '-'}
+              playerName={playerInfo.name}
+              playerAvatar={myPlayer?.avatar ?? null}
+              partnerName={myPartner?.name ?? '-'}
+              partnerAvatar={myPartner?.avatar ?? null}
+              teamScore={myTeam?.score || 0}
+              isCelebrating={isCelebrating}
+            />
+          </div>
+
+          {section === 'waiting' && (
+            <WaitingStatus hostName={gameState?.host.name ?? 'host'} />
+          )}
+
+          {section === 'answering' && (
+            <AnswerSubmissionForm
+              roundNumber={gameState?.currentRound?.roundNumber || 0}
+              question={gameState?.currentRound?.question || ''}
+              responseTime={responseTime}
+              variant={variant}
+              options={options}
+              answer={answer}
+              selectedOption={selectedOption}
+              onAnswerChange={setAnswer}
+              onOptionChange={setSelectedOption}
+              onSubmit={handleSubmit}
+              answerForBoth={gameState?.currentRound?.answerForBoth ?? false}
+              playerName={myPlayer?.name ?? ''}
+              partnerName={myPartner?.name ?? ''}
+              dualAnswers={dualAnswers}
+              onDualAnswerChange={(key, value) => setDualAnswers(prev => ({ ...prev, [key]: value }))}
+            />
+          )}
+
+          {section === 'submitted' && (
+            <SubmittedStatus
+              submittedAnswer={submittedAnswer}
+              partnerName={myPartner?.name ?? null}
+              partnerAvatar={myPartner?.avatar ?? null}
+              partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
+              totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
+              totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
+            />
+          )}
+
+          {section === 'scoring' && <ScoringStatus />}
+
+          <TeamScoreboard teams={gameState?.teams || []} players={gameState?.players || []} />
+
+          {error && <div className="notification is-danger is-light mt-4">{error}</div>}
         </div>
-
-      {section === 'waiting' && (
-        <WaitingStatus hostName={gameState?.host.name ?? 'host'} />
-      )}
-
-      {section === 'answering' && (
-        <AnswerSubmissionForm
-          roundNumber={gameState?.currentRound?.roundNumber || 0}
-          question={gameState?.currentRound?.question || ''}
-          responseTime={responseTime}
-          variant={variant}
-          options={options}
-          answer={answer}
-          selectedOption={selectedOption}
-          onAnswerChange={setAnswer}
-          onOptionChange={setSelectedOption}
-          onSubmit={handleSubmit}
-          answerForBoth={gameState?.currentRound?.answerForBoth ?? false}
-          playerName={myPlayer?.name ?? ''}
-          partnerName={myPartner?.name ?? ''}
-          dualAnswers={dualAnswers}
-          onDualAnswerChange={(key, value) => setDualAnswers(prev => ({ ...prev, [key]: value }))}
-        />
-      )}
-
-      {section === 'submitted' && (
-        <SubmittedStatus
-          submittedAnswer={submittedAnswer}
-          partnerName={myPartner?.name ?? null}
-          partnerAvatar={myPartner?.avatar ?? null}
-          partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
-          totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
-          totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
-        />
-      )}
-
-      {section === 'scoring' && <ScoringStatus />}
-
-      {error && <div className="notification is-danger is-light mt-4">{error}</div>}
-      </div>
-    </section>
+      </section>
     </>
   );
 }
