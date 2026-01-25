@@ -32,9 +32,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
       options = ['Player 1', 'Player 2'];
     }
 
-    // Only pass answerForBoth for non-binary variants
-    const shouldAnswerForBoth = selectedVariant !== 'binary' && answerForBoth;
-    onSubmit(questionInput.trim(), selectedVariant, options, shouldAnswerForBoth);
+    onSubmit(questionInput.trim(), selectedVariant, options, answerForBoth);
 
     // Reset form
     setQuestionInput('');
@@ -181,23 +179,21 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
           </>
         )}
 
-        {/* Answer for Both checkbox - only for non-binary */}
-        {selectedVariant !== 'binary' && (
-          <div className="field mb-4">
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={answerForBoth}
-                onChange={(e) => setAnswerForBoth(e.target.checked)}
-                className="mr-2"
-              />
-              Players answer for both parties
-            </label>
-            <p className="help">
-              Each player will answer the question for themselves AND their partner
-            </p>
-          </div>
-        )}
+        {/* Answer for Both checkbox */}
+        <div className="field mb-4">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={answerForBoth}
+              onChange={(e) => setAnswerForBoth(e.target.checked)}
+              className="mr-2"
+            />
+            Players answer for both parties
+          </label>
+          <p className="help">
+            Each player will answer the question for themselves AND their partner
+          </p>
+        </div>
 
         <button type="submit" className="button is-primary is-fullwidth is-large">
           Start Round
