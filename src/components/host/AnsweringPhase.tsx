@@ -1,4 +1,5 @@
 import { type Player, type CurrentRound } from '../../types/game';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -31,38 +32,41 @@ export function AnsweringPhase({
       </div>
 
       <h3 className="subtitle is-5 mb-3">Answer Status</h3>
-      <div className="box has-background-white-ter mb-4">
-        <div className="content">
-          <ul>
-            {players.map((player) => {
-              const hasSubmitted = currentRound
-                ? currentRound.status === 'complete'
-                  ? player.name in currentRound.answers
-                  : currentRound.submittedInCurrentPhase.includes(player.name)
-                : false;
+      <div className="mb-4">
+        {players.map((player) => {
+          const hasSubmitted = currentRound
+            ? currentRound.status === 'complete'
+              ? player.name in currentRound.answers
+              : currentRound.submittedInCurrentPhase.includes(player.name)
+            : false;
 
-              return (
-                <li
-                  key={player.socketId}
-                  className={
-                    !player.connected
-                      ? 'has-text-grey'
-                      : hasSubmitted
-                      ? 'has-text-success'
-                      : 'has-text-warning-dark'
-                  }
-                >
-                  <strong>{player.name}</strong>{' '}
+          const statusColor = !player.connected
+            ? 'has-background-grey-lighter'
+            : hasSubmitted
+            ? 'has-background-success-light'
+            : 'has-background-warning-light';
+
+          return (
+            <div
+              key={player.socketId}
+              className={`box mb-2 p-3 ${statusColor}`}
+            >
+              <div className="is-flex is-align-items-center is-justify-content-space-between">
+                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                  <PlayerAvatar avatar={player.avatar} size="small" />
+                  <span className="has-text-weight-semibold">{player.name}</span>
+                </div>
+                <span>
                   {!player.connected
-                    ? '🔌 (Disconnected)'
+                    ? '🔌 Disconnected'
                     : hasSubmitted
-                    ? '✅'
-                    : '⏳'}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                    ? '✅ Submitted'
+                    : '⏳ Waiting...'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {!showAllAnswersNotification && (

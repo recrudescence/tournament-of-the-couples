@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Player } from '../../types/game';
 import { usePrevious } from '../../hooks/usePrevious';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface PlayerCardProps {
   player: Player;
@@ -39,9 +40,8 @@ export function PlayerCard({
     }
   }, [player.avatar, prevAvatar, isBumping]);
 
-  const handleAvatarClick = (e: React.MouseEvent) => {
+  const handleAvatarClick = () => {
     if (canRandomize) {
-      e.stopPropagation();
       setIsBumping(true);
       onRandomizeAvatar();
       setTimeout(() => setIsBumping(false), 200);
@@ -55,22 +55,13 @@ export function PlayerCard({
       style={canPair ? { cursor: 'pointer' } : {}}
     >
       <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
-        <div
-          className={`is-flex is-align-items-center is-justify-content-center ${isBumping ? 'avatar-bump' : ''}`}
-          onClick={handleAvatarClick}
-          style={{
-            width: '3rem',
-            height: '3rem',
-            borderRadius: '50%',
-            backgroundColor: player.avatar.color,
-            fontSize: '1.5rem',
-            flexShrink: 0,
-            cursor: canRandomize ? 'pointer' : undefined,
-          }}
+        <PlayerAvatar
+          avatar={player.avatar}
+          size="large"
+          isBumping={isBumping}
+          onClick={canRandomize ? handleAvatarClick : undefined}
           title={canRandomize ? 'Tap to randomize' : undefined}
-        >
-          {player.avatar.emoji}
-        </div>
+        />
         <div className="is-flex-grow-1">
           <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
             {player.name}

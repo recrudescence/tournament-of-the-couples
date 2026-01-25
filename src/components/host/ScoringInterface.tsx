@@ -1,6 +1,7 @@
 import { type Player, type CurrentRound } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
 import { fireBoomBurst } from '../../hooks/useConfetti';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface TeamWithTiming {
   team: {
@@ -78,8 +79,12 @@ export function ScoringInterface({
               className={`box mb-3 ${isExpanded ? 'has-background-link-light' : ''}`}
             >
               <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
-                <div className="has-text-weight-bold is-size-5">
-                  {player1?.name ?? '?'} & {player2?.name ?? '?'}
+                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                  {player1 && <PlayerAvatar avatar={player1.avatar} size="small" />}
+                  <span className="has-text-weight-bold is-size-5">{player1?.name ?? '?'}</span>
+                  <span className="has-text-grey">&</span>
+                  {player2 && <PlayerAvatar avatar={player2.avatar} size="small" />}
+                  <span className="has-text-weight-bold is-size-5">{player2?.name ?? '?'}</span>
                   {bothRevealed && totalResponseTime < Infinity && (
                     <span className="has-text-grey is-size-6 ml-2">
                       took {(totalResponseTime / 1000).toFixed(1)} seconds!
@@ -118,7 +123,10 @@ export function ScoringInterface({
                       player ? (
                         <div key={player.socketId} className="column">
                           <div className="box has-background-white-ter">
-                            <h4 className="subtitle is-6">{player.name} said...</h4>
+                            <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
+                              <PlayerAvatar avatar={player.avatar} size="medium" />
+                              <span className="subtitle is-6 mb-0">{player.name} said...</span>
+                            </div>
                             {!revealedAnswers.has(player.name) ? (
                               <button
                                 className="button is-link"

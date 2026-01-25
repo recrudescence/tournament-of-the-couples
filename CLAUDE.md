@@ -30,14 +30,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `/src/components/common/` - Shared components used across multiple pages
   - **ExitButton**: Floating red button in top-left corner (all game pages) - allows players/hosts to exit to home with confirmation
   - **DebugSidebar**: Host-only debug panel for viewing game state
+  - **PlayerAvatar**: Reusable avatar component displaying player's color + emoji. Supports three sizes (small/medium/large), optional bump animation, and click-to-randomize for the current player.
   - **PlayerCard**: Unpaired player display with avatar, click-to-pair interaction, and host kick functionality. Players can tap their own avatar to randomize it.
   - **TeamCard**: Paired team display showing two player mini-cards side-by-side with avatars, break-up/kick actions. Avatar tap-to-randomize supported.
 
 - `/src/components/host/` - Host-specific components (used by HostPage)
   - **QuestionForm**: Question input with variant selection (open_ended, multiple_choice, binary)
-  - **AnsweringPhase**: Answer submission status display during answering phase
-  - **ScoringInterface**: Team-by-team answer review and scoring interface
-  - **TeamScoreboard**: Team list with scores
+  - **AnsweringPhase**: Answer submission status display with player avatars during answering phase
+  - **ScoringInterface**: Team-by-team answer review and scoring interface with player avatars
+  - **TeamScoreboard**: Team list with scores and player avatars
   - **RoundControls**: End game button
 
 - `/src/components/player/` - Player-specific components (used by PlayerPage)

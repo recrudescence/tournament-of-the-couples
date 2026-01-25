@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Player } from '../../types/game';
 import { usePrevious } from '../../hooks/usePrevious';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface TeamCardProps {
   player1: Player;
@@ -75,20 +76,14 @@ export function TeamCard({
 
     return (
       <div className="box mb-0 p-3 has-text-centered" style={{ flex: '1 1 0', minWidth: 0 }}>
-        <div
-          className={`is-flex is-align-items-center is-justify-content-center mx-auto ${isThisPlayerBumping ? 'avatar-bump' : ''}`}
-          onClick={canRandomize ? () => handleAvatarClick(player.socketId) : undefined}
-          style={{
-            width: '2.5rem',
-            height: '2.5rem',
-            borderRadius: '50%',
-            backgroundColor: player.avatar.color,
-            fontSize: '1.25rem',
-            cursor: canRandomize ? 'pointer' : undefined,
-          }}
-          title={canRandomize ? 'Tap to randomize' : undefined}
-        >
-          {player.avatar.emoji}
+        <div className="is-flex is-justify-content-center">
+          <PlayerAvatar
+            avatar={player.avatar}
+            size="medium"
+            isBumping={isThisPlayerBumping}
+            onClick={canRandomize ? () => handleAvatarClick(player.socketId) : undefined}
+            title={canRandomize ? 'Tap to randomize' : undefined}
+          />
         </div>
         <div
           className={`has-text-weight-semibold mt-2 ${isCurrent ? 'has-text-primary' : ''}`}
