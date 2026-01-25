@@ -23,8 +23,8 @@ export interface ClientToServerEvents {
   startRound: (data: { question: string; variant: string; options?: string[] }) => void;
   submitAnswer: (data: { answer: string; responseTime: number }) => void;
   revealAnswer: (data: { playerName: string }) => void;
-  awardPoint: (data: { teamId: string }) => void;
-  removePoint: (data: { teamId: string }) => void;
+  awardPoint: (data: { teamId: string; points: number }) => void;
+  removePoint: (data: { teamId: string; points: number }) => void;
   skipPoint: (data: { teamId: string }) => void;
   nextRound: () => void;
   backToAnswering: () => void;

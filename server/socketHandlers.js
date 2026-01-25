@@ -409,7 +409,7 @@ function setupSocketHandlers(io) {
     });
 
     // Host awards point to team
-    socket.on('awardPoint', ({ teamId }) => {
+    socket.on('awardPoint', ({ teamId, points = 1 }) => {
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -417,7 +417,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.updateTeamScore(roomCode, teamId, 1);
+        gameState.updateTeamScore(roomCode, teamId, points);
         const state = gameState.getGameState(roomCode);
         const team = state.teams.find(t => t.teamId === teamId);
 
@@ -429,7 +429,7 @@ function setupSocketHandlers(io) {
     });
 
     // Host removes point from team (for reopening scoring)
-    socket.on('removePoint', ({ teamId }) => {
+    socket.on('removePoint', ({ teamId, points = 1 }) => {
       const roomCode = socket.roomCode;
       if (!roomCode) {
         socket.emit('error', { message: 'Not in a room' });
@@ -437,7 +437,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.updateTeamScore(roomCode, teamId, -1);
+        gameState.updateTeamScore(roomCode, teamId, -points);
         const state = gameState.getGameState(roomCode);
         const team = state.teams.find(t => t.teamId === teamId);
 

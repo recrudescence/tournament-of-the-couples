@@ -870,6 +870,24 @@ describe('socketHandlers', () => {
       expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 1 });
     });
 
+    it('should award 2 points to team when specified', () => {
+      socket.roomCode = roomCode;
+
+      const state = gameState.getGameState(roomCode);
+      const teamId = state.teams[0].teamId;
+
+      io.connectionHandler(socket);
+      const awardHandler = socket.on.mock.calls.find(
+        call => call[0] === 'awardPoint'
+      )[1];
+
+      awardHandler({ teamId, points: 2 });
+
+      const updatedState = gameState.getGameState(roomCode);
+      expect(updatedState.teams[0].score).toBe(2);
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 2 });
+    });
+
     it('should reject when not in a room', () => {
       io.connectionHandler(socket);
       const awardHandler = socket.on.mock.calls.find(
@@ -911,6 +929,27 @@ describe('socketHandlers', () => {
       )[1];
 
       removeHandler({ teamId });
+
+      const updatedState = gameState.getGameState(roomCode);
+      expect(updatedState.teams[0].score).toBe(0);
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0 });
+    });
+
+    it('should remove 2 points from team when specified', () => {
+      socket.roomCode = roomCode;
+
+      const state = gameState.getGameState(roomCode);
+      const teamId = state.teams[0].teamId;
+
+      // First award 2 points
+      gameState.updateTeamScore(roomCode, teamId, 2);
+
+      io.connectionHandler(socket);
+      const removeHandler = socket.on.mock.calls.find(
+        call => call[0] === 'removePoint'
+      )[1];
+
+      removeHandler({ teamId, points: 2 });
 
       const updatedState = gameState.getGameState(roomCode);
       expect(updatedState.teams[0].score).toBe(0);

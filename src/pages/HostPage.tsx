@@ -191,14 +191,11 @@ export function HostPage() {
     emit('revealAnswer', { playerName });
   };
 
-  const handleAwardPoint = (teamId: string, teamIndex: number) => {
-    emit('awardPoint', { teamId });
-    setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: 1 }));
-    moveToNextTeam(teamIndex);
-  };
-
-  const handleSkipPoint = (teamId: string, teamIndex: number) => {
-    setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: 0 }));
+  const handleAwardPoints = (teamId: string, teamIndex: number, points: number) => {
+    if (points > 0) {
+      emit('awardPoint', { teamId, points });
+    }
+    setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: points }));
     moveToNextTeam(teamIndex);
   };
 
@@ -216,9 +213,10 @@ export function HostPage() {
   };
 
   const handleReopenTeamScoring = (teamId: string, teamIndex: number) => {
-    // If team was awarded a point, remove it
-    if (teamPointsAwarded[teamId] === 1) {
-      emit('removePoint', { teamId });
+    // If team was awarded points, remove them
+    const pointsAwarded = teamPointsAwarded[teamId] ?? 0;
+    if (pointsAwarded > 0) {
+      emit('removePoint', { teamId, points: pointsAwarded });
     }
 
     // Remove from local tracking
@@ -363,8 +361,7 @@ export function HostPage() {
             showFinishBtn={showFinishBtn}
             onBackToAnswering={handleBackToAnswering}
             onRevealAnswer={handleRevealAnswer}
-            onAwardPoint={handleAwardPoint}
-            onSkipPoint={handleSkipPoint}
+            onAwardPoints={handleAwardPoints}
             onReopenTeamScoring={handleReopenTeamScoring}
             onFinishRound={handleFinishRound}
           />

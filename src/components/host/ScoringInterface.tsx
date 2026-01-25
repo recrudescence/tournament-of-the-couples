@@ -27,8 +27,7 @@ interface ScoringInterfaceProps {
   showFinishBtn: boolean;
   onBackToAnswering: () => void;
   onRevealAnswer: (playerName: string) => void;
-  onAwardPoint: (teamId: string, teamIndex: number) => void;
-  onSkipPoint: (teamId: string, teamIndex: number) => void;
+  onAwardPoints: (teamId: string, teamIndex: number, points: number) => void;
   onReopenTeamScoring: (teamId: string, teamIndex: number) => void;
   onFinishRound: () => void;
 }
@@ -44,8 +43,7 @@ export function ScoringInterface({
   showFinishBtn,
   onBackToAnswering,
   onRevealAnswer,
-  onAwardPoint,
-  onSkipPoint,
+  onAwardPoints,
   onReopenTeamScoring,
   onFinishRound
 }: ScoringInterfaceProps) {
@@ -101,7 +99,7 @@ export function ScoringInterface({
                       }`}
                     >
                       {(teamPointsAwarded[team.teamId] ?? 0) > 0
-                        ? `+${teamPointsAwarded[team.teamId]} point! 🎉`
+                        ? `+${teamPointsAwarded[team.teamId]} ${teamPointsAwarded[team.teamId] === 1 ? 'point' : 'points'}! 🎉`
                         : '0 points 😔'}
                     </span>
                   )}
@@ -156,18 +154,26 @@ export function ScoringInterface({
                   <div className="field is-grouped is-grouped-centered mt-4">
                     <div className="control">
                       <button
-                        className="button is-success is-large"
-                        onClick={() => onAwardPoint(team.teamId, originalIndex)}
+                        className="button is-light is-large"
+                        onClick={() => onAwardPoints(team.teamId, originalIndex, 0)}
                       >
-                        Award Point ⭐
+                        0 😔
                       </button>
                     </div>
                     <div className="control">
                       <button
-                        className="button is-light is-large"
-                        onClick={() => onSkipPoint(team.teamId, originalIndex)}
+                        className="button is-success is-large"
+                        onClick={() => onAwardPoints(team.teamId, originalIndex, 1)}
                       >
-                        No Point
+                        1 ⭐
+                      </button>
+                    </div>
+                    <div className="control">
+                      <button
+                        className="button is-warning is-large"
+                        onClick={() => onAwardPoints(team.teamId, originalIndex, 2)}
+                      >
+                        2 🌟
                       </button>
                     </div>
                   </div>
