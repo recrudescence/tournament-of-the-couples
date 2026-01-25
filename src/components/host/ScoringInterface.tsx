@@ -2,6 +2,7 @@ import { type Player, type CurrentRound } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 import { TeamName } from '../common/TeamName';
+import { Question } from '../common/Question.tsx';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -163,6 +164,7 @@ export function ScoringInterface({
       <button className="button is-info is-small mb-3" onClick={onBackToAnswering}>
         ← Back to Answering
       </button>
+      <Question question={currentRound?.question}/>
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
       <div className="mb-4">

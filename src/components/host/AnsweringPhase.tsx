@@ -1,5 +1,6 @@
 import { type Player, type CurrentRound } from '../../types/game';
 import { PlayerAvatar } from '../common/PlayerAvatar';
+import { Question } from '../common/Question.tsx';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -26,10 +27,7 @@ export function AnsweringPhase({
 }: AnsweringPhaseProps) {
   return (
     <div className="box">
-      <h2 className="subtitle is-4 mb-3">Current Question</h2>
-      <div className="notification is-primary is-light mb-4">
-        <p className="is-size-5 has-text-weight-semibold">{question}</p>
-      </div>
+      <Question question={question} />
 
       <h3 className="subtitle is-5 mb-3">Answer Status</h3>
       <div className="mb-4">
