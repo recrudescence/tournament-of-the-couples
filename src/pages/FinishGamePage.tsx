@@ -4,6 +4,7 @@ import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useCelebrationConfetti } from '../hooks/useConfetti';
 import { ExitButton } from '../components/common/ExitButton';
+import { TeamName } from '../components/common/TeamName';
 import type { Team } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
 
@@ -31,10 +32,10 @@ export function FinishGamePage() {
 
   const winningTeam = sortedTeams[0];
 
-  const getTeamNames = (team: Team) => {
+  const getTeamPlayers = (team: Team) => {
     const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
     const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
-    return `${player1?.name ?? 'Unknown'} & ${player2?.name ?? 'Unknown'}`;
+    return { player1, player2 };
   };
 
   const handleReturnHome = () => {
@@ -64,9 +65,17 @@ export function FinishGamePage() {
           <div className="mb-6">
             <h2 className="subtitle is-4 has-text-centered mb-4">🏆 Winners!</h2>
             <div className="box has-background-primary has-text-white has-text-centered p-6">
-              <h3 className="title is-3 has-text-white mb-3">
-                {winningTeam ? getTeamNames(winningTeam) : '???'}
-              </h3>
+              <div className="is-flex is-justify-content-center mb-3">
+                {winningTeam ? (
+                  <TeamName
+                    player1={getTeamPlayers(winningTeam).player1}
+                    player2={getTeamPlayers(winningTeam).player2}
+                    size="medium"
+                  />
+                ) : (
+                  <span className="title is-3 has-text-white">???</span>
+                )}
+              </div>
               <p className="title is-1 has-text-white has-text-weight-bold">
                 {winningTeam ? winningTeam.score : '???'} points
               </p>
@@ -76,26 +85,27 @@ export function FinishGamePage() {
           <div className="mb-6">
             <h2 className="subtitle is-4 mb-4">Final Standings</h2>
             <div>
-              {sortedTeams.map((team, index) => (
-                <div
-                  key={team.teamId}
-                  className={`box mb-3 is-flex is-justify-content-space-between is-align-items-center ${
-                    index === 0 ? 'has-background-link-light winning-team-border' : ''
-                  }`}
-                >
-                  <div>
-                    <span className="has-text-weight-bold is-size-5 mr-3">
-                      #{index + 1}
-                    </span>
-                    <span className="is-size-5">
-                      {getTeamNames(team)}
-                    </span>
+              {sortedTeams.map((team, index) => {
+                const { player1, player2 } = getTeamPlayers(team);
+                return (
+                  <div
+                    key={team.teamId}
+                    className={`box mb-3 is-flex is-justify-content-space-between is-align-items-center ${
+                      index === 0 ? 'has-background-link-light winning-team-border' : ''
+                    }`}
+                  >
+                    <div className="is-flex is-align-items-center">
+                      <span className="has-text-weight-bold is-size-5 mr-3">
+                        #{index + 1}
+                      </span>
+                      <TeamName player1={player1} player2={player2} />
+                    </div>
+                    <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
+                      {team.score}
+                    </div>
                   </div>
-                  <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
-                    {team.score}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

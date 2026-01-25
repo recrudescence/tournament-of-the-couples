@@ -1,7 +1,7 @@
 import { type Player, type CurrentRound } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
-import { fireBoomBurst } from '../../hooks/useConfetti';
 import { PlayerAvatar } from '../common/PlayerAvatar';
+import { TeamName } from '../common/TeamName';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -55,7 +55,7 @@ function DualAnswerScoring({
           <div key={subject.socketId} className="box has-background-white-ter mb-3">
             <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
               <PlayerAvatar avatar={subject.avatar} size="medium" />
-              <span className="subtitle is-5 mb-0">Answer for {subject.name}:</span>
+              <span className="subtitle is-5 mb-0">Responses for {subject.name}:</span>
             </div>
 
             <div className="columns">
@@ -69,8 +69,7 @@ function DualAnswerScoring({
                   {!p1Revealed ? (
                     <button
                       className="button is-link is-small"
-                      onClick={(e) => {
-                        fireBoomBurst(e);
+                      onClick={() => {
                         onRevealAnswer(p1RevealKey);
                       }}
                     >
@@ -94,8 +93,7 @@ function DualAnswerScoring({
                   {!p2Revealed ? (
                     <button
                       className="button is-link is-small"
-                      onClick={(e) => {
-                        fireBoomBurst(e);
+                      onClick={() => {
                         onRevealAnswer(p2RevealKey);
                       }}
                     >
@@ -191,11 +189,7 @@ export function ScoringInterface({
             >
               <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
                 <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                  {player1 && <PlayerAvatar avatar={player1.avatar} size="small" />}
-                  <span className="has-text-weight-bold is-size-5">{player1?.name ?? '?'}</span>
-                  <span className="has-text-grey">&</span>
-                  {player2 && <PlayerAvatar avatar={player2.avatar} size="small" />}
-                  <span className="has-text-weight-bold is-size-5">{player2?.name ?? '?'}</span>
+                  <TeamName player1={player1} player2={player2} size='large' />
                   {bothRevealed && totalResponseTime < Infinity && (
                     <span className="has-text-grey is-size-6 ml-2">
                       took {(totalResponseTime / 1000).toFixed(1)} seconds!
@@ -252,8 +246,7 @@ export function ScoringInterface({
                               {!revealedAnswers.has(player.name) ? (
                                 <button
                                   className="button is-link"
-                                  onClick={(e) => {
-                                    fireBoomBurst(e);
+                                  onClick={() => {
                                     onRevealAnswer(player.name);
                                   }}
                                 >
