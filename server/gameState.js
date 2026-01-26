@@ -59,7 +59,7 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
   }
 
   if (isHost) {
-    gameState.host = { socketId, name, connected: true };
+    gameState.host = { socketId, name, connected: true, avatar: generateRandomAvatar() };
     console.log(`Host added: ${name}`);
   } else {
     // Check if player name matches host name
@@ -522,6 +522,12 @@ function randomizePlayerAvatar(roomCode, socketId) {
   const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
+  }
+
+  // Check if it's the host
+  if (gameState.host && gameState.host.socketId === socketId) {
+    gameState.host.avatar = generateRandomAvatar();
+    return gameState.host.avatar;
   }
 
   const player = gameState.players.find(p => p.socketId === socketId);

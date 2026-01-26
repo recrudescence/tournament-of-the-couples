@@ -281,6 +281,7 @@ export function PlayerPage() {
             <GameTitle />
             <PlayerHeader
               hostName={gameState?.host.name ?? '-'}
+              hostAvatar={gameState?.host.avatar ?? null}
               playerName={playerInfo.name}
               playerAvatar={myPlayer?.avatar ?? null}
               partnerName={myPartner?.name ?? '-'}

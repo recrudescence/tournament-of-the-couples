@@ -8,6 +8,7 @@ import { useSnowEffect } from '../hooks/useConfetti';
 import { useTheme } from '../hooks/useTheme';
 import { DebugSidebar } from '../components/common/DebugSidebar';
 import { ExitButton } from '../components/common/ExitButton';
+import { PlayerAvatar } from '../components/common/PlayerAvatar';
 import { PlayerCard } from '../components/common/PlayerCard';
 import { TeamCard } from '../components/common/TeamCard';
 import type { Player, Team } from '../types/game';
@@ -223,12 +224,38 @@ export function LobbyPage() {
       <ExitButton />
       <section className="section">
         <div className="container container-md">
-          <div className="block">
-            <h1 className="title has-text-centered">Lobby</h1>
-            <p className="subtitle is-6 has-text-centered">
-              Welcome to <strong>{gameState.host.name}</strong>'s game!
-            </p>
-          </div>
+          {playerInfo.isHost ? (
+            <div className="mb-5">
+              <div className="is-flex is-align-items-center is-justify-content-space-between">
+                <div className="is-flex is-align-items-center">
+                  <PlayerAvatar
+                    avatar={gameState.host.avatar}
+                    size="large"
+                    onClick={handleRandomizeAvatar}
+                    title="Click to randomize"
+                  />
+                  <div className="ml-3 mb-0">
+                    <span className="title is-4">
+                      {gameState.host.name} is hosting a Tournament of the Couples!
+                    </span>
+                    <p>Scan the QR code or go to <i>www.feud.love</i> 💕</p>
+                  </div>
+                </div>
+                <div className="box">
+                  <figure className="image is-96x96">
+                    <img src="/feudlove.svg" alt="Scan to join" />
+                  </figure>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="block">
+              <h1 className="title has-text-centered">Lobby</h1>
+              <p className="subtitle is-6 has-text-centered">
+                Welcome to <strong>{gameState.host.name}</strong>'s game!
+              </p>
+            </div>
+          )}
 
           <div className="notification is-info is-light has-text-centered">
             {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team

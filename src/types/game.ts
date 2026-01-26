@@ -25,6 +25,7 @@ export enum RoundVariant {
 export interface Host {
   socketId: string;
   name: string;
+  avatar: PlayerAvatar;
 }
 
 export interface PlayerAvatar {

@@ -3,6 +3,7 @@ import type { PlayerAvatar as PlayerAvatarType } from '../../types/game';
 
 interface PlayerHeaderProps {
   hostName: string;
+  hostAvatar: PlayerAvatarType | null;
   playerName: string;
   playerAvatar: PlayerAvatarType | null;
   partnerName: string;
@@ -13,6 +14,7 @@ interface PlayerHeaderProps {
 
 export function PlayerHeader({
   hostName,
+  hostAvatar,
   playerName,
   playerAvatar,
   partnerName,
@@ -25,7 +27,10 @@ export function PlayerHeader({
       <div className="columns is-mobile is-multiline has-text-centered">
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Host</p>
-          <p className="title is-6">{hostName}</p>
+          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
+            {hostAvatar && <PlayerAvatar avatar={hostAvatar} size="small" />}
+            <span className="title is-6">{hostName}</span>
+          </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">You</p>
