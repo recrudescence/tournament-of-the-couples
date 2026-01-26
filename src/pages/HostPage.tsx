@@ -195,6 +195,8 @@ export function HostPage() {
   const handleAwardPoints = (teamId: string, teamIndex: number, points: number) => {
     if (points > 0) {
       emit('awardPoint', { teamId, points });
+    } else {
+      emit('skipPoint', { teamId });
     }
     setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: points }));
     moveToNextTeam(teamIndex);

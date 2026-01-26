@@ -437,9 +437,32 @@ function setupSocketHandlers(io) {
         const state = gameState.getGameState(roomCode);
         const team = state.teams.find(t => t.teamId === teamId);
 
-        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score });
+        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score, pointsAwarded: points });
       } catch (err) {
         console.error('Award point error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host skips scoring for a team (awards 0 points)
+    socket.on('skipPoint', ({ teamId }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        const state = gameState.getGameState(roomCode);
+        const team = state.teams.find(t => t.teamId === teamId);
+        if (!team) {
+          socket.emit('error', { message: 'Team not found' });
+          return;
+        }
+
+        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score, pointsAwarded: 0 });
+      } catch (err) {
+        console.error('Skip point error:', err);
         socket.emit('error', { message: err.message });
       }
     });

@@ -35,6 +35,8 @@ export function PlayerPage() {
   const [selectedOption, setSelectedOption] = useState<string>('');
   // Dual answer mode state (when answerForBoth is true)
   const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
+  // Points feedback: null = not scored yet, number = points awarded this round
+  const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
 
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
@@ -151,6 +153,7 @@ export function PlayerPage() {
         setSelectedOption('');
         setDualAnswers({ self: '', partner: '' });
         setHasSubmitted(false);
+        setMyTeamPointsThisRound(null);
         setSection('answering');
         startTimer();
       }),
@@ -167,16 +170,20 @@ export function PlayerPage() {
       }),
 
       on('allAnswersIn', () => {
+        setMyTeamPointsThisRound(null);
         setSection('scoring');
       }),
 
-      on('scoreUpdated', ({ teamId, newScore }) => {
+      on('scoreUpdated', ({ teamId, newScore, pointsAwarded }) => {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
 
         // Check if this is my team
         if (myPlayer?.teamId === teamId) {
-          setIsCelebrating(true);
-          setTimeout(() => setIsCelebrating(false), 500);
+          setMyTeamPointsThisRound(pointsAwarded);
+          if (pointsAwarded > 0) {
+            setIsCelebrating(true);
+            setTimeout(() => setIsCelebrating(false), 500);
+          }
         }
       }),
 
@@ -326,7 +333,7 @@ export function PlayerPage() {
             />
           )}
 
-          {section === 'scoring' && <ScoringStatus />}
+          {section === 'scoring' && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
           <TeamScoreboard teams={gameState?.teams || []} players={gameState?.players || []} />
 

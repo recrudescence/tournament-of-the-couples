@@ -86,7 +86,7 @@ export interface ServerToClientEvents {
   allAnswersIn: () => void;
   returnedToAnswering: (data: GameState) => void;
   answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
-  scoreUpdated: (data: { teamId: string; newScore: number }) => void;
+  scoreUpdated: (data: { teamId: string; newScore: number; pointsAwarded: number }) => void;
   readyForNextRound: (data: GameState) => void;
 
   // error
