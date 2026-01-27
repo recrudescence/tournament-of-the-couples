@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BothPlayersScoring } from '../host/BothPlayersScoring';
 import { SinglePlayerScoring } from '../host/SinglePlayerScoring';
+import { ScoringInterface } from '../host/ScoringInterface';
 import type { Player, CurrentRound } from '../../types/game';
 import { RoundVariant, RoundStatus } from '../../types/game';
 
@@ -354,5 +355,458 @@ describe('SinglePlayerScoring', () => {
     // Should only render one player section
     expect(screen.getByText('Alice said...')).toBeInTheDocument();
     expect(screen.queryByText('Bob said...')).not.toBeInTheDocument();
+  });
+});
+
+describe('ScoringInterface', () => {
+  const mockAvatar1 = { color: '#ff0000', emoji: '😀' };
+  const mockAvatar2 = { color: '#0000ff', emoji: '🎉' };
+
+  const mockPlayer1: Player = {
+    socketId: 'socket1',
+    name: 'Alice',
+    connected: true,
+    partnerId: 'socket2',
+    teamId: 'team1',
+    avatar: mockAvatar1
+  };
+
+  const mockPlayer2: Player = {
+    socketId: 'socket2',
+    name: 'Bob',
+    connected: true,
+    partnerId: 'socket1',
+    teamId: 'team1',
+    avatar: mockAvatar2
+  };
+
+  const mockPlayers = [mockPlayer1, mockPlayer2];
+
+  const mockTeamWithTiming = {
+    team: {
+      teamId: 'team1',
+      player1Id: 'socket1',
+      player2Id: 'socket2',
+      score: 5
+    },
+    originalIndex: 0,
+    totalResponseTime: 8000,
+    player1Time: 3000,
+    player2Time: 5000
+  };
+
+  const mockRound: CurrentRound = {
+    roundNumber: 1,
+    roundId: 'round1',
+    question: 'What is your favorite color?',
+    variant: RoundVariant.OPEN_ENDED,
+    options: null,
+    answerForBoth: false,
+    status: RoundStatus.COMPLETE,
+    answers: {
+      'Alice': { text: 'Blue', responseTime: 3000 },
+      'Bob': { text: 'Red', responseTime: 5000 }
+    },
+    submittedInCurrentPhase: ['Alice', 'Bob']
+  };
+
+  it('renders back to answering button', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /Back to Answering/i })).toBeInTheDocument();
+  });
+
+  it('calls onBackToAnswering when back button is clicked', () => {
+    const onBackToAnswering = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={onBackToAnswering}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Back to Answering/i }));
+    expect(onBackToAnswering).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders question', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('What is your favorite color?')).toBeInTheDocument();
+  });
+
+  it('renders team name with player names', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Alice & Bob')).toBeInTheDocument();
+  });
+
+  it('renders scoring buttons for current team', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /zero pts/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /one point/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /two/i })).toBeInTheDocument();
+  });
+
+  it('calls onAwardPoints with 0 when zero button is clicked', () => {
+    const onAwardPoints = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={onAwardPoints}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /zero pts/i }));
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 0);
+  });
+
+  it('calls onAwardPoints with 1 when one point button is clicked', () => {
+    const onAwardPoints = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={onAwardPoints}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /one point/i }));
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 1);
+  });
+
+  it('calls onAwardPoints with 2 when two points button is clicked', () => {
+    const onAwardPoints = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={onAwardPoints}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /two/i }));
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 2);
+  });
+
+  it('shows points awarded tag after scoring', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 1 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/\+1 point!/)).toBeInTheDocument();
+  });
+
+  it('shows 0 points message when team awarded zero', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 0 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/0 points/)).toBeInTheDocument();
+  });
+
+  it('shows Finish Round button when showFinishBtn is true', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 1 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={true}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Finish Round' })).toBeInTheDocument();
+  });
+
+  it('calls onFinishRound when Finish Round is clicked', () => {
+    const onFinishRound = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 1 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={true}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={onFinishRound}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Finish Round' }));
+    expect(onFinishRound).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows total response time after both answers revealed', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set(['Alice', 'Bob'])}
+        revealedResponseTimes={{ 'Alice': 3000, 'Bob': 5000 }}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/took 8.0 seconds!/)).toBeInTheDocument();
+  });
+
+  it('renders reopen button for scored teams', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 1 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: '↪️' })).toBeInTheDocument();
+  });
+
+  it('calls onReopenTeamScoring when reopen button is clicked', () => {
+    const onReopenTeamScoring = vi.fn();
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={1}
+        teamPointsAwarded={{ 'team1': 1 }}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={onReopenTeamScoring}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '↪️' }));
+    expect(onReopenTeamScoring).toHaveBeenCalledWith('team1', 0);
+  });
+
+  it('uses BothPlayersScoring when answerForBoth is true', () => {
+    const dualRound: CurrentRound = {
+      ...mockRound,
+      answerForBoth: true,
+      answers: {
+        'Alice': { text: JSON.stringify({ 'Alice': 'Pizza', 'Bob': 'Sushi' }), responseTime: 3000 },
+        'Bob': { text: JSON.stringify({ 'Alice': 'Tacos', 'Bob': 'Pasta' }), responseTime: 5000 }
+      }
+    };
+
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={dualRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    // BothPlayersScoring shows labels like "According to X, Y would say..."
+    expect(screen.getByText('According to Bob, Alice would say...')).toBeInTheDocument();
+  });
+
+  it('uses SinglePlayerScoring when answerForBoth is false', () => {
+    render(
+      <ScoringInterface
+        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        players={mockPlayers}
+        currentRound={mockRound}
+        currentTeamIndex={0}
+        teamPointsAwarded={{}}
+        revealedAnswers={new Set()}
+        revealedResponseTimes={{}}
+        showFinishBtn={false}
+        onBackToAnswering={vi.fn()}
+        onRevealAnswer={vi.fn()}
+        onAwardPoints={vi.fn()}
+        onReopenTeamScoring={vi.fn()}
+        onFinishRound={vi.fn()}
+      />
+    );
+
+    // SinglePlayerScoring shows labels like "X said..."
+    expect(screen.getByText('Alice said...')).toBeInTheDocument();
+    expect(screen.getByText('Bob said...')).toBeInTheDocument();
   });
 });

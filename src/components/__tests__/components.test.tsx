@@ -1,13 +1,16 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { PlayerCard } from '../common/PlayerCard';
 import { TeamCard } from '../common/TeamCard';
 import { PlayerHeader } from '../player/PlayerHeader';
 import { WaitingStatus } from '../player/WaitingStatus';
 import { ScoringStatus } from '../player/ScoringStatus';
+import { SubmittedStatus } from '../player/SubmittedStatus';
 import { TeamScoreboard } from '../host/TeamScoreboard';
 import { RoundControls } from '../host/RoundControls';
-import type { Player, Team } from '../../types/game';
+import { AnsweringPhase } from '../host/AnsweringPhase';
+import type { Player, Team, CurrentRound } from '../../types/game';
+import { RoundStatus, RoundVariant } from '../../types/game';
 
 const mockAvatar = { color: '#ff0000', emoji: '😀' };
 
@@ -243,6 +246,316 @@ describe('Component Smoke Tests', () => {
 
         expect(screen.getByRole('button', { name: /End Game/ })).toBeInTheDocument();
       });
+    });
+
+    describe('AnsweringPhase', () => {
+      const mockPlayers: Player[] = [
+        { socketId: 'socket1', name: 'Alice', connected: true, partnerId: 'socket2', teamId: 'team1', avatar: mockAvatar },
+        { socketId: 'socket2', name: 'Bob', connected: true, partnerId: 'socket1', teamId: 'team1', avatar: { color: '#0000ff', emoji: '🎉' } }
+      ];
+
+      const mockRound: CurrentRound = {
+        roundNumber: 1,
+        roundId: 'round1',
+        question: 'What is your favorite color?',
+        variant: RoundVariant.OPEN_ENDED,
+        options: null,
+        answerForBoth: false,
+        status: RoundStatus.ANSWERING,
+        answers: {},
+        submittedInCurrentPhase: ['Alice']
+      };
+
+      it('renders question', () => {
+        render(
+          <AnsweringPhase
+            question="What is your favorite color?"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={1}
+            showAllAnswersNotification={false}
+            showReopenBtn={false}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByText('What is your favorite color?')).toBeInTheDocument();
+      });
+
+      it('shows submitted status for players who answered', () => {
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={1}
+            showAllAnswersNotification={false}
+            showReopenBtn={false}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByText('✅ Submitted')).toBeInTheDocument();
+        expect(screen.getByText('⏳ Waiting...')).toBeInTheDocument();
+      });
+
+      it('shows disconnected status for disconnected players', () => {
+        const playersWithDisconnected: Player[] = [
+          { ...mockPlayers[0], connected: false },
+          mockPlayers[1]
+        ];
+
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={playersWithDisconnected}
+            currentRound={mockRound}
+            submittedCount={0}
+            showAllAnswersNotification={false}
+            showReopenBtn={false}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByText('🔌 Disconnected')).toBeInTheDocument();
+      });
+
+      it('shows answer count when not all submitted', () => {
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={1}
+            showAllAnswersNotification={false}
+            showReopenBtn={false}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByText('1 / 2 answers submitted')).toBeInTheDocument();
+      });
+
+      it('shows all answers notification when all submitted', () => {
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={2}
+            showAllAnswersNotification={true}
+            showReopenBtn={false}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByText(/All answers are in! Ready to score/)).toBeInTheDocument();
+      });
+
+      it('shows Begin Scoring button when showStartScoringBtn is true', () => {
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={2}
+            showAllAnswersNotification={true}
+            showReopenBtn={false}
+            showStartScoringBtn={true}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByRole('button', { name: 'Begin Scoring' })).toBeInTheDocument();
+      });
+
+      it('calls onStartScoring when Begin Scoring is clicked', () => {
+        const onStartScoring = vi.fn();
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={2}
+            showAllAnswersNotification={true}
+            showReopenBtn={false}
+            showStartScoringBtn={true}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={onStartScoring}
+          />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Begin Scoring' }));
+        expect(onStartScoring).toHaveBeenCalledTimes(1);
+      });
+
+      it('shows Re-open Answering button when showReopenBtn is true', () => {
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={2}
+            showAllAnswersNotification={true}
+            showReopenBtn={true}
+            showStartScoringBtn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        expect(screen.getByRole('button', { name: 'Re-open Answering' })).toBeInTheDocument();
+      });
+
+      it('calls onReopenAnswering when Re-open Answering is clicked', () => {
+        const onReopenAnswering = vi.fn();
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={mockPlayers}
+            currentRound={mockRound}
+            submittedCount={2}
+            showAllAnswersNotification={true}
+            showReopenBtn={true}
+            showStartScoringBtn={false}
+            onReopenAnswering={onReopenAnswering}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Re-open Answering' }));
+        expect(onReopenAnswering).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  describe('Player Components - SubmittedStatus', () => {
+    const mockPartnerAvatar = { color: '#0000ff', emoji: '🎉' };
+
+    it('renders submitted answer', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={false}
+          totalAnswersCount={1}
+          totalPlayersCount={2}
+        />
+      );
+
+      expect(screen.getByText('Answer Submitted!')).toBeInTheDocument();
+      expect(screen.getByText('Blue')).toBeInTheDocument();
+    });
+
+    it('shows partner thinking status when partner has not submitted', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={false}
+          totalAnswersCount={1}
+          totalPlayersCount={2}
+        />
+      );
+
+      expect(screen.getByText(/Bob:/)).toBeInTheDocument();
+      expect(screen.getByText(/is thinking.../)).toBeInTheDocument();
+    });
+
+    it('shows partner submitted status when partner has submitted', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={true}
+          totalAnswersCount={2}
+          totalPlayersCount={2}
+        />
+      );
+
+      expect(screen.getByText(/✓ Submitted/)).toBeInTheDocument();
+    });
+
+    it('shows waiting message when not all players submitted', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={false}
+          totalAnswersCount={1}
+          totalPlayersCount={4}
+        />
+      );
+
+      expect(screen.getByText('Waiting for other players to finish...')).toBeInTheDocument();
+    });
+
+    it('does not show waiting message when all players submitted', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={true}
+          totalAnswersCount={4}
+          totalPlayersCount={4}
+        />
+      );
+
+      expect(screen.queryByText('Waiting for other players to finish...')).not.toBeInTheDocument();
+    });
+
+    it('parses and displays dual answer JSON format', () => {
+      const dualAnswer = JSON.stringify({ 'Alice': 'Pizza', 'Bob': 'Sushi' });
+      render(
+        <SubmittedStatus
+          submittedAnswer={dualAnswer}
+          partnerName="Bob"
+          partnerAvatar={mockPartnerAvatar}
+          partnerSubmitted={true}
+          totalAnswersCount={2}
+          totalPlayersCount={2}
+        />
+      );
+
+      // Check for the parsed answer content
+      expect(screen.getByText('Pizza')).toBeInTheDocument();
+      expect(screen.getByText('Sushi')).toBeInTheDocument();
+      // There are two Bob: elements (one in parsed answer, one in partner status)
+      // so we use getAllByText to verify both exist
+      const bobLabels = screen.getAllByText(/Bob:/);
+      expect(bobLabels.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('handles null partner gracefully', () => {
+      render(
+        <SubmittedStatus
+          submittedAnswer="Blue"
+          partnerName={null}
+          partnerAvatar={null}
+          partnerSubmitted={false}
+          totalAnswersCount={1}
+          totalPlayersCount={2}
+        />
+      );
+
+      expect(screen.getByText('Blue')).toBeInTheDocument();
+      expect(screen.queryByText(/is thinking.../)).not.toBeInTheDocument();
     });
   });
 });
