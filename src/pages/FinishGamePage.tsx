@@ -8,6 +8,16 @@ import { TeamName } from '../components/common/TeamName';
 import type { Team } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
 
+function formatTotalTime(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)}s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
+}
+
 export function FinishGamePage() {
   const navigate = useNavigate();
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
@@ -87,6 +97,7 @@ export function FinishGamePage() {
             <div>
               {sortedTeams.map((team, index) => {
                 const { player1, player2 } = getTeamPlayers(team);
+                const totalTime = gameState.teamTotalResponseTimes?.[team.teamId] ?? 0;
                 return (
                   <div
                     key={team.teamId}
@@ -100,8 +111,17 @@ export function FinishGamePage() {
                       </span>
                       <TeamName player1={player1} player2={player2} />
                     </div>
-                    <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
-                      {team.score}
+                    <div>
+                      {totalTime > 0 && (
+                          <div className="is-size-6 is-italic">
+                            {formatTotalTime(totalTime)} combined answer time!
+                          </div>
+                      )}
+                    </div>
+                    <div className="has-text-right">
+                      <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
+                        {team.score} {team.score === 1 ? 'pt' : 'pts'}
+                      </div>
                     </div>
                   </div>
                 );

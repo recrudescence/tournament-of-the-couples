@@ -43,7 +43,8 @@ function initializeGame(roomCode) {
     host: null,
     players: [],
     teams: [],
-    currentRound: null
+    currentRound: null,
+    teamTotalResponseTimes: {} // Cumulative response times per team (teamId -> total ms)
   };
 
   gameStates.set(roomCode, gameState);
@@ -368,6 +369,14 @@ function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
     text: answerText,
     responseTime: responseTime
   };
+
+  // Accumulate team's total response time (only count positive response times)
+  if (player.teamId && responseTime > 0) {
+    if (!gameState.teamTotalResponseTimes[player.teamId]) {
+      gameState.teamTotalResponseTimes[player.teamId] = 0;
+    }
+    gameState.teamTotalResponseTimes[player.teamId] += responseTime;
+  }
 
   // Mark player as having submitted in the current answering phase (avoid duplicates)
   if (!gameState.currentRound.submittedInCurrentPhase.includes(player.name)) {

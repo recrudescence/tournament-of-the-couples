@@ -75,6 +75,7 @@ export interface GameState {
   players: Player[];
   teams: Team[];
   currentRound: CurrentRound | null;
+  teamTotalResponseTimes: Record<string, number>; // Cumulative response times per team (teamId -> total ms)
 }
 
 export interface PlayerInfo {

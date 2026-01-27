@@ -143,6 +143,7 @@ describe('Page Smoke Tests', () => {
         teams: [],
         status: GameStatus.LOBBY,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
       mockMyPlayer = player;
@@ -183,6 +184,7 @@ describe('Page Smoke Tests', () => {
         teams: [],
         status: GameStatus.LOBBY,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
 
       const { container } = render(
@@ -209,6 +211,7 @@ describe('Page Smoke Tests', () => {
         teams: [],
         status: GameStatus.PLAYING,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Host', isHost: true, roomCode: 'test' };
 
@@ -258,6 +261,7 @@ describe('Page Smoke Tests', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
       mockMyPlayer = player;
@@ -309,6 +313,7 @@ describe('Page Smoke Tests', () => {
         teams: [team],
         status: GameStatus.ENDED,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = player1;

@@ -270,31 +270,6 @@ export function HostPage() {
     return gameState.currentRound.submittedInCurrentPhase.length;
   }, [gameState?.currentRound]);
 
-  // Sort teams by total response time for scoring phase
-  const teamsSortedByResponseTime = useMemo(() => {
-    if (!gameState?.teams || !gameState?.currentRound) return [];
-
-    return gameState.teams.map((team, originalIndex) => {
-      const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
-      const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
-
-      const player1Answer = player1 ? gameState.currentRound!.answers[player1.name] : null;
-      const player2Answer = player2 ? gameState.currentRound!.answers[player2.name] : null;
-
-      const player1Time = player1Answer?.responseTime ?? Infinity;
-      const player2Time = player2Answer?.responseTime ?? Infinity;
-      const totalResponseTime = player1Time + player2Time;
-
-      return {
-        team,
-        originalIndex,
-        totalResponseTime,
-        player1Time,
-        player2Time
-      };
-    }).sort((a, b) => b.totalResponseTime - a.totalResponseTime);
-  }, [gameState?.teams, gameState?.currentRound, gameState?.players]);
-
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
@@ -358,7 +333,7 @@ export function HostPage() {
         {/* Scoring Phase */}
         {phase === 'scoring' && gameState?.currentRound && (
           <ScoringInterface
-            teamsSortedByResponseTime={teamsSortedByResponseTime}
+            teams={gameState.teams}
             players={gameState.players}
             currentRound={gameState.currentRound}
             currentTeamIndex={currentTeamIndex}

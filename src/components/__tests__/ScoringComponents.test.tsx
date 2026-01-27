@@ -384,17 +384,11 @@ describe('ScoringInterface', () => {
 
   const mockPlayers = [mockPlayer1, mockPlayer2];
 
-  const mockTeamWithTiming = {
-    team: {
-      teamId: 'team1',
-      player1Id: 'socket1',
-      player2Id: 'socket2',
-      score: 5
-    },
-    originalIndex: 0,
-    totalResponseTime: 8000,
-    player1Time: 3000,
-    player2Time: 5000
+  const mockTeam = {
+    teamId: 'team1',
+    player1Id: 'socket1',
+    player2Id: 'socket2',
+    score: 5
   };
 
   const mockRound: CurrentRound = {
@@ -416,7 +410,7 @@ describe('ScoringInterface', () => {
   it('renders back to answering button', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -439,7 +433,7 @@ describe('ScoringInterface', () => {
     const onBackToAnswering = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -462,7 +456,7 @@ describe('ScoringInterface', () => {
   it('renders question', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -484,7 +478,7 @@ describe('ScoringInterface', () => {
   it('renders team name with player names', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -506,7 +500,7 @@ describe('ScoringInterface', () => {
   it('renders scoring buttons for current team', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -531,7 +525,7 @@ describe('ScoringInterface', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -555,7 +549,7 @@ describe('ScoringInterface', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -579,7 +573,7 @@ describe('ScoringInterface', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -602,7 +596,7 @@ describe('ScoringInterface', () => {
   it('shows points awarded tag after scoring', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -624,7 +618,7 @@ describe('ScoringInterface', () => {
   it('shows 0 points message when team awarded zero', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -646,7 +640,7 @@ describe('ScoringInterface', () => {
   it('shows Finish Round button when showFinishBtn is true', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -669,7 +663,7 @@ describe('ScoringInterface', () => {
     const onFinishRound = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -692,7 +686,7 @@ describe('ScoringInterface', () => {
   it('shows total response time after both answers revealed', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}
@@ -714,7 +708,7 @@ describe('ScoringInterface', () => {
   it('renders reopen button for scored teams', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -737,7 +731,7 @@ describe('ScoringInterface', () => {
     const onReopenTeamScoring = vi.fn();
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={1}
@@ -769,7 +763,7 @@ describe('ScoringInterface', () => {
 
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={dualRound}
         currentTeamIndex={0}
@@ -792,7 +786,7 @@ describe('ScoringInterface', () => {
   it('uses SinglePlayerScoring when answerForBoth is false', () => {
     render(
       <ScoringInterface
-        teamsSortedByResponseTime={[mockTeamWithTiming]}
+        teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
         currentTeamIndex={0}

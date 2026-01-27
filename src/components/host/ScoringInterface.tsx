@@ -1,25 +1,13 @@
-import { type Player, type CurrentRound } from '../../types/game';
+import { useMemo } from 'react';
+import { type Player, type CurrentRound, type Team } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
 import { TeamName } from '../common/TeamName';
 import { Question } from '../common/Question.tsx';
 import { BothPlayersScoring } from './BothPlayersScoring';
 import { SinglePlayerScoring } from './SinglePlayerScoring';
 
-interface TeamWithTiming {
-  team: {
-    teamId: string;
-    player1Id: string;
-    player2Id: string;
-    score: number;
-  };
-  originalIndex: number;
-  totalResponseTime: number;
-  player1Time: number;
-  player2Time: number;
-}
-
 interface ScoringInterfaceProps {
-  teamsSortedByResponseTime: TeamWithTiming[];
+  teams: Team[];
   players: Player[];
   currentRound: CurrentRound | null;
   currentTeamIndex: number;
@@ -35,7 +23,7 @@ interface ScoringInterfaceProps {
 }
 
 export function ScoringInterface({
-  teamsSortedByResponseTime,
+  teams,
   players,
   currentRound,
   currentTeamIndex,
@@ -49,6 +37,31 @@ export function ScoringInterface({
   onReopenTeamScoring,
   onFinishRound
 }: ScoringInterfaceProps) {
+  // Sort teams by total response time (ascending) for scoring display
+  const teamsSortedByResponseTime = useMemo(() => {
+    if (!teams || !currentRound) return [];
+
+    return teams.map((team, originalIndex) => {
+      const player1 = findPlayerBySocketId(players, team.player1Id);
+      const player2 = findPlayerBySocketId(players, team.player2Id);
+
+      const player1Answer = player1 ? currentRound.answers[player1.name] : null;
+      const player2Answer = player2 ? currentRound.answers[player2.name] : null;
+
+      const player1Time = player1Answer?.responseTime ?? Infinity;
+      const player2Time = player2Answer?.responseTime ?? Infinity;
+      const totalResponseTime = player1Time + player2Time;
+
+      return {
+        team,
+        originalIndex,
+        totalResponseTime,
+        player1Time,
+        player2Time
+      };
+    }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
+  }, [teams, currentRound, players]);
+
   return (
     <div className="box">
       <button className="button is-info is-small mb-3" onClick={onBackToAnswering}>

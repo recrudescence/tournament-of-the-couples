@@ -140,6 +140,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -187,6 +188,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -233,6 +235,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -280,6 +283,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -328,6 +332,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.SCORING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -374,6 +379,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -421,6 +427,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: round,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -451,6 +458,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = alice;
@@ -479,6 +487,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         teams: [team],
         status: GameStatus.PLAYING,
         currentRound: null,
+        teamTotalResponseTimes: {},
       };
       mockPlayerInfo = { name: 'Charlie', isHost: false, roomCode: 'test' };
       mockMyPlayer = charlie;
