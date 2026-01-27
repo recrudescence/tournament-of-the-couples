@@ -39,7 +39,8 @@ describe('BothPlayersScoring', () => {
       'Alice': { text: JSON.stringify({ 'Alice': 'Pizza', 'Bob': 'Sushi' }), responseTime: 5000 },
       'Bob': { text: JSON.stringify({ 'Alice': 'Tacos', 'Bob': 'Pasta' }), responseTime: 6000 }
     },
-    submittedInCurrentPhase: ['Alice', 'Bob']
+    submittedInCurrentPhase: ['Alice', 'Bob'],
+    createdAt: Date.now() - 5000
   };
 
   it('renders both player sections', () => {
@@ -228,7 +229,8 @@ describe('SinglePlayerScoring', () => {
       'Alice': { text: 'Blue', responseTime: 3000 },
       'Bob': { text: 'Red', responseTime: 4500 }
     },
-    submittedInCurrentPhase: ['Alice', 'Bob']
+    submittedInCurrentPhase: ['Alice', 'Bob'],
+    createdAt: Date.now() - 4500
   };
 
   const sortedPlayers = [
@@ -407,7 +409,8 @@ describe('ScoringInterface', () => {
       'Alice': { text: 'Blue', responseTime: 3000 },
       'Bob': { text: 'Red', responseTime: 5000 }
     },
-    submittedInCurrentPhase: ['Alice', 'Bob']
+    submittedInCurrentPhase: ['Alice', 'Bob'],
+    createdAt: Date.now() - 5000
   };
 
   it('renders back to answering button', () => {

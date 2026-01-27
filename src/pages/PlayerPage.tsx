@@ -105,6 +105,8 @@ export function PlayerPage() {
           setAnswer(previousAnswer?.text ?? ''); // Pre-fill with previous answer if exists
           setHasSubmitted(false);
           setSection('answering');
+          // Start timer from server timestamp to maintain accurate timing across reconnection
+          startTimer(gameState.currentRound.createdAt);
         }
       }
       return;
@@ -133,7 +135,7 @@ export function PlayerPage() {
 
     // Default to waiting
     setSection('waiting');
-  }, []); // Only run on mount
+  }, [startTimer]); // Only run on mount (startTimer is stable)
 
   // Socket event handlers - use refs to access latest state without causing re-subscriptions
   useEffect(() => {
@@ -142,7 +144,7 @@ export function PlayerPage() {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
-      on('roundStarted', ({ gameState: state, variant: v, options: opts }) => {
+      on('roundStarted', ({ gameState: state, variant: v, options: opts, questionCreatedAt }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
@@ -171,7 +173,7 @@ export function PlayerPage() {
         setHasSubmitted(false);
         setMyTeamPointsThisRound(null);
         setSection('answering');
-        startTimer();
+        startTimer(questionCreatedAt);
       }),
 
       on('answerSubmitted', ({ playerName, answer: ans, gameState: state }) => {
@@ -224,7 +226,7 @@ export function PlayerPage() {
         }
         setHasSubmitted(false);
         setSection('answering');
-        startTimer();
+        startTimer(state.currentRound?.createdAt);
       }),
 
       on('error', ({ message }) => {

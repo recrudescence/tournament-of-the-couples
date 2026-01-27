@@ -177,4 +177,115 @@ describe('useTimer', () => {
     expect(result.current.timerRunning).toBe(false);
     expect(result.current.responseTime).toBeGreaterThan(0);
   });
+
+  describe('server timestamp support', () => {
+    it('starts timer from server timestamp and immediately shows elapsed time', () => {
+      const { result } = renderHook(() => useTimer());
+
+      // Simulate a server timestamp from 5 seconds ago
+      const serverTimestamp = Date.now() - 5000;
+
+      act(() => {
+        result.current.startTimer(serverTimestamp);
+      });
+
+      expect(result.current.timerRunning).toBe(true);
+      // Should immediately show ~5000ms elapsed
+      expect(result.current.responseTime).toBeGreaterThanOrEqual(4900);
+      expect(result.current.responseTime).toBeLessThanOrEqual(5100);
+    });
+
+    it('continues incrementing from server timestamp', () => {
+      const { result } = renderHook(() => useTimer());
+
+      // Simulate a server timestamp from 2 seconds ago
+      const serverTimestamp = Date.now() - 2000;
+
+      act(() => {
+        result.current.startTimer(serverTimestamp);
+      });
+
+      const initialTime = result.current.responseTime;
+      expect(initialTime).toBeGreaterThanOrEqual(1900);
+      expect(initialTime).toBeLessThanOrEqual(2100);
+
+      // Advance time by 500ms
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // Should now be ~2500ms
+      expect(result.current.responseTime).toBeGreaterThanOrEqual(2400);
+      expect(result.current.responseTime).toBeLessThanOrEqual(2600);
+    });
+
+    it('getFinalTime returns correct elapsed time from server timestamp', () => {
+      const { result } = renderHook(() => useTimer());
+
+      // Simulate a server timestamp from 3 seconds ago
+      const serverTimestamp = Date.now() - 3000;
+
+      act(() => {
+        result.current.startTimer(serverTimestamp);
+      });
+
+      // Advance time by 1 second
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      const finalTime = result.current.getFinalTime();
+
+      // Should be ~4000ms (3000 initial + 1000 advanced)
+      expect(finalTime).toBeGreaterThanOrEqual(3900);
+      expect(finalTime).toBeLessThanOrEqual(4100);
+    });
+
+    it('handles reconnection scenario - timer resumes with accurate elapsed time', () => {
+      const { result } = renderHook(() => useTimer());
+
+      // Simulate a question that was asked 10 seconds ago (reconnection scenario)
+      const serverTimestamp = Date.now() - 10000;
+
+      act(() => {
+        result.current.startTimer(serverTimestamp);
+      });
+
+      // Should immediately show ~10 seconds
+      expect(result.current.responseTime).toBeGreaterThanOrEqual(9900);
+      expect(result.current.responseTime).toBeLessThanOrEqual(10100);
+
+      // Player takes 2 more seconds to answer
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      act(() => {
+        result.current.stopTimer();
+      });
+
+      // Final time should be ~12 seconds
+      expect(result.current.getFinalTime()).toBeGreaterThanOrEqual(11900);
+      expect(result.current.getFinalTime()).toBeLessThanOrEqual(12100);
+    });
+
+    it('startTimer without argument uses Date.now() as before', () => {
+      const { result } = renderHook(() => useTimer());
+
+      act(() => {
+        result.current.startTimer();
+      });
+
+      // Should start from 0
+      expect(result.current.responseTime).toBe(0);
+      expect(result.current.timerRunning).toBe(true);
+
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(result.current.responseTime).toBeGreaterThan(0);
+      expect(result.current.responseTime).toBeLessThanOrEqual(100);
+    });
+  });
 });

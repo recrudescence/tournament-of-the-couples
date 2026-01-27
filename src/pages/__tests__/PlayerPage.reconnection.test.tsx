@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { PlayerPage } from '../PlayerPage';
-import type { GameState, Player, Team, Round } from '../../types/game';
-import { GameStatus } from '../../types/game';
+import type { GameState, Player, Team, CurrentRound } from '../../types/game';
+import { GameStatus, RoundStatus, RoundVariant } from '../../types/game';
 
 const mockAvatar = { color: '#ff0000', emoji: '😀' };
 import * as playerUtils from '../../utils/playerUtils';
@@ -115,18 +115,21 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Test question',
-        variant: 'open_ended',
+        variant: RoundVariant.OPEN_ENDED,
         options: null,
+        answerForBoth: false,
         answers: {
           // Alice had submitted before round was reopened
           'Alice': { text: 'Previous answer', responseTime: 1500 },
           'Bob': { text: 'Bobs answer', responseTime: 1200 }
         },
         submittedInCurrentPhase: [], // Empty because round was reopened
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -160,17 +163,20 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Test question',
-        variant: 'open_ended',
+        variant: RoundVariant.OPEN_ENDED,
         options: null,
+        answerForBoth: false,
         answers: {
           'Alice': { text: 'My previous answer', responseTime: 1500 },
           'Bob': { text: 'Bobs answer', responseTime: 1200 }
         },
         submittedInCurrentPhase: [], // Reopened
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -203,17 +209,20 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Test question',
-        variant: 'open_ended',
+        variant: RoundVariant.OPEN_ENDED,
         options: null,
+        answerForBoth: false,
         answers: {
           'Alice': { text: 'Current answer', responseTime: 1500 },
           'Bob': { text: 'Bobs answer', responseTime: 1200 }
         },
         submittedInCurrentPhase: ['Alice'], // Alice submitted in current phase
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -248,16 +257,19 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Who is more likely to cook dinner?',
-        variant: 'binary',
+        variant: RoundVariant.BINARY,
         options: ['Player 1', 'Player 2'], // Placeholders from server
+        answerForBoth: false,
         answers: {
           'Alice': { text: 'Alice', responseTime: 1500 }
         },
         submittedInCurrentPhase: [], // Reopened
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -292,17 +304,20 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Who is more likely to cook dinner?',
-        variant: 'binary',
+        variant: RoundVariant.BINARY,
         options: ['Player 1', 'Player 2'],
+        answerForBoth: false,
         answers: {
           'Alice': { text: 'Alice', responseTime: 1500 },
           'Bob': { text: 'Bob', responseTime: 1200 }
         },
         submittedInCurrentPhase: ['Alice', 'Bob'],
-        status: 'complete',
+        status: RoundStatus.COMPLETE,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -336,16 +351,19 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'What is your favorite color?',
-        variant: 'multiple_choice',
+        variant: RoundVariant.MULTIPLE_CHOICE,
         options: ['Red', 'Blue', 'Green', 'Yellow'],
+        answerForBoth: false,
         answers: {
           'Alice': { text: 'Red', responseTime: 1500 }
         },
         submittedInCurrentPhase: [],
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {
@@ -382,14 +400,17 @@ describe('PlayerPage Reconnection Scenarios', () => {
       const bob = createPlayer('Bob', 'socket2', 'team1', 'socket1');
       const team = createTeam('team1', 'socket1', 'socket2');
 
-      const round: Round = {
+      const round: CurrentRound = {
         roundNumber: 1,
+        roundId: 'round1',
         question: 'Test question',
-        variant: 'open_ended',
+        variant: RoundVariant.OPEN_ENDED,
         options: null,
+        answerForBoth: false,
         answers: {},
         submittedInCurrentPhase: [],
-        status: 'answering',
+        status: RoundStatus.ANSWERING,
+        createdAt: Date.now() - 1500,
       };
 
       mockGameState = {

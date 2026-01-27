@@ -64,6 +64,7 @@ export interface CurrentRound {
   status: RoundStatus;
   answers: Record<string, Answer>; // When answerForBoth, text is JSON: { [playerName]: answer }
   submittedInCurrentPhase: string[];
+  createdAt: number; // Server timestamp for response time calculation (survives reconnection)
 }
 
 export interface GameState {

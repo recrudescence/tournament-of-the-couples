@@ -31,9 +31,20 @@ export function useTimer() {
     }
   }, [timerRunning]);
 
-  const startTimer = useCallback(() => {
-    setResponseTime(0);
-    timerStartRef.current = null;
+  /**
+   * Start the timer. If serverTimestamp is provided, the timer will
+   * calculate elapsed time from that timestamp (allows accurate timing
+   * across reconnections). Otherwise uses Date.now().
+   */
+  const startTimer = useCallback((serverTimestamp?: number) => {
+    if (serverTimestamp !== undefined) {
+      // Use server timestamp for accurate cross-client timing
+      timerStartRef.current = serverTimestamp;
+      setResponseTime(Date.now() - serverTimestamp);
+    } else {
+      setResponseTime(0);
+      timerStartRef.current = null;
+    }
     setTimerRunning(true);
   }, []);
 

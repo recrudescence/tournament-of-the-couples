@@ -334,7 +334,8 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     answerForBoth, // When true, players answer for both themselves and their partner
     status: 'answering',
     answers: {},
-    submittedInCurrentPhase: [] // Track who has submitted in THIS answering session
+    submittedInCurrentPhase: [], // Track who has submitted in THIS answering session
+    createdAt: Date.now() // Timestamp for response time calculation (survives reconnection)
   };
 
   console.log(`Round ${roundNumber} started: ${question} (${variant})`);

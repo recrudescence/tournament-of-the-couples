@@ -340,6 +340,7 @@ function setupSocketHandlers(io) {
           variant: state.currentRound.variant,
           options: state.currentRound.options,
           answerForBoth: state.currentRound.answerForBoth,
+          questionCreatedAt: state.currentRound.createdAt,
           gameState: state
         });
       } catch (err) {

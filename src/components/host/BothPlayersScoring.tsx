@@ -10,6 +10,11 @@ function parseDualAnswer(text: string): Record<string, string> | null {
   }
 }
 
+// Helper to format response time
+function formatResponseTime(ms: number): string {
+  return (ms / 1000).toFixed(2);
+}
+
 interface BothPlayersScoringProps {
   player1: Player | undefined;
   player2: Player | undefined;
@@ -94,18 +99,26 @@ export function BothPlayersScoring({
                     <PlayerAvatar avatar={partner.avatar} size="small" />
                     <span className="is-size-7 has-text-grey">According to {partner.name}, {subject.name} would say...</span>
                   </div>
-                  {!partnerRevealed ? (
-                    <button
-                      className="button is-link is-small"
-                      onClick={() => onRevealAnswer(partnerAnswerKey)}
-                    >
-                      Reveal
-                    </button>
-                  ) : (
-                    <div className="notification is-light is-small py-2 px-3">
-                      <strong>{partnerAnswerText}</strong>
-                    </div>
-                  )}
+                  {(() => {
+                    const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
+                    return !partnerRevealed ? (
+                      <button
+                        className="button is-link is-small"
+                        onClick={() => onRevealAnswer(partnerAnswerKey)}
+                      >
+                        Reveal
+                      </button>
+                    ) : (
+                      <div className="notification is-light is-small py-2 px-3">
+                        <strong>{partnerAnswerText}</strong>
+                        {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
+                          <span className="has-text-grey ml-2 is-size-7">
+                            ({formatResponseTime(partnerResponseTime)}s)
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -116,18 +129,26 @@ export function BothPlayersScoring({
                     <PlayerAvatar avatar={subject.avatar} size="small" />
                     <span className="is-size-7 has-text-grey">{subject.name} actually said...</span>
                   </div>
-                  {!selfRevealed ? (
-                    <button
-                      className="button is-link is-small"
-                      onClick={() => onRevealAnswer(selfAnswerKey)}
-                    >
-                      Reveal
-                    </button>
-                  ) : (
-                    <div className="notification is-light is-small py-2 px-3">
-                      <strong>{selfAnswerText}</strong>
-                    </div>
-                  )}
+                  {(() => {
+                    const selfResponseTime = currentRound.answers[subject.name]?.responseTime;
+                    return !selfRevealed ? (
+                      <button
+                        className="button is-link is-small"
+                        onClick={() => onRevealAnswer(selfAnswerKey)}
+                      >
+                        Reveal
+                      </button>
+                    ) : (
+                      <div className="notification is-light is-small py-2 px-3">
+                        <strong>{selfAnswerText}</strong>
+                        {selfResponseTime !== undefined && selfResponseTime >= 0 && (
+                          <span className="has-text-grey ml-2 is-size-7">
+                            ({formatResponseTime(selfResponseTime)}s)
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

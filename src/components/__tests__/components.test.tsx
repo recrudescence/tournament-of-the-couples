@@ -263,7 +263,8 @@ describe('Component Smoke Tests', () => {
         answerForBoth: false,
         status: RoundStatus.ANSWERING,
         answers: {},
-        submittedInCurrentPhase: ['Alice']
+        submittedInCurrentPhase: ['Alice'],
+        createdAt: Date.now() - 1000,
       };
 
       it('renders question', () => {

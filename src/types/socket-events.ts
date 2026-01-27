@@ -72,6 +72,7 @@ export interface ServerToClientEvents {
     variant: string;
     options: string[] | null;
     answerForBoth: boolean;
+    questionCreatedAt: number;
     gameState: GameState;
   }) => void;
 

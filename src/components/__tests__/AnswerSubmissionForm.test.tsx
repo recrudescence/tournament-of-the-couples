@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnswerSubmissionForm } from '../player/AnswerSubmissionForm';
 import userEvent from '@testing-library/user-event';
@@ -7,6 +7,7 @@ describe('AnswerSubmissionForm', () => {
   const mockOnAnswerChange = vi.fn();
   const mockOnOptionChange = vi.fn();
   const mockOnSubmit = vi.fn((e) => e.preventDefault());
+  const mockOnDualAnswerChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -24,6 +25,11 @@ describe('AnswerSubmissionForm', () => {
       onAnswerChange: mockOnAnswerChange,
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
     };
 
     it('renders question and round number', () => {
@@ -94,6 +100,11 @@ describe('AnswerSubmissionForm', () => {
       onAnswerChange: mockOnAnswerChange,
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
     };
 
     it('renders all options as radio buttons', () => {
@@ -179,6 +190,11 @@ describe('AnswerSubmissionForm', () => {
       onAnswerChange: mockOnAnswerChange,
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
     };
 
     it('renders both player names as options', () => {
@@ -225,6 +241,11 @@ describe('AnswerSubmissionForm', () => {
       onAnswerChange: mockOnAnswerChange,
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
     };
 
     it('displays 0 seconds initially', () => {
@@ -258,6 +279,11 @@ describe('AnswerSubmissionForm', () => {
       onAnswerChange: mockOnAnswerChange,
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
     };
 
     it('renders submit button', () => {
@@ -277,6 +303,14 @@ describe('AnswerSubmissionForm', () => {
   });
 
   describe('Edge Cases', () => {
+    const dualAnswerProps = {
+      answerForBoth: false,
+      playerName: 'Alice',
+      partnerName: 'Bob',
+      dualAnswers: { self: '', partner: '' },
+      onDualAnswerChange: mockOnDualAnswerChange,
+    };
+
     it('handles empty options array', () => {
       const props = {
         roundNumber: 1,
@@ -289,6 +323,7 @@ describe('AnswerSubmissionForm', () => {
         onAnswerChange: mockOnAnswerChange,
         onOptionChange: mockOnOptionChange,
         onSubmit: mockOnSubmit,
+        ...dualAnswerProps,
       };
 
       render(<AnswerSubmissionForm {...props} />);
@@ -309,6 +344,7 @@ describe('AnswerSubmissionForm', () => {
         onAnswerChange: mockOnAnswerChange,
         onOptionChange: mockOnOptionChange,
         onSubmit: mockOnSubmit,
+        ...dualAnswerProps,
       };
 
       render(<AnswerSubmissionForm {...props} />);
@@ -328,6 +364,7 @@ describe('AnswerSubmissionForm', () => {
         onAnswerChange: mockOnAnswerChange,
         onOptionChange: mockOnOptionChange,
         onSubmit: mockOnSubmit,
+        ...dualAnswerProps,
       };
 
       render(<AnswerSubmissionForm {...props} />);
@@ -347,6 +384,7 @@ describe('AnswerSubmissionForm', () => {
         onAnswerChange: mockOnAnswerChange,
         onOptionChange: mockOnOptionChange,
         onSubmit: mockOnSubmit,
+        ...dualAnswerProps,
       };
 
       render(<AnswerSubmissionForm {...props} />);
@@ -366,6 +404,7 @@ describe('AnswerSubmissionForm', () => {
         onAnswerChange: mockOnAnswerChange,
         onOptionChange: mockOnOptionChange,
         onSubmit: mockOnSubmit,
+        ...dualAnswerProps,
       };
 
       render(<AnswerSubmissionForm {...props} />);
