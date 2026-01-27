@@ -10,6 +10,9 @@ import { FinishGamePage } from '../FinishGamePage';
 import type { GameState, Player, Team } from '../../types/game';
 import { GameStatus } from '../../types/game';
 
+const mockAvatar = { color: '#ff0000', emoji: '😀' };
+const mockAvatar2 = { color: '#0000ff', emoji: '🎉' };
+
 // Mock implementations
 const mockNavigate = vi.fn();
 const mockEmit = vi.fn();
@@ -129,12 +132,13 @@ describe('Page Smoke Tests', () => {
         connected: true,
         partnerId: null,
         teamId: null,
+        avatar: mockAvatar,
       };
 
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [player],
         teams: [],
         status: GameStatus.LOBBY,
@@ -174,7 +178,7 @@ describe('Page Smoke Tests', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [],
         teams: [],
         status: GameStatus.LOBBY,
@@ -200,7 +204,7 @@ describe('Page Smoke Tests', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [],
         teams: [],
         status: GameStatus.PLAYING,
@@ -227,6 +231,7 @@ describe('Page Smoke Tests', () => {
         connected: true,
         partnerId: 'socket2',
         teamId: 'team1',
+        avatar: mockAvatar,
       };
 
       const partner: Player = {
@@ -235,6 +240,7 @@ describe('Page Smoke Tests', () => {
         connected: true,
         partnerId: 'socket1',
         teamId: 'team1',
+        avatar: mockAvatar2,
       };
 
       const team: Team = {
@@ -247,7 +253,7 @@ describe('Page Smoke Tests', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [player, partner],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -276,6 +282,7 @@ describe('Page Smoke Tests', () => {
         connected: true,
         partnerId: 'socket2',
         teamId: 'team1',
+        avatar: mockAvatar,
       };
 
       const player2: Player = {
@@ -284,6 +291,7 @@ describe('Page Smoke Tests', () => {
         connected: true,
         partnerId: 'socket1',
         teamId: 'team1',
+        avatar: mockAvatar2,
       };
 
       const team: Team = {
@@ -296,7 +304,7 @@ describe('Page Smoke Tests', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [player1, player2],
         teams: [team],
         status: GameStatus.ENDED,

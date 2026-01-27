@@ -9,6 +9,8 @@ import { TeamScoreboard } from '../host/TeamScoreboard';
 import { RoundControls } from '../host/RoundControls';
 import type { Player, Team } from '../../types/game';
 
+const mockAvatar = { color: '#ff0000', emoji: '😀' };
+
 describe('Component Smoke Tests', () => {
   describe('Shared Components', () => {
     describe('PlayerCard', () => {
@@ -17,7 +19,8 @@ describe('Component Smoke Tests', () => {
         name: 'Alice',
         connected: true,
         partnerId: null,
-        teamId: null
+        teamId: null,
+        avatar: mockAvatar
       };
 
       it('renders player name', () => {
@@ -87,7 +90,8 @@ describe('Component Smoke Tests', () => {
         name: 'Alice',
         connected: true,
         partnerId: 'socket2',
-        teamId: 'team1'
+        teamId: 'team1',
+        avatar: mockAvatar
       };
 
       const mockPlayer2: Player = {
@@ -95,7 +99,8 @@ describe('Component Smoke Tests', () => {
         name: 'Bob',
         connected: true,
         partnerId: 'socket1',
-        teamId: 'team1'
+        teamId: 'team1',
+        avatar: { color: '#0000ff', emoji: '🎉' }
       };
 
       it('renders both player names', () => {
@@ -105,30 +110,32 @@ describe('Component Smoke Tests', () => {
             player2={mockPlayer2}
             currentPlayerName={null}
             isHost={false}
+            isViewerTeam={false}
             canUnpair={false}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
         );
 
-        // When not host and not current player, shows player2 first
-        expect(screen.getByText('Bob 🤝🏼 Alice')).toBeInTheDocument();
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.getByText('Bob')).toBeInTheDocument();
       });
 
-      it('shows unpair button when canUnpair is true', () => {
+      it('shows break up button when canUnpair is true', () => {
         render(
           <TeamCard
             player1={mockPlayer1}
             player2={mockPlayer2}
             currentPlayerName="Alice"
             isHost={false}
+            isViewerTeam={false}
             canUnpair={true}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
         );
 
-        expect(screen.getByRole('button', { name: 'Unpair' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Break up/i })).toBeInTheDocument();
       });
 
       it('shows kick buttons for host', () => {
@@ -138,14 +145,15 @@ describe('Component Smoke Tests', () => {
             player2={mockPlayer2}
             currentPlayerName={null}
             isHost={true}
+            isViewerTeam={false}
             canUnpair={false}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
         );
 
-        expect(screen.getByRole('button', { name: 'Kick Alice' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Kick Bob' })).toBeInTheDocument();
+        const kickButtons = screen.getAllByRole('button', { name: 'Kick' });
+        expect(kickButtons).toHaveLength(2);
       });
     });
   });
@@ -207,8 +215,8 @@ describe('Component Smoke Tests', () => {
   describe('Host Components', () => {
     describe('TeamScoreboard', () => {
       const mockPlayers: Player[] = [
-        { socketId: 'socket1', name: 'Alice', connected: true, partnerId: 'socket2', teamId: 'team1' },
-        { socketId: 'socket2', name: 'Bob', connected: true, partnerId: 'socket1', teamId: 'team1' }
+        { socketId: 'socket1', name: 'Alice', connected: true, partnerId: 'socket2', teamId: 'team1', avatar: mockAvatar },
+        { socketId: 'socket2', name: 'Bob', connected: true, partnerId: 'socket1', teamId: 'team1', avatar: { color: '#0000ff', emoji: '🎉' } }
       ];
 
       const mockTeams: Team[] = [

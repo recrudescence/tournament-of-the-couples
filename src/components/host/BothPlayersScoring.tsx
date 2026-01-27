@@ -80,6 +80,7 @@ export function BothPlayersScoring({
           <div key={subject.socketId} className="box has-background-white-ter mb-3">
             {/* Player header */}
             <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
+              Answers about
               <PlayerAvatar avatar={subject.avatar} size="medium" />
               <span className="subtitle is-5 mb-0">{subject.name}</span>
             </div>

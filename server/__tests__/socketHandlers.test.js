@@ -487,7 +487,7 @@ describe('socketHandlers', () => {
       const player = state.players.find(p => p.socketId === 'socket-1');
       expect(player.connected).toBe(false); // Player marked as disconnected, not removed
       expect(io.to).toHaveBeenCalledWith(roomCode);
-      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1' });
+      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1', name: 'Alice' });
     });
   });
 
@@ -680,7 +680,7 @@ describe('socketHandlers', () => {
       const state = gameState.getGameState(roomCode);
       const player = state.players.find(p => p.socketId === 'socket-1');
       expect(player.connected).toBe(false);
-      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1' });
+      expect(io.roomEmit).toHaveBeenCalledWith('playerDisconnected', { socketId: 'socket-1', name: 'Alice' });
     });
   });
 
@@ -867,7 +867,7 @@ describe('socketHandlers', () => {
 
       const updatedState = gameState.getGameState(roomCode);
       expect(updatedState.teams[0].score).toBe(1);
-      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 1 });
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 1, pointsAwarded: 1 });
     });
 
     it('should award 2 points to team when specified', () => {
@@ -885,7 +885,7 @@ describe('socketHandlers', () => {
 
       const updatedState = gameState.getGameState(roomCode);
       expect(updatedState.teams[0].score).toBe(2);
-      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 2 });
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 2, pointsAwarded: 2 });
     });
 
     it('should reject when not in a room', () => {
@@ -932,7 +932,7 @@ describe('socketHandlers', () => {
 
       const updatedState = gameState.getGameState(roomCode);
       expect(updatedState.teams[0].score).toBe(0);
-      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0 });
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0, pointsAwarded: -1 });
     });
 
     it('should remove 2 points from team when specified', () => {
@@ -953,7 +953,7 @@ describe('socketHandlers', () => {
 
       const updatedState = gameState.getGameState(roomCode);
       expect(updatedState.teams[0].score).toBe(0);
-      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0 });
+      expect(io.roomEmit).toHaveBeenCalledWith('scoreUpdated', { teamId, newScore: 0, pointsAwarded: -2 });
     });
 
     it('should reject when not in a room', () => {

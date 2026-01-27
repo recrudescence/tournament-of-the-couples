@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { PlayerPage } from '../PlayerPage';
 import type { GameState, Player, Team, Round } from '../../types/game';
 import { GameStatus } from '../../types/game';
+
+const mockAvatar = { color: '#ff0000', emoji: '😀' };
 import * as playerUtils from '../../utils/playerUtils';
 
 // Mock implementations
@@ -88,6 +90,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
     connected: true,
     partnerId,
     teamId,
+    avatar: mockAvatar,
   });
 
   const createTeam = (teamId: string, player1Id: string, player2Id: string): Team => ({
@@ -129,7 +132,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -173,7 +176,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -216,7 +219,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -260,7 +263,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -305,7 +308,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.SCORING,
@@ -348,7 +351,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -392,7 +395,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -422,7 +425,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, bob],
         teams: [team],
         status: GameStatus.PLAYING,
@@ -450,7 +453,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
       mockGameState = {
         roomCode: 'test',
         gameId: 'game1',
-        host: { socketId: 'host1', name: 'Host' },
+        host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
         players: [alice, charlie],
         teams: [team],
         status: GameStatus.PLAYING,

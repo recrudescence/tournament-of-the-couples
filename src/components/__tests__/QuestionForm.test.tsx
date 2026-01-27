@@ -32,7 +32,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'What is your favorite color?',
         'open_ended',
-        undefined
+        undefined,
+        false
       );
     });
 
@@ -56,7 +57,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'What is your favorite color?',
         'open_ended',
-        undefined
+        undefined,
+        false
       );
     });
 
@@ -100,7 +102,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'Favorite color?',
         'multiple_choice',
-        ['Red', 'Blue']
+        ['Red', 'Blue'],
+        false
       );
     });
 
@@ -123,7 +126,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'Favorite color?',
         'multiple_choice',
-        ['Red', 'Blue', 'Green', 'Yellow']
+        ['Red', 'Blue', 'Green', 'Yellow'],
+        false
       );
     });
 
@@ -155,7 +159,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'Favorite color?',
         'multiple_choice',
-        ['Red', 'Blue']
+        ['Red', 'Blue'],
+        false
       );
     });
 
@@ -224,7 +229,8 @@ describe('QuestionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
         'Who is more likely to cook?',
         'binary',
-        ['Player 1', 'Player 2']
+        ['Player 1', 'Player 2'],
+        false
       );
     });
 
