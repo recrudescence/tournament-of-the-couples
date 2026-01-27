@@ -52,7 +52,7 @@ export interface ServerToClientEvents {
     gameState: GameState;
   }) => void;
   playerDisconnected: (data: { socketId: string; name: string }) => void;
-  playerReconnected: (data: { name: string; newSocketId: string }) => void;
+  playerReconnected: (data: { name: string; newSocketId: string; gameState: GameState }) => void;
   playerKicked: () => void;
 
   // gameplay state

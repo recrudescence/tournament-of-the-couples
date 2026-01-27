@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, type ReactNode } from 'react';
 import type { GameState, Player, Team, RoundPhase, PlayerInfo } from '../types/game';
-import { findPlayerBySocketId, findPlayerByName } from '../utils/playerUtils';
+import { findPlayerByName } from '../utils/playerUtils';
 
 interface GameContextState {
   gameState: GameState | null;
@@ -85,9 +85,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ? state.gameState?.teams.find((t) => t.teamId === myPlayer.teamId) ?? null
       : null;
 
+  // Use teamId + name for partner lookup (more stable than partnerId which is a socket ID)
   const myPartner =
-    myPlayer?.partnerId && state.gameState?.players
-      ? findPlayerBySocketId(state.gameState.players, myPlayer.partnerId) ?? null
+    myPlayer?.teamId && state.gameState?.players
+      ? state.gameState.players.find(
+          (p) => p.teamId === myPlayer.teamId && p.name !== myPlayer.name
+        ) ?? null
       : null;
 
   return (

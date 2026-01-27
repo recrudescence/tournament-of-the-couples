@@ -38,6 +38,13 @@ export function PlayerPage() {
   // Points feedback: null = not scored yet, number = points awarded this round
   const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
 
+  // Sync sessionStorage playerInfo to GameContext on mount (handles page refresh)
+  useEffect(() => {
+    if (playerInfo) {
+      dispatch({ type: 'SET_PLAYER_INFO', payload: playerInfo });
+    }
+  }, [playerInfo, dispatch]);
+
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
     if (gameState?.status === 'playing' && wakeLockSupported) {
@@ -215,6 +222,20 @@ export function PlayerPage() {
         if (hasSubmitted) {
           setHasSubmitted(false);
           setSection('answering');
+        }
+      }),
+
+      on('playerDisconnected', ({ socketId }) => {
+        if (!gameState) return;
+        const updatedPlayers = gameState.players.map((p) =>
+          p.socketId === socketId ? { ...p, connected: false } : p
+        );
+        dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
+      }),
+
+      on('playerReconnected', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
       }),
     ];

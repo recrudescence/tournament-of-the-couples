@@ -77,6 +77,16 @@ function setupSocketHandlers(io) {
         if (result.success) {
           socket.emit('joinSuccess', { roomCode, ...result.data });
           io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
+
+          // If reconnecting during active game, broadcast state update to all players
+          // so they can update stale socket IDs
+          if (result.data.reconnected && state.status !== 'lobby') {
+            io.to(roomCode).emit('playerReconnected', {
+              name: result.data.name,
+              newSocketId: socket.id,
+              gameState: gameState.getGameState(roomCode)
+            });
+          }
         } else {
           socket.emit('error', { message: result.error });
         }
@@ -219,10 +229,12 @@ function setupSocketHandlers(io) {
         // During active game, just mark as disconnected
         if (state.host && state.host.socketId === socket.id) {
           gameState.disconnectHost(roomCode);
+          io.to(roomCode).emit('playerDisconnected', { socketId: socket.id, name: state.host.name });
         } else {
+          const player = state.players.find(p => p.socketId === socket.id);
           gameState.disconnectPlayer(roomCode, socket.id);
+          io.to(roomCode).emit('playerDisconnected', { socketId: socket.id, name: player?.name });
         }
-        io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
       }
 
       // Clean up socket's room association
@@ -557,8 +569,9 @@ function setupSocketHandlers(io) {
             gameState.deleteRoom(roomCode);
           } else {
             // During active game, just mark as disconnected
+            const hostName = state.host.name;
             gameState.disconnectHost(roomCode);
-            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
+            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id, name: hostName });
           }
         } else {
           // In lobby: fully remove players so they must re-enter their name
@@ -567,8 +580,9 @@ function setupSocketHandlers(io) {
             gameState.removePlayer(roomCode, socket.id);
             io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
           } else {
+            const player = state.players.find(p => p.socketId === socket.id);
             gameState.disconnectPlayer(roomCode, socket.id);
-            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id });
+            io.to(roomCode).emit('playerDisconnected', { socketId: socket.id, name: player?.name });
           }
         }
       }
