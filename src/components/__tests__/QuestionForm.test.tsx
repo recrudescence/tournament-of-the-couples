@@ -280,4 +280,138 @@ describe('QuestionForm', () => {
       expect(binaryTab).not.toHaveClass('is-active');
     });
   });
+
+  describe('Answer for Both (Dual Answer Mode)', () => {
+    it('renders the dual answer checkbox', () => {
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      expect(screen.getByLabelText(/Players answer for both parties/i)).toBeInTheDocument();
+    });
+
+    it('checkbox is unchecked by default', () => {
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      const checkbox = screen.getByLabelText(/Players answer for both parties/i) as HTMLInputElement;
+      expect(checkbox.checked).toBe(false);
+    });
+
+    it('submits with answerForBoth=false by default', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      await user.type(screen.getByLabelText(/Enter Question/i), 'Test question');
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        'Test question',
+        'open_ended',
+        undefined,
+        false
+      );
+    });
+
+    it('toggles checkbox state when clicked', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      const checkbox = screen.getByLabelText(/Players answer for both parties/i) as HTMLInputElement;
+      expect(checkbox.checked).toBe(false);
+
+      await user.click(checkbox);
+      expect(checkbox.checked).toBe(true);
+
+      await user.click(checkbox);
+      expect(checkbox.checked).toBe(false);
+    });
+
+    it('submits with answerForBoth=true when checkbox is checked', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      await user.type(screen.getByLabelText(/Enter Question/i), 'What would your partner say?');
+      await user.click(screen.getByLabelText(/Players answer for both parties/i));
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        'What would your partner say?',
+        'open_ended',
+        undefined,
+        true
+      );
+    });
+
+    it('works with multiple choice variant', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      await user.click(screen.getByText('Multiple Choice'));
+      await user.type(screen.getByLabelText(/Enter Question/i), 'Who is messier?');
+      await user.type(screen.getByPlaceholderText(/Option 1/i), 'Me');
+      await user.type(screen.getByPlaceholderText(/Option 2/i), 'Partner');
+      await user.click(screen.getByLabelText(/Players answer for both parties/i));
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        'Who is messier?',
+        'multiple_choice',
+        ['Me', 'Partner'],
+        true
+      );
+    });
+
+    it('works with binary variant', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      await user.click(screen.getByText('Binary'));
+      await user.type(screen.getByLabelText(/Enter Question/i), 'Who cooks more?');
+      await user.click(screen.getByLabelText(/Players answer for both parties/i));
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        'Who cooks more?',
+        'binary',
+        ['Player 1', 'Player 2'],
+        true
+      );
+    });
+
+    it('preserves checkbox state when switching variants', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      // Check the box in open_ended mode
+      await user.click(screen.getByLabelText(/Players answer for both parties/i));
+      const checkbox = screen.getByLabelText(/Players answer for both parties/i) as HTMLInputElement;
+      expect(checkbox.checked).toBe(true);
+
+      // Switch to multiple choice
+      await user.click(screen.getByText('Multiple Choice'));
+      expect(checkbox.checked).toBe(true);
+
+      // Switch to binary
+      await user.click(screen.getByText('Binary'));
+      expect(checkbox.checked).toBe(true);
+    });
+
+    it('resets checkbox after form submission', async () => {
+      const user = userEvent.setup();
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      await user.type(screen.getByLabelText(/Enter Question/i), 'Test question');
+      await user.click(screen.getByLabelText(/Players answer for both parties/i));
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+      await waitFor(() => {
+        const checkbox = screen.getByLabelText(/Players answer for both parties/i) as HTMLInputElement;
+        expect(checkbox.checked).toBe(false);
+      });
+    });
+
+    it('shows help text explaining the feature', () => {
+      render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
+
+      expect(screen.getByText(/Each player will answer the question for themselves AND their partner/i)).toBeInTheDocument();
+    });
+  });
 });

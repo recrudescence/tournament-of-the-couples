@@ -55,6 +55,52 @@ describe('GameState - Array Operations for submittedInCurrentPhase', () => {
       expect(array2).not.toBe(array1);
       expect(array2).toEqual([]);
     });
+
+    test('sets answerForBoth to false by default', () => {
+      gameState.startRound(roomCode, 'What is your favorite color?');
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answerForBoth).toBe(false);
+    });
+
+    test('sets answerForBoth to true when specified', () => {
+      gameState.startRound(roomCode, 'What would your partner say?', 'open_ended', null, true);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answerForBoth).toBe(true);
+    });
+
+    test('answerForBoth works with multiple_choice variant', () => {
+      gameState.startRound(roomCode, 'Who is messier?', 'multiple_choice', ['Option A', 'Option B'], true);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answerForBoth).toBe(true);
+      expect(state.currentRound.variant).toBe('multiple_choice');
+      expect(state.currentRound.options).toEqual(['Option A', 'Option B']);
+    });
+
+    test('answerForBoth works with binary variant', () => {
+      gameState.startRound(roomCode, 'Who cooks more?', 'binary', ['Player 1', 'Player 2'], true);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answerForBoth).toBe(true);
+      expect(state.currentRound.variant).toBe('binary');
+    });
+
+    test('answerForBoth persists through round lifecycle', () => {
+      gameState.startRound(roomCode, 'Dual answer question', 'open_ended', null, true);
+
+      // Submit answers
+      gameState.submitAnswer(roomCode, 'socket1', JSON.stringify({ 'Alice': 'A1', 'Bob': 'A2' }), 1000);
+      gameState.submitAnswer(roomCode, 'socket2', JSON.stringify({ 'Alice': 'B1', 'Bob': 'B2' }), 1500);
+
+      // Complete round
+      gameState.completeRound(roomCode);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.answerForBoth).toBe(true);
+      expect(state.currentRound.status).toBe('complete');
+    });
   });
 
   describe('submitAnswer', () => {
