@@ -17,14 +17,19 @@ export function TeamScoreboard({ teams, players }: TeamScoreboardProps) {
         <p className="has-text-centered has-text-grey">No teams yet</p>
       ) : (
         <div>
-          {sortedTeams.map((team) => {
+          {sortedTeams.map((team, index) => {
             const player1 = findPlayerBySocketId(players, team.player1Id);
             const player2 = findPlayerBySocketId(players, team.player2Id);
 
             return (
               <div key={team.teamId} className="box has-background-white-ter mb-2 p-3">
                 <div className="is-flex is-justify-content-space-between is-align-items-center">
-                  <TeamName player1={player1} player2={player2} />
+                  <div className="is-flex is-align-items-center">
+                    <span className="has-text-weight-bold is-size-5 mr-5">
+                        #{index + 1}
+                      </span>
+                    <TeamName player1={player1} player2={player2} />
+                  </div>
                   <span className="tag is-info is-medium">{team.score} pts</span>
                 </div>
               </div>

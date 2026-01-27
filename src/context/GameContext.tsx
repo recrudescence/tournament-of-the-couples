@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, type ReactNode } from 'react';
 import type { GameState, Player, Team, RoundPhase, PlayerInfo } from '../types/game';
 import { findPlayerByName } from '../utils/playerUtils';
 
@@ -75,23 +75,32 @@ const GameContext = createContext<GameContextValue | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
-  const myPlayer =
-    state.gameState?.players && state.playerInfo?.name
-      ? findPlayerByName(state.gameState.players, state.playerInfo.name) ?? null
-      : null;
+  const myPlayer = useMemo(
+    () =>
+      state.gameState?.players && state.playerInfo?.name
+        ? findPlayerByName(state.gameState.players, state.playerInfo.name) ?? null
+        : null,
+    [state.gameState?.players, state.playerInfo?.name]
+  );
 
-  const myTeam =
-    myPlayer?.teamId
-      ? state.gameState?.teams.find((t) => t.teamId === myPlayer.teamId) ?? null
-      : null;
+  const myTeam = useMemo(
+    () =>
+      myPlayer?.teamId
+        ? state.gameState?.teams.find((t) => t.teamId === myPlayer.teamId) ?? null
+        : null,
+    [myPlayer?.teamId, state.gameState?.teams]
+  );
 
   // Use teamId + name for partner lookup (more stable than partnerId which is a socket ID)
-  const myPartner =
-    myPlayer?.teamId && state.gameState?.players
-      ? state.gameState.players.find(
-          (p) => p.teamId === myPlayer.teamId && p.name !== myPlayer.name
-        ) ?? null
-      : null;
+  const myPartner = useMemo(
+    () =>
+      myPlayer?.teamId && state.gameState?.players
+        ? state.gameState.players.find(
+            (p) => p.teamId === myPlayer.teamId && p.name !== myPlayer.name
+          ) ?? null
+        : null,
+    [myPlayer?.teamId, myPlayer?.name, state.gameState?.players]
+  );
 
   return (
     <GameContext.Provider

@@ -131,7 +131,7 @@ export function JoinPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, savePlayerInfo, dispatch, navigate, showError, playerName]);
+  }, [on, savePlayerInfo, dispatch, navigate, showError]);
 
   const handleSelectGame = (roomCode: string, hostName: string, status: string) => {
     setSelectedRoomCode(roomCode);

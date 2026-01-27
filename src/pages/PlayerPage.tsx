@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -11,7 +11,7 @@ import { WaitingStatus } from '../components/player/WaitingStatus';
 import { AnswerSubmissionForm } from '../components/player/AnswerSubmissionForm';
 import { SubmittedStatus } from '../components/player/SubmittedStatus';
 import { ScoringStatus } from '../components/player/ScoringStatus';
-import { findPlayerBySocketId } from '../utils/playerUtils';
+import { transformBinaryOptions } from '../utils/playerUtils';
 import { GameTitle } from '../components/common/GameTitle';
 import { TeamScoreboard } from '../components/host/TeamScoreboard';
 
@@ -28,6 +28,13 @@ export function PlayerPage() {
   const [submittedAnswer, setSubmittedAnswer] = useState('');
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  // Refs to access latest state in socket handlers without causing re-subscriptions
+  const gameStateRef = useRef(gameState);
+  const playerInfoRef = useRef(playerInfo);
+  const myPlayerRef = useRef(myPlayer);
+  const hasSubmittedRef = useRef(hasSubmitted);
+
   const { error, showError } = useGameError();
   const { responseTime, startTimer, stopTimer, getFinalTime } = useTimer();
   const [variant, setVariant] = useState<string>('open_ended');
@@ -52,6 +59,14 @@ export function PlayerPage() {
     }
   }, [gameState?.status, wakeLockSupported, requestWakeLock]);
 
+  // Keep refs in sync with state for socket handlers
+  useEffect(() => {
+    gameStateRef.current = gameState;
+    playerInfoRef.current = playerInfo;
+    myPlayerRef.current = myPlayer;
+    hasSubmittedRef.current = hasSubmitted;
+  }, [gameState, playerInfo, myPlayer, hasSubmitted]);
+
   // Initialize from GameContext when PlayerPage mounts (handles reconnection)
   useEffect(() => {
     if (!gameState || !playerInfo) return;
@@ -69,13 +84,12 @@ export function PlayerPage() {
         setVariant(roundVariant);
 
         // For binary: replace placeholders with actual team member names
-        if (roundVariant === 'binary' && gameState.currentRound.options && myPlayer && myTeam) {
-          const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
-          const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
-          setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
-        } else {
-          setOptions(gameState.currentRound.options);
-        }
+        setOptions(transformBinaryOptions(
+          gameState.currentRound.options,
+          roundVariant,
+          gameState.players,
+          myTeam
+        ));
 
         const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
         const hasSubmittedInCurrentPhase = gameState.currentRound.submittedInCurrentPhase.includes(playerInfo.name);
@@ -102,13 +116,12 @@ export function PlayerPage() {
       setVariant(roundVariant);
 
       // For binary: replace placeholders with actual team member names
-      if (roundVariant === 'binary' && gameState.currentRound.options && myPlayer && myTeam) {
-        const player1 = findPlayerBySocketId(gameState.players, myTeam.player1Id);
-        const player2 = findPlayerBySocketId(gameState.players, myTeam.player2Id);
-        setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
-      } else {
-        setOptions(gameState.currentRound.options);
-      }
+      setOptions(transformBinaryOptions(
+        gameState.currentRound.options,
+        roundVariant,
+        gameState.players,
+        myTeam
+      ));
 
       const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
       if (previousAnswer) {
@@ -122,7 +135,7 @@ export function PlayerPage() {
     setSection('waiting');
   }, []); // Only run on mount
 
-  // Socket event handlers
+  // Socket event handlers - use refs to access latest state without causing re-subscriptions
   useEffect(() => {
     const unsubscribers = [
       on('joinSuccess', ({ gameState: state }) => {
@@ -137,21 +150,17 @@ export function PlayerPage() {
         setVariant(v);
 
         // For binary: replace placeholders with actual team member names
-        if (v === 'binary' && opts && playerInfo) {
-          const players = state?.players ?? gameState?.players ?? [];
-          const teams = state?.teams ?? gameState?.teams ?? [];
-          const currentPlayer = players.find(p => p.name === playerInfo.name);
+        const pInfo = playerInfoRef.current;
+        const gState = state ?? gameStateRef.current;
+        if (v === 'binary' && opts && pInfo && gState) {
+          const players = gState.players;
+          const teams = gState.teams;
+          const currentPlayer = players.find(p => p.name === pInfo.name);
           const currentTeam = currentPlayer
             ? teams.find(t => t.player1Id === currentPlayer.socketId || t.player2Id === currentPlayer.socketId)
             : null;
 
-          if (currentTeam) {
-            const player1 = findPlayerBySocketId(players, currentTeam.player1Id);
-            const player2 = findPlayerBySocketId(players, currentTeam.player2Id);
-            setOptions([player1?.name ?? 'Player 1', player2?.name ?? 'Player 2']);
-          } else {
-            setOptions(opts);
-          }
+          setOptions(transformBinaryOptions(opts, v, players, currentTeam ?? null));
         } else {
           setOptions(opts);
         }
@@ -169,7 +178,7 @@ export function PlayerPage() {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
-        if (playerName === playerInfo?.name) {
+        if (playerName === playerInfoRef.current?.name) {
           setHasSubmitted(true);
           setSubmittedAnswer(ans);
           setSection('submitted');
@@ -185,7 +194,7 @@ export function PlayerPage() {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
 
         // Check if this is my team
-        if (myPlayer?.teamId === teamId) {
+        if (myPlayerRef.current?.teamId === teamId) {
           setMyTeamPointsThisRound(pointsAwarded);
           if (pointsAwarded > 0) {
             setIsCelebrating(true);
@@ -202,8 +211,9 @@ export function PlayerPage() {
       on('returnedToAnswering', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
 
-        if (state.currentRound?.answers && playerInfo) {
-          const previousAnswer = state.currentRound.answers[playerInfo.name];
+        const pInfo = playerInfoRef.current;
+        if (state.currentRound?.answers && pInfo) {
+          const previousAnswer = state.currentRound.answers[pInfo.name];
           if (previousAnswer) {
             setAnswer(previousAnswer.text);
           } else {
@@ -219,15 +229,16 @@ export function PlayerPage() {
 
       on('error', ({ message }) => {
         showError(message);
-        if (hasSubmitted) {
+        if (hasSubmittedRef.current) {
           setHasSubmitted(false);
           setSection('answering');
         }
       }),
 
       on('playerDisconnected', ({ socketId }) => {
-        if (!gameState) return;
-        const updatedPlayers = gameState.players.map((p) =>
+        const gState = gameStateRef.current;
+        if (!gState) return;
+        const updatedPlayers = gState.players.map((p) =>
           p.socketId === socketId ? { ...p, connected: false } : p
         );
         dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
@@ -241,7 +252,7 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, playerInfo, myPlayer, myTeam, gameState, hasSubmitted, dispatch, showError]);
+  }, [on, dispatch, showError, startTimer]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

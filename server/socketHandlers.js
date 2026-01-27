@@ -387,8 +387,7 @@ function setupSocketHandlers(io) {
         // Check if round is complete
         if (gameState.isRoundComplete(roomCode)) {
           gameState.completeRound(roomCode);
-          const teams = gameState.getPlayerTeams(roomCode);
-          io.to(roomCode).emit('allAnswersIn', { teams });
+          io.to(roomCode).emit('allAnswersIn');
         }
       } catch (err) {
         console.error('Submit answer error:', err);
@@ -492,7 +491,7 @@ function setupSocketHandlers(io) {
         const state = gameState.getGameState(roomCode);
         const team = state.teams.find(t => t.teamId === teamId);
 
-        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score });
+        io.to(roomCode).emit('scoreUpdated', { teamId, newScore: team.score, pointsAwarded: -points });
       } catch (err) {
         console.error('Remove point error:', err);
         socket.emit('error', { message: err.message });
