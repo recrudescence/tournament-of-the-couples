@@ -111,17 +111,15 @@ export function FinishGamePage() {
                       </span>
                       <TeamName player1={player1} player2={player2} />
                     </div>
-                    <div>
-                      {totalTime > 0 && (
-                          <div className="is-size-6 is-italic">
-                            {formatTotalTime(totalTime)} combined answer time!
-                          </div>
-                      )}
-                    </div>
                     <div className="has-text-right">
                       <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
                         {team.score} {team.score === 1 ? 'pt' : 'pts'}
                       </div>
+                      {totalTime > 0 && (
+                        <div className="is-size-6 has-text-grey is-italic">
+                          {formatTotalTime(totalTime)} thinking time!
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
