@@ -6,7 +6,6 @@ import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
 import { useSnowEffect } from '../hooks/useConfetti';
 import { useTheme } from '../hooks/useTheme';
-import { DebugSidebar } from '../components/common/DebugSidebar';
 import { ExitButton } from '../components/common/ExitButton';
 import { PlayerAvatar } from '../components/common/PlayerAvatar';
 import { PlayerCard } from '../components/common/PlayerCard';
@@ -220,7 +219,6 @@ export function LobbyPage() {
 
   return (
     <>
-      {playerInfo.isHost && <DebugSidebar />}
       <ExitButton />
       <section className="section">
         <div className="container container-md">

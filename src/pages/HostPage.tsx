@@ -3,7 +3,6 @@ import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
 import { useGameError } from '../hooks/useGameError';
-import { DebugSidebar } from '../components/common/DebugSidebar';
 import { ExitButton } from '../components/common/ExitButton';
 import { QuestionForm } from '../components/host/QuestionForm';
 import { AnsweringPhase } from '../components/host/AnsweringPhase';
@@ -283,7 +282,6 @@ export function HostPage() {
 
   return (
     <>
-      <DebugSidebar />
       <ExitButton />
       <section className="section">
         <div className="container container-md">
