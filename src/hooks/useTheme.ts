@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export type Theme = 'default' | 'holiday' | 'valentines' | 'halloween';
+export type Theme = 'default' | 'holiday' | 'valentines' | 'halloween' | 'hyper';
 
 const THEME_COOKIE_NAME = 'theme';
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
@@ -15,7 +15,7 @@ function setCookie(name: string, value: string, maxAge: number): void {
 }
 
 function isValidTheme(value: string | null): value is Theme {
-  return value === 'default' || value === 'holiday' || value === 'valentines' || value === 'halloween';
+  return value === 'default' || value === 'holiday' || value === 'valentines' || value === 'halloween' || value === 'hyper';
 }
 
 function applyTheme(theme: Theme): void {

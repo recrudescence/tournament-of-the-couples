@@ -178,6 +178,239 @@
 }
 
 /* ======================
+   HYPER THEME
+   ====================== */
+[data-theme="hyper"] {
+  --theme-primary: #8B5CF6;
+  --theme-primary-dark: #7C3AED;
+  --theme-success: #06D6A0;
+  --theme-info: #FFD60A;
+  --theme-accent: #3A86FF;
+  --theme-bg: #FFE66D;
+  --theme-bg-gradient: linear-gradient(180deg, #FFE66D 0%, #FF6B6B 50%, #C9B1FF 100%);
+  --theme-title-color: #8B5CF6;
+  --theme-box-border: rgba(58, 134, 255, 0.3);
+  --theme-box-shadow: rgba(139, 92, 246, 0.2);
+
+  /* Bulma overrides for hyper */
+  --bulma-primary-h: 258deg;
+  --bulma-primary-s: 90%;
+  --bulma-primary-l: 66%;
+  --bulma-success-h: 161deg;
+  --bulma-success-s: 96%;
+  --bulma-success-l: 43%;
+  --bulma-info-h: 51deg;
+  --bulma-info-s: 100%;
+  --bulma-info-l: 52%;
+  --bulma-link-h: 258deg;
+  --bulma-link-s: 90%;
+  --bulma-link-l: 66%;
+}
+
+/* HYPER specific overrides for vibrant look */
+[data-theme="hyper"] .box {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-width: 3px;
+  border-color: var(--theme-accent);
+}
+
+[data-theme="hyper"] .subtitle,
+[data-theme="hyper"] .label {
+  color: #3A86FF;
+}
+
+[data-theme="hyper"] .notification.is-primary {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #7C3AED;
+}
+
+[data-theme="hyper"] .notification.is-info {
+  background-color: rgba(255, 214, 10, 0.3);
+  color: #806B00;
+}
+
+[data-theme="hyper"] .notification.is-light {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #363636;
+}
+
+[data-theme="hyper"] .notification.is-success {
+  background-color: rgba(6, 214, 160, 0.2);
+  color: #047857;
+}
+
+[data-theme="hyper"] .input,
+[data-theme="hyper"] .textarea,
+[data-theme="hyper"] .select select {
+  background-color: #fff;
+  border-color: #3A86FF;
+  border-width: 2px;
+  color: #363636;
+}
+
+[data-theme="hyper"] .input:focus,
+[data-theme="hyper"] .textarea:focus,
+[data-theme="hyper"] .select select:focus {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 0.125em rgba(139, 92, 246, 0.25);
+}
+
+[data-theme="hyper"] .input::placeholder,
+[data-theme="hyper"] .textarea::placeholder {
+  color: #999;
+}
+
+[data-theme="hyper"] .button.is-primary {
+  background-color: #8B5CF6;
+  border-color: #8B5CF6;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-primary:hover {
+  background-color: #7C3AED;
+  border-color: #7C3AED;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-success {
+  background-color: #06D6A0;
+  border-color: #06D6A0;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-success:hover {
+  background-color: #05B888;
+  border-color: #05B888;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-info {
+  background-color: #FFD60A;
+  border-color: #FFD60A;
+  color: #363636;
+}
+
+[data-theme="hyper"] .button.is-info:hover {
+  background-color: #E6C009;
+  border-color: #E6C009;
+  color: #363636;
+}
+
+[data-theme="hyper"] .button.is-link {
+  background-color: #3A86FF;
+  border-color: #3A86FF;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-link:hover {
+  background-color: #2171E6;
+  border-color: #2171E6;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-light {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: #3A86FF;
+  color: #363636;
+}
+
+[data-theme="hyper"] .button.is-light:hover {
+  background-color: rgba(255, 255, 255, 1);
+  border-color: #8B5CF6;
+  color: #363636;
+}
+
+[data-theme="hyper"] .button.is-link.is-light {
+  background-color: rgba(58, 134, 255, 0.2);
+  border-color: transparent;
+  color: #3A86FF;
+}
+
+[data-theme="hyper"] .button.is-link.is-light:hover {
+  background-color: rgba(58, 134, 255, 0.3);
+  color: #2171E6;
+}
+
+[data-theme="hyper"] .button.is-danger {
+  background-color: #EF4444;
+  border-color: #EF4444;
+  color: #fff;
+}
+
+[data-theme="hyper"] .button.is-danger:hover {
+  background-color: #DC2626;
+  border-color: #DC2626;
+  color: #fff;
+}
+
+[data-theme="hyper"] .has-text-grey,
+[data-theme="hyper"] .has-text-grey-light {
+  color: #666 !important;
+}
+
+[data-theme="hyper"] .has-background-white,
+[data-theme="hyper"] .has-background-white-ter,
+[data-theme="hyper"] .has-background-white-bis,
+[data-theme="hyper"] .has-background-light {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme="hyper"] .has-background-link-light,
+[data-theme="hyper"] .has-background-primary-light {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+[data-theme="hyper"] .tag.is-light {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #363636;
+}
+
+[data-theme="hyper"] .tag.is-primary {
+  background-color: #8B5CF6;
+  color: #fff;
+}
+
+[data-theme="hyper"] .tag.is-success {
+  background-color: #06D6A0;
+  color: #fff;
+}
+
+[data-theme="hyper"] .tag.is-info {
+  background-color: #FFD60A;
+  color: #363636;
+}
+
+[data-theme="hyper"] .tabs.is-boxed li.is-active a {
+  background-color: #3A86FF;
+  border-color: #3A86FF;
+}
+
+[data-theme="hyper"] .tabs.is-boxed a {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="hyper"] .tabs.is-boxed a:hover {
+  background-color: rgba(58, 134, 255, 0.2);
+  border-bottom-color: #3A86FF;
+}
+
+[data-theme="hyper"] .section {
+  background: transparent;
+}
+
+[data-theme="hyper"] .progress {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="hyper"] .progress::-webkit-progress-value {
+  background-color: #8B5CF6;
+}
+
+[data-theme="hyper"] .progress::-moz-progress-bar {
+  background-color: #8B5CF6;
+}
+
+/* ======================
    SHARED THEME STYLES
    ====================== */
 
