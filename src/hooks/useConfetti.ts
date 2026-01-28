@@ -80,6 +80,24 @@ export function useCelebrationConfetti(shouldTrigger: boolean) {
 }
 
 /**
+ * Fire a directional burst of confetti from a specific position (for scoring)
+ */
+export function fireScoringBurst(originX: number, originY: number, points: number) {
+  const colors = points === 2 ? ['#ff9c29', '#ff4c4c'] : ['#48c774', '#3ec46d'];
+  confetti({
+    particleCount: 25 + (points * 10),
+    startVelocity: 30,
+    spread: 70,
+    angle: 30, // Fire to the right
+    origin: { x: originX, y: originY },
+    colors,
+    ticks: 100,
+    gravity: .7,
+    scalar: 0.8
+  });
+}
+
+/**
  * Hook for falling snow effect
  */
 export function useSnowEffect(enabled: boolean = true) {

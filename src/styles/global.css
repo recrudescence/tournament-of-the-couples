@@ -112,3 +112,54 @@ input[type="radio"] {
 .container-lg {
   max-width: 900px !important;
 }
+
+/* Modal pop animations */
+.scoring-modal.modal-opening .modal-card {
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scoring-modal.modal-closing .modal-card {
+  animation: popOut 0.2s ease-in forwards;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) rotate(calc(var(--spin-deg, 0deg) * 3));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes popOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(var(--spin-deg, 0deg));
+  }
+}
+
+/* Score tag pop animation on award */
+.score-tag-pop {
+  animation: scorePop 0.4s ease;
+}
+
+@keyframes scorePop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

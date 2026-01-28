@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { type Player, type CurrentRound, type Team } from '../../types/game';
 import { findPlayerBySocketId } from '../../utils/playerUtils';
 import { TeamName } from '../common/TeamName';
 import { Question } from '../common/Question.tsx';
-import { BothPlayersScoring } from './BothPlayersScoring';
-import { SinglePlayerScoring } from './SinglePlayerScoring';
+import { ScoringModal } from './ScoringModal';
+import { fireScoringBurst } from '../../hooks/useConfetti';
 
 interface ScoringInterfaceProps {
   teams: Team[];
@@ -22,11 +22,12 @@ interface ScoringInterfaceProps {
   onFinishRound: () => void;
 }
 
+const SCORE_TAG_POP_MS = 400;
+
 export function ScoringInterface({
   teams,
   players,
   currentRound,
-  currentTeamIndex,
   teamPointsAwarded,
   revealedAnswers,
   revealedResponseTimes,
@@ -37,6 +38,10 @@ export function ScoringInterface({
   onReopenTeamScoring,
   onFinishRound
 }: ScoringInterfaceProps) {
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [recentlyScored, setRecentlyScored] = useState<string | null>(null);
+  const scoreTagRefs = useRef<Record<string, HTMLSpanElement | null>>({});
+
   // Sort teams by total response time (ascending) for scoring display
   const teamsSortedByResponseTime = useMemo(() => {
     if (!teams || !currentRound) return [];
@@ -57,10 +62,53 @@ export function ScoringInterface({
         originalIndex,
         totalResponseTime,
         player1Time,
-        player2Time
+        player2Time,
+        player1,
+        player2
       };
     }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
   }, [teams, currentRound, players]);
+
+  // Get selected team data
+  const selectedTeamData = useMemo(() => {
+    if (!selectedTeamId) return null;
+    return teamsSortedByResponseTime.find(t => t.team.teamId === selectedTeamId) ?? null;
+  }, [selectedTeamId, teamsSortedByResponseTime]);
+
+  const handleOpenModal = useCallback((teamId: string) => {
+    setSelectedTeamId(teamId);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedTeamId(null);
+  }, []);
+
+  const handleAwardPoints = useCallback((teamId: string, originalIndex: number, points: number) => {
+    // Close modal first
+    setSelectedTeamId(null);
+
+    // Track which team was just scored for animation
+    setRecentlyScored(teamId);
+
+    // Award points (this updates parent state)
+    onAwardPoints(teamId, originalIndex, points);
+
+    // Fire confetti after tag pop animation completes (only for points > 0)
+    if (points > 0) {
+      setTimeout(() => {
+        const tagEl = scoreTagRefs.current[teamId];
+        if (tagEl) {
+          const rect = tagEl.getBoundingClientRect();
+          const originX = rect.right / window.innerWidth;
+          const originY = rect.top / window.innerHeight + (rect.height / 2 / window.innerHeight);
+          fireScoringBurst(originX, originY, points);
+        }
+        setRecentlyScored(null);
+      }, SCORE_TAG_POP_MS);
+    } else {
+      setTimeout(() => setRecentlyScored(null), SCORE_TAG_POP_MS);
+    }
+  }, [onAwardPoints]);
 
   return (
     <div className="box">
@@ -71,109 +119,52 @@ export function ScoringInterface({
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
       <div className="mb-4">
-        {teamsSortedByResponseTime.map(({ team, originalIndex, totalResponseTime, player1Time, player2Time }) => {
-          const player1 = findPlayerBySocketId(players, team.player1Id);
-          const player2 = findPlayerBySocketId(players, team.player2Id);
+        {teamsSortedByResponseTime.map(({ team, originalIndex, totalResponseTime, player1, player2 }) => {
           const isScored = team.teamId in teamPointsAwarded;
-          const isExpanded = originalIndex === currentTeamIndex && !isScored;
-
-          // Sort players by response time (ascending)
-          const sortedPlayers = [
-            { player: player1, time: player1Time },
-            { player: player2, time: player2Time }
-          ].sort((a, b) => a.time - b.time);
-
-          // Only show total time after both individual times are revealed
-          const bothRevealed = player1?.name && player2?.name &&
-            revealedAnswers.has(player1.name) && revealedAnswers.has(player2.name);
+          const points = teamPointsAwarded[team.teamId] ?? 0;
+          const isRecentlyScored = recentlyScored === team.teamId;
 
           return (
             <div
               key={team.teamId}
-              className={`box mb-3 ${isExpanded ? 'has-background-link-light' : ''}`}
+              className="box mb-3"
             >
-              <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
+              <div className="is-flex is-justify-content-space-between is-align-items-center">
                 <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
                   <TeamName player1={player1} player2={player2} size='large' />
-                  {bothRevealed && totalResponseTime < Infinity && (
-                    <span className="has-text-grey is-size-6 ml-2">
-                      took {(totalResponseTime / 1000).toFixed(1)} seconds!
-                    </span>
-                  )}
                 </div>
-                <div className="is-flex is-align-items-center">
-                  {isScored && (
-                    <span
-                      className={`tag is-medium mr-2 ${
-                        (teamPointsAwarded[team.teamId] ?? 0) > 0
-                          ? 'is-success'
-                          : 'is-light'
-                      }`}
-                    >
-                      {(teamPointsAwarded[team.teamId] ?? 0) > 0
-                        ? `+${teamPointsAwarded[team.teamId]} ${teamPointsAwarded[team.teamId] === 1 ? 'point' : 'points'}! 🎉`
-                        : '0 points 😔'}
-                    </span>
-                  )}
-                  {!isExpanded && isScored && (
+                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                  {isScored ? (
+                    <>
+                      <span
+                        ref={el => { scoreTagRefs.current[team.teamId] = el; }}
+                        className={`tag is-medium ${points > 0 ? 'is-success' : 'is-light'} ${isRecentlyScored ? 'score-tag-pop' : ''}`}
+                      >
+                        {points > 0 ? `+${points} pts` : '0 pts'}
+                      </span>
+                      {totalResponseTime < Infinity && (
+                        <span className="tag is-light is-medium">
+                          {(totalResponseTime / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      <button
+                        className="button is-info is-small"
+                        onClick={() => onReopenTeamScoring(team.teamId, originalIndex)}
+                        title="Re-score"
+                      >
+                        ↪️
+                      </button>
+                    </>
+                  ) : (
                     <button
-                      className="button is-info is-small"
-                      onClick={() => onReopenTeamScoring(team.teamId, originalIndex)}
+                      className="button is-link"
+                      onClick={() => handleOpenModal(team.teamId)}
                     >
-                      ↪️
+                      Score
                     </button>
                   )}
                 </div>
               </div>
-
-              {isExpanded && currentRound && (
-                <div className="content">
-                  {currentRound.answerForBoth ? (
-                    <BothPlayersScoring
-                      player1={player1}
-                      player2={player2}
-                      currentRound={currentRound}
-                      revealedAnswers={revealedAnswers}
-                      onRevealAnswer={onRevealAnswer}
-                    />
-                  ) : (
-                    <SinglePlayerScoring
-                      sortedPlayers={sortedPlayers}
-                      currentRound={currentRound}
-                      revealedAnswers={revealedAnswers}
-                      revealedResponseTimes={revealedResponseTimes}
-                      onRevealAnswer={onRevealAnswer}
-                    />
-                  )}
-
-                  <div className="field is-grouped is-grouped-centered mt-4">
-                    <div className="control">
-                      <button
-                        className="button is-light is-large"
-                        onClick={() => onAwardPoints(team.teamId, originalIndex, 0)}
-                      >
-                        zero pts 😔
-                      </button>
-                    </div>
-                    <div className="control">
-                      <button
-                        className="button is-success is-large"
-                        onClick={() => onAwardPoints(team.teamId, originalIndex, 1)}
-                      >
-                        one point ⭐
-                      </button>
-                    </div>
-                    <div className="control">
-                      <button
-                        className="button is-warning is-large"
-                        onClick={() => onAwardPoints(team.teamId, originalIndex, 2)}
-                      >
-                        🌟 two! ptz! 🌟
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
@@ -185,6 +176,26 @@ export function ScoringInterface({
             Finish Round
           </button>
         </div>
+      )}
+
+      {/* Scoring Modal */}
+      {selectedTeamData && currentRound && (
+        <ScoringModal
+          team={selectedTeamData.team}
+          player1={selectedTeamData.player1}
+          player2={selectedTeamData.player2}
+          currentRound={currentRound}
+          totalResponseTime={selectedTeamData.totalResponseTime}
+          sortedPlayers={[
+            { player: selectedTeamData.player1, time: selectedTeamData.player1Time },
+            { player: selectedTeamData.player2, time: selectedTeamData.player2Time }
+          ].sort((a, b) => a.time - b.time)}
+          revealedAnswers={revealedAnswers}
+          revealedResponseTimes={revealedResponseTimes}
+          onRevealAnswer={onRevealAnswer}
+          onAwardPoints={(points) => handleAwardPoints(selectedTeamData.team.teamId, selectedTeamData.originalIndex, points)}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   );
