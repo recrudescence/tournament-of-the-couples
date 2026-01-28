@@ -33,6 +33,11 @@ export interface PlayerAvatar {
   emoji: string;
 }
 
+export interface PlayerIdentity {
+  name: string;
+  avatar: PlayerAvatar | null;
+}
+
 export interface Player {
   socketId: string;
   name: string;

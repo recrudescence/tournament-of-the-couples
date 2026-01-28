@@ -1,24 +1,18 @@
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import type { PlayerAvatar as PlayerAvatarType } from '../../types/game';
+import type { PlayerIdentity } from '../../types/game';
 
 interface PlayerHeaderProps {
-  hostName: string;
-  hostAvatar: PlayerAvatarType | null;
-  playerName: string;
-  playerAvatar: PlayerAvatarType | null;
-  partnerName: string;
-  partnerAvatar: PlayerAvatarType | null;
+  host: PlayerIdentity;
+  player: PlayerIdentity;
+  partner: PlayerIdentity;
   teamScore: number;
   isCelebrating: boolean;
 }
 
 export function PlayerHeader({
-  hostName,
-  hostAvatar,
-  playerName,
-  playerAvatar,
-  partnerName,
-  partnerAvatar,
+  host,
+  player,
+  partner,
   teamScore,
   isCelebrating
 }: PlayerHeaderProps) {
@@ -28,22 +22,22 @@ export function PlayerHeader({
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Host</p>
           <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {hostAvatar && <PlayerAvatar avatar={hostAvatar} size="small" />}
-            <span className="title is-6">{hostName}</span>
+            {host.avatar && <PlayerAvatar avatar={host.avatar} size="small" />}
+            <span className="title is-6">{host.name}</span>
           </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">You</p>
           <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {playerAvatar && <PlayerAvatar avatar={playerAvatar} size="small" />}
-            <span className="title is-6 has-text-primary mb-0">{playerName}</span>
+            {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
+            <span className="title is-6 has-text-primary mb-0">{player.name}</span>
           </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Partner</p>
           <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {partnerAvatar && <PlayerAvatar avatar={partnerAvatar} size="small" />}
-            <span className="title is-6 mb-0">{partnerName}</span>
+            {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
+            <span className="title is-6 mb-0">{partner.name}</span>
           </div>
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">

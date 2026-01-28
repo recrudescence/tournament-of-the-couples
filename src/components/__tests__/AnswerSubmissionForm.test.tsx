@@ -26,8 +26,8 @@ describe('AnswerSubmissionForm', () => {
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };
@@ -101,8 +101,8 @@ describe('AnswerSubmissionForm', () => {
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };
@@ -191,8 +191,8 @@ describe('AnswerSubmissionForm', () => {
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };
@@ -242,8 +242,8 @@ describe('AnswerSubmissionForm', () => {
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };
@@ -280,8 +280,8 @@ describe('AnswerSubmissionForm', () => {
       onOptionChange: mockOnOptionChange,
       onSubmit: mockOnSubmit,
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };
@@ -305,8 +305,8 @@ describe('AnswerSubmissionForm', () => {
   describe('Edge Cases', () => {
     const dualAnswerProps = {
       answerForBoth: false,
-      playerName: 'Alice',
-      partnerName: 'Bob',
+      player: { name: 'Alice', avatar: null },
+      partner: { name: 'Bob', avatar: null },
       dualAnswers: { self: '', partner: '' },
       onDualAnswerChange: mockOnDualAnswerChange,
     };

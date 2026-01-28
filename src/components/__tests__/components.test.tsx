@@ -166,9 +166,9 @@ describe('Component Smoke Tests', () => {
       it('renders all player info', () => {
         render(
           <PlayerHeader
-            hostName="GameHost"
-            playerName="Alice"
-            partnerName="Bob"
+            host={{ name: 'GameHost', avatar: null }}
+            player={{ name: 'Alice', avatar: null }}
+            partner={{ name: 'Bob', avatar: null }}
             teamScore={5}
             isCelebrating={false}
           />
@@ -183,9 +183,9 @@ describe('Component Smoke Tests', () => {
       it('applies celebration style when isCelebrating is true', () => {
         render(
           <PlayerHeader
-            hostName="GameHost"
-            playerName="Alice"
-            partnerName="Bob"
+            host={{ name: 'GameHost', avatar: null }}
+            player={{ name: 'Alice', avatar: null }}
+            partner={{ name: 'Bob', avatar: null }}
             teamScore={5}
             isCelebrating={true}
           />
@@ -442,14 +442,13 @@ describe('Component Smoke Tests', () => {
   });
 
   describe('Player Components - SubmittedStatus', () => {
-    const mockPartnerAvatar = { color: '#0000ff', emoji: '🎉' };
+    const mockPartner = { name: 'Bob', avatar: { color: '#0000ff', emoji: '🎉' } };
 
     it('renders submitted answer', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={false}
           totalAnswersCount={1}
           totalPlayersCount={2}
@@ -464,8 +463,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={false}
           totalAnswersCount={1}
           totalPlayersCount={2}
@@ -480,8 +478,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={true}
           totalAnswersCount={2}
           totalPlayersCount={2}
@@ -495,8 +492,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={false}
           totalAnswersCount={1}
           totalPlayersCount={4}
@@ -510,8 +506,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={true}
           totalAnswersCount={4}
           totalPlayersCount={4}
@@ -526,8 +521,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer={dualAnswer}
-          partnerName="Bob"
-          partnerAvatar={mockPartnerAvatar}
+          partner={mockPartner}
           partnerSubmitted={true}
           totalAnswersCount={2}
           totalPlayersCount={2}
@@ -547,8 +541,7 @@ describe('Component Smoke Tests', () => {
       render(
         <SubmittedStatus
           submittedAnswer="Blue"
-          partnerName={null}
-          partnerAvatar={null}
+          partner={null}
           partnerSubmitted={false}
           totalAnswersCount={1}
           totalPlayersCount={2}

@@ -1,3 +1,6 @@
+import { PlayerAvatar } from '../common/PlayerAvatar';
+import type { PlayerIdentity } from '../../types/game';
+
 interface AnswerSubmissionFormProps {
   roundNumber: number;
   question: string;
@@ -11,8 +14,8 @@ interface AnswerSubmissionFormProps {
   onSubmit: (e: React.FormEvent) => void;
   // Dual answer mode props
   answerForBoth: boolean;
-  playerName: string;
-  partnerName: string;
+  player: PlayerIdentity;
+  partner: PlayerIdentity;
   dualAnswers: { self: string; partner: string };
   onDualAnswerChange: (key: 'self' | 'partner', value: string) => void;
 }
@@ -29,8 +32,8 @@ export function AnswerSubmissionForm({
   onOptionChange,
   onSubmit,
   answerForBoth,
-  playerName,
-  partnerName,
+  player,
+  partner,
   dualAnswers,
   onDualAnswerChange
 }: AnswerSubmissionFormProps) {
@@ -53,14 +56,17 @@ export function AnswerSubmissionForm({
           <div className="dual-answer-sections">
             {/* Answer for self */}
             <div className="box has-background-light mb-4">
-              <h3 className="subtitle is-5 mb-3">{playerName}</h3>
+              <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
+                {player.name}
+              </h3>
               {variant === 'open_ended' ? (
                 <div className="field">
                   <div className="control">
                     <textarea
                       className="textarea"
                       rows={2}
-                      placeholder={`Answer for ${playerName}...`}
+                      placeholder={`What would ${player.name} say?`}
                       value={dualAnswers.self}
                       onChange={(e) => onDualAnswerChange('self', e.target.value)}
                       required
@@ -93,14 +99,17 @@ export function AnswerSubmissionForm({
 
             {/* Answer for partner */}
             <div className="box has-background-light mb-4">
-              <h3 className="subtitle is-5 mb-3">{partnerName}</h3>
+              <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
+                {partner.name}
+              </h3>
               {variant === 'open_ended' ? (
                 <div className="field">
                   <div className="control">
                     <textarea
                       className="textarea"
                       rows={2}
-                      placeholder={`Answer for ${partnerName}...`}
+                      placeholder={`Meanwhile, ${partner.name} would say...`}
                       value={dualAnswers.partner}
                       onChange={(e) => onDualAnswerChange('partner', e.target.value)}
                       required

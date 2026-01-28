@@ -1,5 +1,5 @@
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import type { PlayerAvatar as PlayerAvatarType } from '../../types/game';
+import type { PlayerIdentity } from '../../types/game';
 
 // Try to parse JSON answer (for dual answer mode)
 function parseAnswer(answer: string): Record<string, string> | null {
@@ -16,8 +16,7 @@ function parseAnswer(answer: string): Record<string, string> | null {
 
 interface SubmittedStatusProps {
   submittedAnswer: string;
-  partnerName: string | null;
-  partnerAvatar: PlayerAvatarType | null;
+  partner: PlayerIdentity | null;
   partnerSubmitted: boolean;
   totalAnswersCount: number;
   totalPlayersCount: number;
@@ -25,8 +24,7 @@ interface SubmittedStatusProps {
 
 export function SubmittedStatus({
   submittedAnswer,
-  partnerName,
-  partnerAvatar,
+  partner,
   partnerSubmitted,
   totalAnswersCount,
   totalPlayersCount
@@ -50,12 +48,12 @@ export function SubmittedStatus({
           <p className="is-size-5">{submittedAnswer}</p>
         )}
       </div>
-      {partnerName && partnerAvatar && (
+      {partner && partner.avatar && (
         <div className="notification is-info is-light mb-4">
           <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-            <PlayerAvatar avatar={partnerAvatar} size="small" />
+            <PlayerAvatar avatar={partner.avatar} size="small" />
             <span>
-              <strong>{partnerName}:</strong>{' '}
+              <strong>{partner.name}:</strong>{' '}
               <i>{partnerSubmitted ? '✓ Submitted' : 'is thinking...'}</i>
             </span>
           </div>

@@ -321,12 +321,9 @@ export function PlayerPage() {
           <div className="block">
             <GameTitle />
             <PlayerHeader
-              hostName={gameState?.host.name ?? '-'}
-              hostAvatar={gameState?.host.avatar ?? null}
-              playerName={playerInfo.name}
-              playerAvatar={myPlayer?.avatar ?? null}
-              partnerName={myPartner?.name ?? '-'}
-              partnerAvatar={myPartner?.avatar ?? null}
+              host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }}
+              player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
+              partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}
               teamScore={myTeam?.score || 0}
               isCelebrating={isCelebrating}
             />
@@ -349,8 +346,8 @@ export function PlayerPage() {
               onOptionChange={setSelectedOption}
               onSubmit={handleSubmit}
               answerForBoth={gameState?.currentRound?.answerForBoth ?? false}
-              playerName={myPlayer?.name ?? ''}
-              partnerName={myPartner?.name ?? ''}
+              player={{ name: myPlayer?.name ?? '', avatar: myPlayer?.avatar ?? null }}
+              partner={{ name: myPartner?.name ?? '', avatar: myPartner?.avatar ?? null }}
               dualAnswers={dualAnswers}
               onDualAnswerChange={(key, value) => setDualAnswers(prev => ({ ...prev, [key]: value }))}
             />
@@ -359,8 +356,7 @@ export function PlayerPage() {
           {section === 'submitted' && (
             <SubmittedStatus
               submittedAnswer={submittedAnswer}
-              partnerName={myPartner?.name ?? null}
-              partnerAvatar={myPartner?.avatar ?? null}
+              partner={myPartner ? { name: myPartner.name, avatar: myPartner.avatar } : null}
               partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
               totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
               totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
