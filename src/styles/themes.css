@@ -411,6 +411,239 @@
 }
 
 /* ======================
+   NICKELODEON THEME
+   ====================== */
+[data-theme="nick"] {
+  --theme-primary: #FF6600;
+  --theme-primary-dark: #E55C00;
+  --theme-success: #6DBF1A;
+  --theme-info: #6DBF1A;
+  --theme-accent: #6DBF1A;
+  --theme-bg: #FFF8F0;
+  --theme-bg-gradient: linear-gradient(180deg, #FFF8F0 0%, #FFE4CC 100%);
+  --theme-title-color: #FF6600;
+  --theme-box-border: rgba(255, 102, 0, 0.3);
+  --theme-box-shadow: rgba(255, 102, 0, 0.15);
+
+  /* Bulma overrides for nick */
+  --bulma-primary-h: 24deg;
+  --bulma-primary-s: 100%;
+  --bulma-primary-l: 50%;
+  --bulma-success-h: 90deg;
+  --bulma-success-s: 76%;
+  --bulma-success-l: 43%;
+  --bulma-info-h: 90deg;
+  --bulma-info-s: 76%;
+  --bulma-info-l: 43%;
+  --bulma-link-h: 24deg;
+  --bulma-link-s: 100%;
+  --bulma-link-l: 50%;
+}
+
+/* Nick specific overrides */
+[data-theme="nick"] .box {
+  background-color: #fff;
+  border-width: 3px;
+  border-color: #FF6600;
+}
+
+[data-theme="nick"] .subtitle,
+[data-theme="nick"] .label {
+  color: #E55C00;
+}
+
+[data-theme="nick"] .notification.is-primary {
+  background-color: rgba(255, 102, 0, 0.15);
+  color: #E55C00;
+}
+
+[data-theme="nick"] .notification.is-info {
+  background-color: rgba(109, 191, 26, 0.2);
+  color: #4A9A0D;
+}
+
+[data-theme="nick"] .notification.is-light {
+  background-color: #FFF8F0;
+  color: #363636;
+}
+
+[data-theme="nick"] .notification.is-success {
+  background-color: rgba(109, 191, 26, 0.2);
+  color: #4A9A0D;
+}
+
+[data-theme="nick"] .input,
+[data-theme="nick"] .textarea,
+[data-theme="nick"] .select select {
+  background-color: #fff;
+  border-color: #FF6600;
+  border-width: 2px;
+  color: #363636;
+}
+
+[data-theme="nick"] .input:focus,
+[data-theme="nick"] .textarea:focus,
+[data-theme="nick"] .select select:focus {
+  border-color: #6DBF1A;
+  box-shadow: 0 0 0 0.125em rgba(109, 191, 26, 0.25);
+}
+
+[data-theme="nick"] .input::placeholder,
+[data-theme="nick"] .textarea::placeholder {
+  color: #999;
+}
+
+[data-theme="nick"] .button.is-primary {
+  background-color: #FF6600;
+  border-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-primary:hover {
+  background-color: #E55C00;
+  border-color: #E55C00;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-success {
+  background-color: #6DBF1A;
+  border-color: #6DBF1A;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-success:hover {
+  background-color: #5AAD10;
+  border-color: #5AAD10;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-info {
+  background-color: #6DBF1A;
+  border-color: #6DBF1A;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-info:hover {
+  background-color: #5AAD10;
+  border-color: #5AAD10;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-link {
+  background-color: #FF6600;
+  border-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-link:hover {
+  background-color: #E55C00;
+  border-color: #E55C00;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-light {
+  background-color: #FFF8F0;
+  border-color: #FF6600;
+  color: #363636;
+}
+
+[data-theme="nick"] .button.is-light:hover {
+  background-color: #FFE4CC;
+  border-color: #6DBF1A;
+  color: #363636;
+}
+
+[data-theme="nick"] .button.is-link.is-light {
+  background-color: rgba(255, 102, 0, 0.15);
+  border-color: transparent;
+  color: #FF6600;
+}
+
+[data-theme="nick"] .button.is-link.is-light:hover {
+  background-color: rgba(255, 102, 0, 0.25);
+  color: #E55C00;
+}
+
+[data-theme="nick"] .button.is-danger {
+  background-color: #EF4444;
+  border-color: #EF4444;
+  color: #fff;
+}
+
+[data-theme="nick"] .button.is-danger:hover {
+  background-color: #DC2626;
+  border-color: #DC2626;
+  color: #fff;
+}
+
+[data-theme="nick"] .has-text-grey,
+[data-theme="nick"] .has-text-grey-light {
+  color: #666 !important;
+}
+
+[data-theme="nick"] .has-background-white,
+[data-theme="nick"] .has-background-white-ter,
+[data-theme="nick"] .has-background-white-bis,
+[data-theme="nick"] .has-background-light {
+  background-color: #FFF8F0 !important;
+}
+
+[data-theme="nick"] .has-background-link-light,
+[data-theme="nick"] .has-background-primary-light {
+  background-color: rgba(255, 102, 0, 0.1) !important;
+}
+
+[data-theme="nick"] .tag.is-light {
+  background-color: #FFF8F0;
+  color: #363636;
+}
+
+[data-theme="nick"] .tag.is-primary {
+  background-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="nick"] .tag.is-success {
+  background-color: #6DBF1A;
+  color: #fff;
+}
+
+[data-theme="nick"] .tag.is-info {
+  background-color: #6DBF1A;
+  color: #fff;
+}
+
+[data-theme="nick"] .tabs.is-boxed li.is-active a {
+  background-color: #FF6600;
+  border-color: #FF6600;
+}
+
+[data-theme="nick"] .tabs.is-boxed a {
+  background-color: #FFF8F0;
+}
+
+[data-theme="nick"] .tabs.is-boxed a:hover {
+  background-color: rgba(255, 102, 0, 0.15);
+  border-bottom-color: #FF6600;
+}
+
+[data-theme="nick"] .section {
+  background: transparent;
+}
+
+[data-theme="nick"] .progress {
+  background-color: rgba(255, 102, 0, 0.2);
+}
+
+[data-theme="nick"] .progress::-webkit-progress-value {
+  background-color: #6DBF1A;
+}
+
+[data-theme="nick"] .progress::-moz-progress-bar {
+  background-color: #6DBF1A;
+}
+
+/* ======================
    SHARED THEME STYLES
    ====================== */
 
