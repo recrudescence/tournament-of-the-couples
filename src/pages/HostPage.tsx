@@ -12,7 +12,7 @@ import { RoundControls } from '../components/host/RoundControls';
 import { type GameState } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
 import { GameTitle } from '../components/common/GameTitle';
-import { PlayerAvatar } from '../components/common/PlayerAvatar';
+import {HostHeader} from "../components/host/HostHeader.tsx";
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
 
@@ -287,25 +287,7 @@ export function HostPage() {
         <div className="container container-md">
           <div className="block">
             <GameTitle />
-            <div className="box">
-              <div className="columns is-mobile has-text-centered">
-                <div className="column">
-                  <p className="heading">Host</p>
-                  <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-                    {gameState?.host.avatar && <PlayerAvatar avatar={gameState.host.avatar} size="small" />}
-                    <span className="title is-6 has-text-primary mb-0">{playerInfo.name}</span>
-                  </div>
-                </div>
-                <div className="column">
-                  <p className="heading">Round</p>
-                  <p className="title is-6">{gameState?.currentRound?.roundNumber || '-'}</p>
-                </div>
-                <div className="column">
-                  <p className="heading">Status</p>
-                  <p className="title is-6">{gameStatus}</p>
-                </div>
-              </div>
-            </div>
+            <HostHeader gameState={gameState} gameStatus={gameStatus}/>
           </div>
 
         {/* Round Setup Phase */}

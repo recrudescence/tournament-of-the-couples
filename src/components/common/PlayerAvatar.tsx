@@ -9,7 +9,7 @@ const sizeStyles: Record<AvatarSize, { width: string; height: string; fontSize: 
 };
 
 interface PlayerAvatarProps {
-  avatar: PlayerAvatarType;
+  avatar: PlayerAvatarType | undefined | null;
   size?: AvatarSize;
   isBumping?: boolean;
   onClick?: () => void;
@@ -23,6 +23,8 @@ export function PlayerAvatar({
   onClick,
   title,
 }: PlayerAvatarProps) {
+  if (!avatar) return (<></>);
+
   const styles = sizeStyles[size];
   const isClickable = Boolean(onClick);
 
