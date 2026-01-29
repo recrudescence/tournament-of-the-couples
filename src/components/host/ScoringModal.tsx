@@ -3,6 +3,7 @@ import {type CurrentRound, type Player, type Team} from '../../types/game';
 import {TeamName} from '../common/TeamName';
 import {BothPlayersScoring} from './BothPlayersScoring';
 import {SinglePlayerScoring} from './SinglePlayerScoring';
+import {formatResponseTime} from '../../utils/formatUtils';
 
 interface PlayerWithTime {
   player: Player | undefined;
@@ -62,23 +63,40 @@ export function ScoringModal({
     setTimeout(() => onAwardPoints(points), CLOSE_ANIMATION_MS);
   };
 
-  // Calculate if both answers are revealed for showing total time
-  const bothRevealed = player1?.name && player2?.name &&
-    revealedAnswers.has(player1.name) && revealedAnswers.has(player2.name);
+  // Calculate if all answers are revealed for showing total time
+  // For answerForBoth: keys are "responder:subject" (e.g., "Bob:Alice", "Alice:Alice")
+  // For single player: keys are just player names
+  const allRevealed = (() => {
+    if (!player1?.name || !player2?.name) return false;
+
+    if (currentRound.answerForBoth) {
+      // All 4 keys must be revealed
+      return (
+        revealedAnswers.has(`${player2.name}:${player1.name}`) &&
+        revealedAnswers.has(`${player1.name}:${player1.name}`) &&
+        revealedAnswers.has(`${player1.name}:${player2.name}`) &&
+        revealedAnswers.has(`${player2.name}:${player2.name}`)
+      );
+    }
+    return revealedAnswers.has(player1.name) && revealedAnswers.has(player2.name);
+  })();
 
   return (
     <div className={`modal is-active scoring-modal ${isClosing ? 'modal-closing' : 'modal-opening'}`}>
       <div className="modal-background" onClick={handleClose}></div>
       <div className="modal-card" style={{'--spin-deg': `${spinDeg}deg`} as React.CSSProperties}>
-        <header className="modal-card-head">
-          <div className="modal-card-title is-flex is-align-items-center" style={{gap: '0.5rem'}}>
+        <header className="modal-card-head" style={{position: 'relative'}}>
+          <div className="modal-card-title is-flex is-align-items-center" style={{gap: '0.5rem', fontSize: '2rem'}}>
             <TeamName player1={player1} player2={player2} size="large"/>
-            {bothRevealed && totalResponseTime < Infinity && (
-              <span className="has-text-grey is-size-6 ml-2">
-                took {(totalResponseTime / 1000).toFixed(1)} seconds!
-              </span>
-            )}
           </div>
+          {allRevealed && totalResponseTime < Infinity && (
+            <span
+              className="tag is-info is-large time-badge-slam"
+              style={{transform: 'translateX(-50%)'}}
+            >
+              ⏱️ {formatResponseTime(totalResponseTime)}s
+            </span>
+          )}
           <button className="delete" aria-label="close" onClick={handleClose}></button>
         </header>
         <section className="modal-card-body">

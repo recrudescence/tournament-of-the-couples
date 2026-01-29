@@ -70,10 +70,10 @@ describe('BothPlayersScoring', () => {
       />
     );
 
-    // Alice section should show "According to Bob, Alice would say..."
-    expect(screen.getByText('According to Bob, Alice would say...')).toBeInTheDocument();
-    // Bob section should show "According to Alice, Bob would say..."
-    expect(screen.getByText('According to Alice, Bob would say...')).toBeInTheDocument();
+    // Alice section should show "Bob said that Alice would write..."
+    expect(screen.getByText('Bob said that Alice would write...')).toBeInTheDocument();
+    // Bob section should show "Alice said that Bob would write..."
+    expect(screen.getByText('Alice said that Bob would write...')).toBeInTheDocument();
   });
 
   it('shows self answer labels correctly', () => {
@@ -313,7 +313,7 @@ describe('SinglePlayerScoring', () => {
       />
     );
 
-    expect(screen.getByText('(took 3.00s)')).toBeInTheDocument();
+    expect(screen.getByText('(took 3.00 seconds)')).toBeInTheDocument();
   });
 
   it('shows "No answer" for players who did not answer', () => {
@@ -497,7 +497,7 @@ describe('ScoringInterface', () => {
     expect(screen.getByText('Alice & Bob')).toBeInTheDocument();
   });
 
-  it('renders scoring buttons for current team', () => {
+  it('renders scoring buttons in modal after clicking Score', () => {
     render(
       <ScoringInterface
         teams={[mockTeam]}
@@ -516,12 +516,15 @@ describe('ScoringInterface', () => {
       />
     );
 
+    // Click Score button to open modal
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
+
     expect(screen.getByRole('button', { name: /zero pts/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /one point/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /two/i })).toBeInTheDocument();
   });
 
-  it('calls onAwardPoints with 0 when zero button is clicked', () => {
+  it('calls onAwardPoints with 0 when zero button is clicked', async () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -541,11 +544,17 @@ describe('ScoringInterface', () => {
       />
     );
 
+    // Open modal first
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /zero pts/i }));
-    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 0);
+
+    // Wait for modal close animation timeout
+    await vi.waitFor(() => {
+      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 0);
+    });
   });
 
-  it('calls onAwardPoints with 1 when one point button is clicked', () => {
+  it('calls onAwardPoints with 1 when one point button is clicked', async () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -565,11 +574,17 @@ describe('ScoringInterface', () => {
       />
     );
 
+    // Open modal first
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /one point/i }));
-    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 1);
+
+    // Wait for modal close animation timeout
+    await vi.waitFor(() => {
+      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 1);
+    });
   });
 
-  it('calls onAwardPoints with 2 when two points button is clicked', () => {
+  it('calls onAwardPoints with 2 when two points button is clicked', async () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -589,8 +604,14 @@ describe('ScoringInterface', () => {
       />
     );
 
+    // Open modal first
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /two/i }));
-    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 2);
+
+    // Wait for modal close animation timeout
+    await vi.waitFor(() => {
+      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 2);
+    });
   });
 
   it('shows points awarded tag after scoring', () => {
@@ -612,7 +633,7 @@ describe('ScoringInterface', () => {
       />
     );
 
-    expect(screen.getByText(/\+1 point!/)).toBeInTheDocument();
+    expect(screen.getByText('+1 pts')).toBeInTheDocument();
   });
 
   it('shows 0 points message when team awarded zero', () => {
@@ -634,7 +655,7 @@ describe('ScoringInterface', () => {
       />
     );
 
-    expect(screen.getByText(/0 points/)).toBeInTheDocument();
+    expect(screen.getByText('0 pts')).toBeInTheDocument();
   });
 
   it('shows Finish Round button when showFinishBtn is true', () => {
@@ -683,7 +704,7 @@ describe('ScoringInterface', () => {
     expect(onFinishRound).toHaveBeenCalledTimes(1);
   });
 
-  it('shows total response time after both answers revealed', () => {
+  it('shows total response time in modal after both answers revealed', () => {
     render(
       <ScoringInterface
         teams={[mockTeam]}
@@ -702,7 +723,10 @@ describe('ScoringInterface', () => {
       />
     );
 
-    expect(screen.getByText(/took 8.0 seconds!/)).toBeInTheDocument();
+    // Open modal to see the total time
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
+
+    expect(screen.getByText(/8\.0s/)).toBeInTheDocument();
   });
 
   it('renders reopen button for scored teams', () => {
@@ -751,7 +775,7 @@ describe('ScoringInterface', () => {
     expect(onReopenTeamScoring).toHaveBeenCalledWith('team1', 0);
   });
 
-  it('uses BothPlayersScoring when answerForBoth is true', () => {
+  it('uses BothPlayersScoring in modal when answerForBoth is true', () => {
     const dualRound: CurrentRound = {
       ...mockRound,
       answerForBoth: true,
@@ -779,11 +803,14 @@ describe('ScoringInterface', () => {
       />
     );
 
-    // BothPlayersScoring shows labels like "According to X, Y would say..."
-    expect(screen.getByText('According to Bob, Alice would say...')).toBeInTheDocument();
+    // Open modal to see scoring content
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
+
+    // BothPlayersScoring shows labels like "X said that Y would write..."
+    expect(screen.getByText('Bob said that Alice would write...')).toBeInTheDocument();
   });
 
-  it('uses SinglePlayerScoring when answerForBoth is false', () => {
+  it('uses SinglePlayerScoring in modal when answerForBoth is false', () => {
     render(
       <ScoringInterface
         teams={[mockTeam]}
@@ -801,6 +828,9 @@ describe('ScoringInterface', () => {
         onFinishRound={vi.fn()}
       />
     );
+
+    // Open modal to see scoring content
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
 
     // SinglePlayerScoring shows labels like "X said..."
     expect(screen.getByText('Alice said...')).toBeInTheDocument();

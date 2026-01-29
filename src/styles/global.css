@@ -113,6 +113,11 @@ input[type="radio"] {
   max-width: 900px !important;
 }
 
+/* Modal */
+.modal-card {
+  width: 70%;
+  max-height: 90%;
+}
 .modal-background {
   background-color: hsla(0, 0%, 35%, 0.71);
 }
@@ -165,5 +170,27 @@ input[type="radio"] {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* Time badge slam animation */
+.time-badge-slam {
+  animation: slamDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slamDown {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-80px) rotate(-15deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(5px) rotate(3deg);
+  }
+  80% {
+    transform: translateX(-50%) translateY(-3px) rotate(-1deg);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(0deg);
   }
 }

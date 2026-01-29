@@ -1,10 +1,11 @@
-import { useMemo, useState, useRef, useCallback } from 'react';
-import { type Player, type CurrentRound, type Team } from '../../types/game';
-import { findPlayerBySocketId } from '../../utils/playerUtils';
-import { TeamName } from '../common/TeamName';
-import { Question } from '../common/Question.tsx';
-import { ScoringModal } from './ScoringModal';
-import { fireScoringBurst } from '../../hooks/useConfetti';
+import {useCallback, useMemo, useRef, useState} from 'react';
+import {type CurrentRound, type Player, type Team} from '../../types/game';
+import {findPlayerBySocketId} from '../../utils/playerUtils';
+import {TeamName} from '../common/TeamName';
+import {Question} from '../common/Question.tsx';
+import {ScoringModal} from './ScoringModal';
+import {fireScoringBurst} from '../../hooks/useConfetti';
+import {formatResponseTime} from '../../utils/formatUtils';
 
 interface ScoringInterfaceProps {
   teams: Team[];
@@ -136,24 +137,24 @@ export function ScoringInterface({
                 <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
                   {isScored ? (
                     <>
-                      <span
-                        ref={el => { scoreTagRefs.current[team.teamId] = el; }}
-                        className={`tag is-medium ${points > 0 ? 'is-success' : 'is-light'} ${isRecentlyScored ? 'score-tag-pop' : ''}`}
-                      >
-                        {points > 0 ? `+${points} pts` : '0 pts'}
-                      </span>
-                      {totalResponseTime < Infinity && (
-                        <span className="tag is-light is-medium">
-                          {(totalResponseTime / 1000).toFixed(1)}s
-                        </span>
-                      )}
                       <button
-                        className="button is-info is-small"
+                        className="button is-light is-small"
                         onClick={() => onReopenTeamScoring(team.teamId, originalIndex)}
                         title="Re-score"
                       >
                         ↪️
                       </button>
+                      {totalResponseTime < Infinity && (
+                        <span className="tag is-family-secondary is-medium">
+                          ⏱️ {formatResponseTime(totalResponseTime)}s
+                        </span>
+                      )}
+                      <span
+                        ref={el => { scoreTagRefs.current[team.teamId] = el; }}
+                        className={`tag is-medium ${points > 0 ? (points > 1 ? 'is-warning' : 'is-success') : 'is-light'} ${isRecentlyScored ? 'score-tag-pop' : ''}`}
+                      >
+                        {points > 0 ? `+${points} pts` : '0 pts'}
+                      </span>
                     </>
                   ) : (
                     <button

@@ -1,5 +1,6 @@
-import { type Player, type CurrentRound } from '../../types/game';
-import { PlayerAvatar } from '../common/PlayerAvatar';
+import {type CurrentRound, type Player} from '../../types/game';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {formatResponseTime} from '../../utils/formatUtils';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -8,11 +9,6 @@ function parseDualAnswer(text: string): Record<string, string> | null {
   } catch {
     return null;
   }
-}
-
-// Helper to format response time
-function formatResponseTime(ms: number): string {
-  return (ms / 1000).toFixed(2);
 }
 
 interface BothPlayersScoringProps {
@@ -84,36 +80,38 @@ export function BothPlayersScoring({
         return (
           <div key={subject.socketId} className="box has-background-white-ter mb-3">
             {/* Player header */}
-            <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
+            <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem', fontSize: '1.5rem' }}>
               Answers about
               <PlayerAvatar avatar={subject.avatar} size="medium" />
-              <span className="subtitle is-5 mb-0">{subject.name}</span>
+              <span className="subtitle is-4 mb-0">{subject.name}</span>
             </div>
 
             {/* Two answer cards side by side */}
             <div className="columns is-mobile">
               {/* Partner's answer about this player */}
               <div className="column">
-                <div className="box">
+                <div className="box" style={{ minHeight: '10rem' }}>
                   <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
                     <PlayerAvatar avatar={partner.avatar} size="small" />
-                    <span className="is-size-7 has-text-grey">According to {partner.name}, {subject.name} would say...</span>
+                    <span className="is-size-5 has-text-grey">{partner.name} said that {subject.name} would write...</span>
                   </div>
                   {(() => {
                     const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
                     return !partnerRevealed ? (
-                      <button
-                        className="button is-link is-small"
-                        onClick={() => onRevealAnswer(partnerAnswerKey)}
-                      >
-                        Reveal
-                      </button>
+                      <div className="has-text-centered">
+                        <button
+                          className="button is-link is-medium"
+                          onClick={() => onRevealAnswer(partnerAnswerKey)}
+                        >
+                          Reveal
+                        </button>
+                      </div>
                     ) : (
-                      <div className="notification is-light is-small py-2 px-3">
+                      <div className="notification is-light is-size-3 py-2 px-3">
                         <strong>{partnerAnswerText}</strong>
                         {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
-                          <span className="has-text-grey ml-2 is-size-7">
-                            ({formatResponseTime(partnerResponseTime)}s)
+                          <span className="has-text-grey ml-2 is-size-5">
+                            (took {formatResponseTime(partnerResponseTime)} seconds)
                           </span>
                         )}
                       </div>
@@ -124,28 +122,24 @@ export function BothPlayersScoring({
 
               {/* Player's own answer about themselves */}
               <div className="column">
-                <div className="box">
+                <div className="box" style={{ minHeight: '10rem' }}>
                   <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
                     <PlayerAvatar avatar={subject.avatar} size="small" />
-                    <span className="is-size-7 has-text-grey">{subject.name} actually said...</span>
+                    <span className="is-size-5 has-text-grey">{subject.name} actually said...</span>
                   </div>
                   {(() => {
-                    const selfResponseTime = currentRound.answers[subject.name]?.responseTime;
                     return !selfRevealed ? (
-                      <button
-                        className="button is-link is-small"
-                        onClick={() => onRevealAnswer(selfAnswerKey)}
-                      >
-                        Reveal
-                      </button>
+                      <div className="has-text-centered">
+                        <button
+                          className="button is-link is-medium"
+                          onClick={() => onRevealAnswer(selfAnswerKey)}
+                        >
+                          Reveal
+                        </button>
+                      </div>
                     ) : (
-                      <div className="notification is-light is-small py-2 px-3">
+                      <div className="notification is-light is-size-3 py-2 px-3">
                         <strong>{selfAnswerText}</strong>
-                        {selfResponseTime !== undefined && selfResponseTime >= 0 && (
-                          <span className="has-text-grey ml-2 is-size-7">
-                            ({formatResponseTime(selfResponseTime)}s)
-                          </span>
-                        )}
                       </div>
                     );
                   })()}

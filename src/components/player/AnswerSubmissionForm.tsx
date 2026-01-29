@@ -1,5 +1,6 @@
 import { PlayerAvatar } from '../common/PlayerAvatar';
 import type { PlayerIdentity } from '../../types/game';
+import { formatResponseTime } from '../../utils/formatUtils';
 
 interface AnswerSubmissionFormProps {
   roundNumber: number;
@@ -42,7 +43,7 @@ export function AnswerSubmissionForm({
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
         <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
         <div className="tag is-mono is-info is-large">
-          {(responseTime / 1000).toFixed(2)}s
+          {formatResponseTime(responseTime, 2)}s
         </div>
       </div>
 
