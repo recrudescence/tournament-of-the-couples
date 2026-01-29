@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { JoinPage } from '../JoinPage';
 import { LobbyPage } from '../LobbyPage';
@@ -89,10 +89,20 @@ describe('Page Smoke Tests', () => {
     mockMyPlayer = null;
     mockMyTeam = null;
     mockMyPartner = null;
+
+    // Mock fetch for JoinPage API calls
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ games: [] }),
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('JoinPage', () => {
-    it('renders without crashing', () => {
+    it('renders without crashing', async () => {
       render(
         <MemoryRouter>
           <JoinPage />
@@ -100,9 +110,14 @@ describe('Page Smoke Tests', () => {
       );
 
       expect(screen.getByText(/Tournament of the Couples/i)).toBeInTheDocument();
+
+      // Wait for fetch to complete and state to settle
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
 
-    it('shows current rooms section when connected', () => {
+    it('shows current rooms section when connected', async () => {
       render(
         <MemoryRouter>
           <JoinPage />
@@ -111,6 +126,11 @@ describe('Page Smoke Tests', () => {
 
       expect(screen.getByText(/Current Rooms/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Create Room/i })).toBeInTheDocument();
+
+      // Wait for fetch to complete and state to settle
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
   });
 

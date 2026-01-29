@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { findPlayerBySocketId, findPlayerByName } from '../playerUtils';
 import type { Player } from '../../types/game';
 
+const mockAvatar = { color: '#ff0000', emoji: '😀' };
+
 describe('playerUtils', () => {
   const mockPlayers: Player[] = [
     {
@@ -10,6 +12,7 @@ describe('playerUtils', () => {
       connected: true,
       partnerId: 'socket2',
       teamId: 'team1',
+      avatar: mockAvatar,
     },
     {
       socketId: 'socket2',
@@ -17,6 +20,7 @@ describe('playerUtils', () => {
       connected: true,
       partnerId: 'socket1',
       teamId: 'team1',
+      avatar: mockAvatar,
     },
     {
       socketId: 'socket3',
@@ -24,6 +28,7 @@ describe('playerUtils', () => {
       connected: false,
       partnerId: null,
       teamId: null,
+      avatar: mockAvatar,
     },
     {
       socketId: 'socket4',
@@ -31,6 +36,7 @@ describe('playerUtils', () => {
       connected: true,
       partnerId: null,
       teamId: null,
+      avatar: mockAvatar,
     },
   ];
 
@@ -91,6 +97,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
       ];
 
@@ -149,6 +156,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
         {
           socketId: 'socket6',
@@ -156,6 +164,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
       ];
 
@@ -174,6 +183,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
         {
           socketId: 'socket8',
@@ -181,6 +191,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
       ];
 
@@ -203,6 +214,7 @@ describe('playerUtils', () => {
           connected: true,
           partnerId: null,
           teamId: null,
+          avatar: mockAvatar,
         },
       ];
 
@@ -229,6 +241,7 @@ describe('playerUtils', () => {
         connected: true,
         partnerId: null,
         teamId: null,
+        avatar: mockAvatar,
       }));
 
       const result1 = findPlayerBySocketId(largePlayers, 'socket999');

@@ -1,6 +1,6 @@
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import type { PlayerIdentity } from '../../types/game';
-import { formatResponseTime } from '../../utils/formatUtils';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import type {PlayerIdentity} from '../../types/game';
+import {formatResponseTime} from '../../utils/formatUtils';
 
 interface AnswerSubmissionFormProps {
   roundNumber: number;
@@ -67,7 +67,7 @@ export function AnswerSubmissionForm({
                     <textarea
                       className="textarea"
                       rows={2}
-                      placeholder={`What would ${player.name} say?`}
+                      placeholder={`Your answer goes here!`}
                       value={dualAnswers.self}
                       onChange={(e) => onDualAnswerChange('self', e.target.value)}
                       required

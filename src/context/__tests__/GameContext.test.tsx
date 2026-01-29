@@ -4,6 +4,8 @@ import { GameProvider, useGameContext } from '../GameContext';
 import type { GameState, Player, Team } from '../../types/game';
 import { GameStatus, RoundPhase } from '../../types/game';
 
+const mockAvatar = { color: '#ff0000', emoji: '😀' };
+
 // Wrapper component for testing
 function wrapper({ children }: { children: React.ReactNode }) {
   return <GameProvider>{children}</GameProvider>;
@@ -15,7 +17,8 @@ describe('GameContext', () => {
     name: 'Alice',
     connected: true,
     partnerId: 'socket2',
-    teamId: 'team1'
+    teamId: 'team1',
+    avatar: mockAvatar
   };
 
   const mockPlayer2: Player = {
@@ -23,7 +26,8 @@ describe('GameContext', () => {
     name: 'Bob',
     connected: true,
     partnerId: 'socket1',
-    teamId: 'team1'
+    teamId: 'team1',
+    avatar: mockAvatar
   };
 
   const mockTeam: Team = {
@@ -36,11 +40,12 @@ describe('GameContext', () => {
   const mockGameState: GameState = {
     roomCode: 'test',
     gameId: 'game1',
-    host: { socketId: 'host1', name: 'Host' },
+    host: { socketId: 'host1', name: 'Host', avatar: mockAvatar },
     players: [mockPlayer1, mockPlayer2],
     teams: [mockTeam],
     status: GameStatus.LOBBY,
-    currentRound: null
+    currentRound: null,
+    teamTotalResponseTimes: {}
   };
 
   describe('Initial State', () => {

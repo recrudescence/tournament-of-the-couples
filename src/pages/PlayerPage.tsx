@@ -1,19 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
-import { useSocket } from '../hooks/useSocket';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useGameContext } from '../context/GameContext';
-import { useGameError } from '../hooks/useGameError';
-import { useWakeLock } from '../hooks/useWakeLock';
-import { useTimer } from '../hooks/useTimer';
-import { ExitButton } from '../components/common/ExitButton';
-import { PlayerHeader } from '../components/player/PlayerHeader';
-import { WaitingStatus } from '../components/player/WaitingStatus';
-import { AnswerSubmissionForm } from '../components/player/AnswerSubmissionForm';
-import { SubmittedStatus } from '../components/player/SubmittedStatus';
-import { ScoringStatus } from '../components/player/ScoringStatus';
-import { transformBinaryOptions } from '../utils/playerUtils';
-import { GameTitle } from '../components/common/GameTitle';
-import { TeamScoreboard } from '../components/host/TeamScoreboard';
+import {useEffect, useRef, useState} from 'react';
+import {useSocket} from '../hooks/useSocket';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useGameContext} from '../context/GameContext';
+import {useGameError} from '../hooks/useGameError';
+import {useWakeLock} from '../hooks/useWakeLock';
+import {useTimer} from '../hooks/useTimer';
+import {ExitButton} from '../components/common/ExitButton';
+import {PlayerHeader} from '../components/player/PlayerHeader';
+import {WaitingStatus} from '../components/player/WaitingStatus';
+import {AnswerSubmissionForm} from '../components/player/AnswerSubmissionForm';
+import {SubmittedStatus} from '../components/player/SubmittedStatus';
+import {ScoringStatus} from '../components/player/ScoringStatus';
+import {transformBinaryOptions} from '../utils/playerUtils';
+import {GameTitle} from '../components/common/GameTitle';
+import {TeamScoreboard} from '../components/host/TeamScoreboard';
 
 type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
 
@@ -329,8 +329,10 @@ export function PlayerPage() {
             />
           </div>
 
+          {(section === 'scoring' || section === 'waiting') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
+
           {section === 'waiting' && (
-            <WaitingStatus hostName={gameState?.host.name ?? 'host'} />
+            <WaitingStatus host={gameState?.host} />
           )}
 
           {section === 'answering' && (
@@ -353,7 +355,7 @@ export function PlayerPage() {
             />
           )}
 
-          {section === 'submitted' && (
+          {(section === 'submitted' || section === 'scoring') && (
             <SubmittedStatus
               submittedAnswer={submittedAnswer}
               partner={myPartner ? { name: myPartner.name, avatar: myPartner.avatar } : null}
@@ -362,8 +364,6 @@ export function PlayerPage() {
               totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
             />
           )}
-
-          {section === 'scoring' && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
           <TeamScoreboard teams={gameState?.teams || []} players={gameState?.players || []} />
 

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QuestionForm } from '../host/QuestionForm';
 import userEvent from '@testing-library/user-event';
@@ -176,7 +176,7 @@ describe('QuestionForm', () => {
 
       // Remove option
       const removeButtons = screen.getAllByRole('button', { name: /Remove/i });
-      await user.click(removeButtons[2]); // Remove option 3
+      await user.click(removeButtons[2]!); // Remove option 3
 
       expect(screen.queryByPlaceholderText(/Option 3/i)).not.toBeInTheDocument();
     });

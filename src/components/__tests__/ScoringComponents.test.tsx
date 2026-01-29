@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BothPlayersScoring } from '../host/BothPlayersScoring';
 import { SinglePlayerScoring } from '../host/SinglePlayerScoring';
 import { ScoringInterface } from '../host/ScoringInterface';
@@ -121,7 +121,7 @@ describe('BothPlayersScoring', () => {
 
     // Click first reveal button (Bob's answer about Alice)
     const revealButtons = screen.getAllByRole('button', { name: 'Reveal' });
-    fireEvent.click(revealButtons[0]);
+    fireEvent.click(revealButtons[0]!);
 
     expect(onRevealAnswer).toHaveBeenCalledWith('Bob:Alice');
   });
@@ -140,7 +140,7 @@ describe('BothPlayersScoring', () => {
 
     // Click second reveal button (Alice's self answer)
     const revealButtons = screen.getAllByRole('button', { name: 'Reveal' });
-    fireEvent.click(revealButtons[1]);
+    fireEvent.click(revealButtons[1]!);
 
     expect(onRevealAnswer).toHaveBeenCalledWith('Alice:Alice');
   });
@@ -281,7 +281,7 @@ describe('SinglePlayerScoring', () => {
     );
 
     const revealButtons = screen.getAllByRole('button', { name: 'Reveal Answer' });
-    fireEvent.click(revealButtons[0]);
+    fireEvent.click(revealButtons[0]!);
 
     expect(onRevealAnswer).toHaveBeenCalledWith('Alice');
   });
@@ -361,6 +361,15 @@ describe('SinglePlayerScoring', () => {
 });
 
 describe('ScoringInterface', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
   const mockAvatar1 = { color: '#ff0000', emoji: '😀' };
   const mockAvatar2 = { color: '#0000ff', emoji: '🎉' };
 
@@ -524,7 +533,7 @@ describe('ScoringInterface', () => {
     expect(screen.getByRole('button', { name: /two/i })).toBeInTheDocument();
   });
 
-  it('calls onAwardPoints with 0 when zero button is clicked', async () => {
+  it('calls onAwardPoints with 0 when zero button is clicked', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -548,13 +557,15 @@ describe('ScoringInterface', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /zero pts/i }));
 
-    // Wait for modal close animation timeout
-    await vi.waitFor(() => {
-      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 0);
+    // Run timers to trigger the delayed onAwardPoints callback
+    act(() => {
+      vi.runAllTimers();
     });
+
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 0);
   });
 
-  it('calls onAwardPoints with 1 when one point button is clicked', async () => {
+  it('calls onAwardPoints with 1 when one point button is clicked', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -578,13 +589,15 @@ describe('ScoringInterface', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /one point/i }));
 
-    // Wait for modal close animation timeout
-    await vi.waitFor(() => {
-      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 1);
+    // Run timers to trigger the delayed onAwardPoints callback
+    act(() => {
+      vi.runAllTimers();
     });
+
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 1);
   });
 
-  it('calls onAwardPoints with 2 when two points button is clicked', async () => {
+  it('calls onAwardPoints with 2 when two points button is clicked', () => {
     const onAwardPoints = vi.fn();
     render(
       <ScoringInterface
@@ -608,10 +621,12 @@ describe('ScoringInterface', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Score' }));
     fireEvent.click(screen.getByRole('button', { name: /two/i }));
 
-    // Wait for modal close animation timeout
-    await vi.waitFor(() => {
-      expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 2);
+    // Run timers to trigger the delayed onAwardPoints callback
+    act(() => {
+      vi.runAllTimers();
     });
+
+    expect(onAwardPoints).toHaveBeenCalledWith('team1', 0, 2);
   });
 
   it('shows points awarded tag after scoring', () => {

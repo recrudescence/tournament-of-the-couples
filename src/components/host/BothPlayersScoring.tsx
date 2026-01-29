@@ -1,6 +1,6 @@
-import {type CurrentRound, type Player} from '../../types/game';
-import {PlayerAvatar} from '../common/PlayerAvatar';
-import {formatResponseTime} from '../../utils/formatUtils';
+import type { CurrentRound, Player } from '../../types/game';
+import { PlayerAvatar } from '../common/PlayerAvatar';
+import { formatResponseTime } from '../../utils/formatUtils';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {

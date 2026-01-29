@@ -306,8 +306,8 @@ describe('Component Smoke Tests', () => {
 
       it('shows disconnected status for disconnected players', () => {
         const playersWithDisconnected: Player[] = [
-          { ...mockPlayers[0], connected: false },
-          mockPlayers[1]
+          { ...mockPlayers[0]!, connected: false },
+          mockPlayers[1]!
         ];
 
         render(

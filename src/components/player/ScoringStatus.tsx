@@ -8,8 +8,8 @@ export function ScoringStatus({ pointsAwarded }: ScoringStatusProps) {
     if (pointsAwarded > 0) {
       return (
         <div className="box has-text-centered">
-          <h2 className="title is-3 has-text-success mb-3">You got points! 🎉</h2>
-          <p className="subtitle is-4">+{pointsAwarded} {pointsAwarded === 1 ? 'point' : 'points'} received</p>
+          <h2 className="title is-3 has-text-success mb-3">o nice you got points! 🎉</h2>
+          <p className="subtitle is-4">+{pointsAwarded} {pointsAwarded === 1 ? 'point' : 'points'} received that round</p>
         </div>
       );
     } else {
@@ -24,7 +24,7 @@ export function ScoringStatus({ pointsAwarded }: ScoringStatusProps) {
 
   // Default: waiting for host to score
   return (
-    <div className="box has-text-centered">
+    <div className="box has-text-centered has-background-warning-soft">
       <h2 className="subtitle is-4 mb-3">All answers are in!</h2>
       <p className="has-text-grey">The host is reviewing answers and awarding points on the big screen. Look that way!</p>
     </div>

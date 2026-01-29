@@ -1,5 +1,8 @@
 const roomCodeGenerator = require('./roomCodeGenerator');
 
+// Logging helper - silent in test environment
+const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
+
 // In-memory game states - Map of roomCode -> gameState
 const gameStates = new Map();
 
@@ -48,7 +51,7 @@ function initializeGame(roomCode) {
   };
 
   gameStates.set(roomCode, gameState);
-  console.log('Game initialized:', roomCode);
+  log('Game initialized:', roomCode);
   return gameState;
 }
 
@@ -61,7 +64,7 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
 
   if (isHost) {
     gameState.host = { socketId, name, connected: true, avatar: generateRandomAvatar() };
-    console.log(`Host added: ${name}`);
+    log(`Host added: ${name}`);
   } else {
     // Check if player name matches host name
     if (gameState.host && gameState.host.name === name) {
@@ -82,7 +85,7 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
       connected: true,
       avatar: generateRandomAvatar()
     });
-    console.log(`Player added: ${name}`);
+    log(`Player added: ${name}`);
   }
 }
 
@@ -102,7 +105,7 @@ function removePlayer(roomCode, socketId) {
   }
 
   gameState.players.splice(playerIndex, 1);
-  console.log(`Player removed: ${player.name}`);
+  log(`Player removed: ${player.name}`);
 }
 
 // Mark player as disconnected (during game)
@@ -113,7 +116,7 @@ function disconnectPlayer(roomCode, socketId) {
   const player = gameState.players.find(p => p.socketId === socketId);
   if (player) {
     player.connected = false;
-    console.log(`<${player.name}> disconnected`);
+    log(`<${player.name}> disconnected`);
   }
 }
 
@@ -156,7 +159,7 @@ function reconnectPlayer(roomCode, name, newSocketId) {
 
   // No need to migrate answers anymore - they're keyed by player name which doesn't change!
 
-  console.log(`<${name}> rejoined`);
+  log(`<${name}> rejoined`);
   return player;
 }
 
@@ -175,7 +178,7 @@ function disconnectHost(roomCode) {
   if (!gameState || !gameState.host) return;
 
   gameState.host.connected = false;
-  console.log(`<${gameState.host.name}> (host) disconnected`);
+  log(`<${gameState.host.name}> (host) disconnected`);
 }
 
 // Reconnect the host
@@ -187,7 +190,7 @@ function reconnectHost(roomCode, newSocketId) {
 
   gameState.host.socketId = newSocketId;
   gameState.host.connected = true;
-  console.log(`<${gameState.host.name}> (host) reconnected`);
+  log(`<${gameState.host.name}> (host) reconnected`);
 }
 
 // Check if new players can join
@@ -227,7 +230,7 @@ function pairPlayers(roomCode, socketId1, socketId2) {
     score: 0
   });
 
-  console.log(`Players paired: ${player1.name} & ${player2.name}`);
+  log(`Players paired: ${player1.name} & ${player2.name}`);
 }
 
 // Unpair players (break up a team)
@@ -255,7 +258,7 @@ function unpairPlayers(roomCode, socketId) {
     gameState.teams.splice(teamIndex, 1);
   }
 
-  console.log(`Players unpaired: ${player.name}${partner ? ' & ' + partner.name : ''}`);
+  log(`Players unpaired: ${player.name}${partner ? ' & ' + partner.name : ''}`);
 }
 
 // Start the game (move from lobby to playing)
@@ -274,7 +277,7 @@ function startGame(roomCode) {
   }
 
   gameState.status = 'playing';
-  console.log('Game started');
+  log('Game started');
 }
 
 // End the game
@@ -293,7 +296,7 @@ function endGame(roomCode) {
   }
 
   gameState.status = 'ended';
-  console.log('Game ended');
+  log('Game ended');
 }
 
 // Start a new round
@@ -339,7 +342,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     createdAt: Date.now() // Timestamp for response time calculation (survives reconnection)
   };
 
-  console.log(`Round ${roundNumber} started: ${question} (${variant})`);
+  log(`Round ${roundNumber} started: ${question} (${variant})`);
 }
 
 // Submit an answer
@@ -383,7 +386,7 @@ function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
     gameState.currentRound.submittedInCurrentPhase.push(player.name);
   }
 
-  console.log(`Answer submitted by ${player.name} (${responseTime}ms)`);
+  log(`Answer submitted by ${player.name} (${responseTime}ms)`);
 }
 
 // Check if round is complete (all players answered)
@@ -410,7 +413,7 @@ function completeRound(roomCode) {
 
   gameState.currentRound.status = 'complete';
   gameState.status = 'scoring';
-  console.log(`Round ${gameState.currentRound.roundNumber} complete`);
+  log(`Round ${gameState.currentRound.roundNumber} complete`);
 }
 
 // Update team score
@@ -426,7 +429,7 @@ function updateTeamScore(roomCode, teamId, points) {
   }
 
   team.score += points;
-  console.log(`Team ${teamId} score updated: +${points} (total: ${team.score})`);
+  log(`Team ${teamId} score updated: +${points} (total: ${team.score})`);
 }
 
 // Get current game state
@@ -498,7 +501,7 @@ function returnToAnswering(roomCode) {
   // (but keep their previous answers for pre-filling)
   gameState.currentRound.submittedInCurrentPhase = [];
 
-  console.log('Returned to answering phase - submission tracking reset');
+  log('Returned to answering phase - submission tracking reset');
 }
 
 // Room management functions
@@ -509,7 +512,7 @@ function hasRoom(roomCode) {
 function deleteRoom(roomCode) {
   gameStates.delete(roomCode);
   roomCodeGenerator.markRoomInactive(roomCode);
-  console.log(`Room deleted: ${roomCode}`);
+  log(`Room deleted: ${roomCode}`);
 }
 
 function getRoomCodes() {
