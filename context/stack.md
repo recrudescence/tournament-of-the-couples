@@ -5,6 +5,8 @@
 - **Frontend:** React 19, TypeScript, Vite
 - **State Management:** React Context API + useReducer
 - **Routing:** React Router 7
+- **Styling:** Bulma CSS framework
+- **Animation:** Framer Motion (3D transforms, spring physics)
 
 ## Commands
 

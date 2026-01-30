@@ -3,6 +3,7 @@ import {type CurrentRound, type Player} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {formatResponseTime} from '../../utils/formatUtils';
 import {FlipCard} from './FlipCard';
+import {slideInLeft, slideInRight, springDefault, staggerDelay, buttonHover, buttonTap} from '../../styles/motion';
 
 interface PlayerWithTime {
   player: Player | undefined;
@@ -35,14 +36,10 @@ export function SinglePlayerScoring({
           <motion.div
             key={player.socketId}
             className="column"
-            initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 25,
-              delay: index * 0.1,
-            }}
+            variants={index === 0 ? slideInLeft : slideInRight}
+            initial="hidden"
+            animate="visible"
+            transition={{ ...springDefault, delay: staggerDelay(index) }}
           >
             <div className="has-background-white-ter" style={{ borderRadius: '6px', padding: '0.75rem' }}>
               <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
@@ -56,8 +53,8 @@ export function SinglePlayerScoring({
                   <div className="has-text-centered">
                     <motion.button
                       className="button is-link is-medium"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={buttonHover}
+                      whileTap={buttonTap}
                     >
                       Reveal Answer
                     </motion.button>

@@ -3,6 +3,7 @@ import type { CurrentRound, Player } from '../../types/game';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 import { formatResponseTime } from '../../utils/formatUtils';
 import { FlipCard } from './FlipCard';
+import { slideInUp, slideInLeft, slideInRight, springDefault, staggerDelay, buttonHover, buttonTap } from '../../styles/motion';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -79,19 +80,16 @@ export function BothPlayersScoring({
         const partnerRevealed = revealedAnswers.has(partnerAnswerKey);
         const selfRevealed = revealedAnswers.has(selfAnswerKey);
         const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
+        const baseDelay = staggerDelay(sectionIndex, 0, 0.15);
 
         return (
           <motion.div
             key={subject.socketId}
             className="box has-background-white-ter mb-3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 25,
-              delay: sectionIndex * 0.15,
-            }}
+            variants={slideInUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ ...springDefault, delay: baseDelay }}
           >
             {/* Player header */}
             <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem', fontSize: '1.5rem' }}>
@@ -105,9 +103,10 @@ export function BothPlayersScoring({
               {/* Partner's answer about this player */}
               <motion.div
                 className="column"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: sectionIndex * 0.15 + 0.1 }}
+                variants={slideInLeft}
+                initial="hidden"
+                animate="visible"
+                transition={{ ...springDefault, delay: baseDelay + 0.1 }}
               >
                 <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
                   <PlayerAvatar avatar={partner.avatar} size="small" />
@@ -120,8 +119,8 @@ export function BothPlayersScoring({
                     <div className="has-text-centered">
                       <motion.button
                         className="button is-link is-medium"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={buttonHover}
+                        whileTap={buttonTap}
                       >
                         Reveal
                       </motion.button>
@@ -143,9 +142,10 @@ export function BothPlayersScoring({
               {/* Player's own answer about themselves */}
               <motion.div
                 className="column"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: sectionIndex * 0.15 + 0.15 }}
+                variants={slideInRight}
+                initial="hidden"
+                animate="visible"
+                transition={{ ...springDefault, delay: baseDelay + 0.15 }}
               >
                 <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
                   <PlayerAvatar avatar={subject.avatar} size="small" />
@@ -158,8 +158,8 @@ export function BothPlayersScoring({
                     <div className="has-text-centered">
                       <motion.button
                         className="button is-link is-medium"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={buttonHover}
+                        whileTap={buttonTap}
                       >
                         Reveal
                       </motion.button>

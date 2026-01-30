@@ -5,6 +5,19 @@ import {TeamName} from '../common/TeamName';
 import {BothPlayersScoring} from './BothPlayersScoring';
 import {SinglePlayerScoring} from './SinglePlayerScoring';
 import {formatResponseTime} from '../../utils/formatUtils';
+import {
+  modalBackdrop,
+  slideInLeft,
+  fadeIn,
+  popInSpin,
+  slideInUpDeep,
+  springDefault,
+  springBouncy,
+  springStiff,
+  staggerDelay,
+  liftHover,
+  liftTap,
+} from '../../styles/motion';
 
 interface PlayerWithTime {
   player: Player | undefined;
@@ -96,9 +109,10 @@ export function ScoringModal({
           {/* Backdrop */}
           <motion.div
             className="modal-background"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={modalBackdrop}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             transition={{ duration: 0.2 }}
             onClick={handleClose}
           />
@@ -114,32 +128,18 @@ export function ScoringModal({
               y: -100,
               opacity: 0,
             }}
-            animate={{
-              scale: 1,
-              rotateX: 0,
-              rotateZ: 0,
-              y: 0,
-              opacity: 1,
-            }}
-            exit={{
-              scale: 0.5,
-              rotateX: 20,
-              y: 100,
-              opacity: 0,
-            }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 25,
-            }}
+            animate={{ scale: 1, rotateX: 0, rotateZ: 0, y: 0, opacity: 1 }}
+            exit={{ scale: 0.5, rotateX: 20, y: 100, opacity: 0 }}
+            transition={springDefault}
           >
             <header className="modal-card-head" style={{ position: 'relative' }}>
               <motion.div
                 className="modal-card-title is-flex is-align-items-center"
                 style={{ gap: '0.5rem', fontSize: '2rem' }}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.15 }}
+                variants={slideInLeft}
+                initial="hidden"
+                animate="visible"
+                transition={{ ...springDefault, delay: 0.15 }}
               >
                 <TeamName player1={player1} player2={player2} size="large" />
               </motion.div>
@@ -148,14 +148,11 @@ export function ScoringModal({
                   <motion.span
                     className="tag is-info is-large mr-5"
                     style={{ transform: 'translateX(-50%)' }}
-                    initial={{ scale: 0, rotate: -180, y: -50 }}
-                    animate={{ scale: 1, rotate: 0, y: 0 }}
-                    exit={{ scale: 0, y: -30 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 400,
-                      damping: 15,
-                    }}
+                    variants={popInSpin}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={springBouncy}
                   >
                     ⏱️ {formatResponseTime(totalResponseTime)}s
                   </motion.span>
@@ -166,8 +163,9 @@ export function ScoringModal({
 
             <motion.section
               className="modal-card-body"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              variants={fadeIn}
+              initial="hidden"
+              animate="visible"
               transition={{ delay: 0.1 }}
             >
               {currentRound.answerForBoth ? (
@@ -199,23 +197,12 @@ export function ScoringModal({
                   key={points}
                   className={`button is-large ${className}`}
                   onClick={() => handleAwardPoints(points)}
-                  initial={{ y: 50, opacity: 0, rotateX: -30 }}
-                  animate={{ y: 0, opacity: 1, rotateX: 0 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 400,
-                    damping: 20,
-                    delay: 0.2 + index * 0.08,
-                  }}
-                  whileHover={{
-                    scale: 1.08,
-                    y: -4,
-                    boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
-                  }}
-                  whileTap={{
-                    scale: 0.92,
-                    y: 2,
-                  }}
+                  variants={slideInUpDeep}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ ...springStiff, delay: staggerDelay(index, 0.2, 0.08) }}
+                  whileHover={liftHover}
+                  whileTap={liftTap}
                 >
                   {label}
                 </motion.button>

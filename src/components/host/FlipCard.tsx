@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { flipCard, springDefault } from '../../styles/motion';
 
 interface FlipCardProps {
   isRevealed: boolean;
@@ -22,12 +23,7 @@ export function FlipCard({
   minHeight = '10rem',
 }: FlipCardProps) {
   return (
-    <div
-      style={{
-        perspective: 1000,
-        minHeight,
-      }}
-    >
+    <div style={{ perspective: 1000, minHeight }}>
       <motion.div
         style={{
           position: 'relative',
@@ -36,13 +32,10 @@ export function FlipCard({
           minHeight,
           transformStyle: 'preserve-3d',
         }}
+        variants={flipCard}
         initial={false}
-        animate={{ rotateY: isRevealed ? 180 : 0 }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 25,
-        }}
+        animate={isRevealed ? 'back' : 'front'}
+        transition={springDefault}
       >
         {/* Front face - Reveal button */}
         <div

@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Context API + useReducer for state management
 - **Derived state pattern**: UI state derived from `gameState` where possible (not duplicated)
 - **Bulma CSS framework** for styling (imported in `main.tsx`)
+- **Framer Motion** for animations (3D transforms, spring physics, enter/exit transitions)
 - **Wake Lock API** to prevent mobile screen sleep during gameplay
 
 **Backend:** Node.js, Express 5, Socket.io (unchanged)
@@ -39,6 +40,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **QuestionForm**: Question input with variant selection (open_ended, multiple_choice, binary)
   - **AnsweringPhase**: Answer submission status display with player avatars during answering phase. Shows notification and buttons when `allAnswersIn` is true.
   - **ScoringInterface**: Team-by-team answer review and scoring interface with player avatars
+  - **ScoringModal**: Animated modal for scoring individual teams with 3D entrance/exit
+  - **FlipCard**: Reusable 3D flip card component for revealing answers
+  - **SinglePlayerScoring** / **BothPlayersScoring**: Answer display variants inside ScoringModal
   - **TeamScoreboard**: Team list with scores and player avatars
   - **RoundControls**: End game button
 
@@ -85,6 +89,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - FinishGamePage: ✅ Fully migrated to Bulma (replaced all inline styles)
 - PlayerPage: ✅ Fully migrated to Bulma (responsive columns, answer forms)
 - HostPage: ✅ Fully migrated to Bulma (tabs, forms, team cards, scoreboard)
+
+## Animation Conventions
+
+**Framer Motion** (installed January 2026)
+- All animation definitions are centralized in `/src/styles/motion.ts`
+- Use named variants and shared transitions instead of inline animation props
+
+**Shared Transitions (spring configs):**
+- `springDefault` - stiffness: 300, damping: 25 (most common)
+- `springBouncy` - stiffness: 400, damping: 15 (badges, emojis)
+- `springStiff` - stiffness: 400, damping: 20 (buttons)
+- `springGentle` - stiffness: 200, damping: 20 (cards)
+
+**Shared Variants (named animation states):**
+- `fadeIn`, `slideInLeft`, `slideInRight`, `slideInUp`, `slideInUpDeep`
+- `flipInLeft`, `flipInRight` - 3D card flip entrances
+- `cardEntrance`, `scalePop`, `emojiSpin`, `popInSpin`
+- `modalBackdrop`, `flipCard`
+
+**Interaction Presets (hover/tap):**
+- `buttonHover`/`buttonTap` - subtle scale (1.05/0.95)
+- `liftHover`/`liftTap` - scale + y offset + shadow
+- `cardHover`/`cardTap` - 3D tilt effect
+- `nervousHover` - shake animation for destructive buttons
+
+**Helper Functions:**
+- `staggerDelay(index, base, increment)` - calculate staggered delays
+
+**Usage Pattern:**
+```tsx
+import { slideInLeft, springDefault, staggerDelay, buttonHover, buttonTap } from '../../styles/motion';
+
+<motion.div
+  variants={slideInLeft}
+  initial="hidden"
+  animate="visible"
+  transition={{ ...springDefault, delay: staggerDelay(index) }}
+  whileHover={buttonHover}
+  whileTap={buttonTap}
+>
+```
+
+**Animated Components:**
+- `TeamCard` - 3D flip entrance, card hover effects
+- `ScoringModal` - 3D modal entrance/exit with AnimatePresence
+- `FlipCard` - Reusable 3D card flip for answer reveals
+- `SinglePlayerScoring` / `BothPlayersScoring` - Staggered slide-in animations
 
 ## Important Configuration Notes
 
