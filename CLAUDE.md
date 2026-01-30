@@ -2,13 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current Architecture (December 2025)
+## Current Architecture (January 2026)
 
 **Frontend:** React 19 + TypeScript SPA built with Vite
 - All client code is in `/src` (not `/public/js`)
 - Type-safe Socket.io integration via custom hooks
 - React Router for client-side navigation
 - Context API + useReducer for state management
+- **Derived state pattern**: UI state derived from `gameState` where possible (not duplicated)
 - **Bulma CSS framework** for styling (imported in `main.tsx`)
 - **Wake Lock API** to prevent mobile screen sleep during gameplay
 
@@ -34,8 +35,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **TeamCard**: Paired team display showing two player mini-cards side-by-side with avatars, break-up/kick actions. Avatar tap-to-randomize supported.
 
 - `/src/components/host/` - Host-specific components (used by HostPage)
+  - **HostHeader**: Round number, game status, host info display
   - **QuestionForm**: Question input with variant selection (open_ended, multiple_choice, binary)
-  - **AnsweringPhase**: Answer submission status display with player avatars during answering phase
+  - **AnsweringPhase**: Answer submission status display with player avatars during answering phase. Shows notification and buttons when `allAnswersIn` is true.
   - **ScoringInterface**: Team-by-team answer review and scoring interface with player avatars
   - **TeamScoreboard**: Team list with scores and player avatars
   - **RoundControls**: End game button
@@ -59,6 +61,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - All major pages (HostPage, PlayerPage, LobbyPage) are kept under 400 lines
 - Pages coordinate components and manage socket event subscriptions
 - Business logic is delegated to custom hooks and components
+- **Derived state pattern**: PlayerPage and HostPage derive UI phase/status from `gameState` rather than duplicating state. Socket handlers primarily dispatch state updates; UI reacts to derived values.
 
 ## Styling Conventions
 

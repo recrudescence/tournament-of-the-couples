@@ -85,6 +85,48 @@ Local component state for UI-only concerns:
 const [isExpanded, setIsExpanded] = useState(false);
 ```
 
+### Derived State Pattern (January 2026)
+
+Prefer deriving UI state from `gameState` over duplicating it in local state. This keeps a single source of truth and simplifies socket handlers.
+
+**PlayerPage example** - phase is derived, not stored:
+```typescript
+// Derive phase from gameState (single source of truth)
+const phase = derivePlayerPhase(gameState, playerInfo?.name);
+const currentRound = gameState?.currentRound;
+const variant = currentRound?.variant ?? 'open_ended';
+const hasSubmitted = currentRound?.submittedInCurrentPhase.includes(playerInfo.name) ?? false;
+const submittedAnswer = currentRound?.answers?.[playerInfo.name]?.text ?? '';
+
+// Socket handlers just update gameState - UI reacts via derivation
+on('roundStarted', ({ gameState: state }) => {
+  dispatch({ type: 'SET_GAME_STATE', payload: state });
+  // No need to setPhase, setVariant, etc. - derived automatically
+});
+```
+
+**HostPage example** - allAnswersIn and gameStatus are derived:
+```typescript
+// Derived values
+const playerCount = gameState?.players.length ?? 0;
+const submittedCount = gameState?.currentRound?.submittedInCurrentPhase.length ?? 0;
+const allAnswersIn = phase === 'answering' && playerCount > 0 && submittedCount >= playerCount;
+
+const gameStatus = useMemo(() => {
+  if (phase === 'roundSetup') return 'Setting Up';
+  if (phase === 'scoring') return 'Scoring';
+  if (allAnswersIn) return 'All Answers In';
+  return 'Answering';
+}, [phase, allAnswersIn]);
+```
+
+**What to derive vs. keep local:**
+- **Derive**: Values that mirror server state (phase, submission status, round info)
+- **Keep local**: Form input state, animation flags, UI-only counters (currentTeamIndex)
+
+**GameContext actions for edge cases:**
+- `SET_PLAYER_CONNECTED`: Update a player's connected status without needing the full gameState (for `playerDisconnected` events that don't include gameState)
+
 ### Testing Reconnection
 
 Players can reconnect mid-game by name. Key areas to verify:

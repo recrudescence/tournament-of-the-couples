@@ -119,16 +119,18 @@ src/
    - No route guards (GamePage handles this)
    - Three-phase flow: Round Setup → Answering → Scoring
    - Uses conditional rendering for phase management
+   - **Derived state**: `allAnswersIn` and `gameStatus` computed from gameState, not stored
    - Manages question entry, answer tracking, point awarding, return to answering phase, ending game
 
 5. **PlayerPage** (`src/pages/PlayerPage.tsx`)
    - Player game interface (rendered by GamePage)
    - No route guards (GamePage handles this)
-   - Four-section flow: Waiting → Answering → Submitted → Scoring
-   - Uses conditional rendering for section management
+   - Five-phase flow: Waiting → Answering → Submitted → Scoring → Ended
+   - **Derived state**: Phase derived from `gameState.status`, `currentRound`, and submission status via `derivePlayerPhase()` function
+   - Socket handlers primarily dispatch state updates; UI reacts to derived values
    - Players see partner name and team score
-   - Auto-advances through phases based on server events
-   - Properly restores submission state on reconnection
+   - Auto-advances through phases based on gameState changes
+   - Properly restores state on reconnection (phase derived from gameState)
 
 6. **FinishGamePage** (`src/pages/FinishGamePage.tsx`)
    - Game completion interface (rendered by GamePage)
@@ -141,6 +143,7 @@ src/
 - **Socket Management**: Single socket instance created in `SocketContext`, shared via context
 - **Event Handling**: `useEffect` hooks with cleanup for socket listeners
 - **State Synchronization**: Server events trigger `dispatch()` calls to update global state
+- **Derived State**: UI state (phase, status) derived from `gameState` via functions/useMemo, not duplicated in local state
 - **SessionStorage**: Managed via `usePlayerInfo` hook, persists across page navigations
 - **Conditional Rendering**: Replaces `.hidden` class toggling with `{condition && <Component />}`
 
@@ -176,10 +179,11 @@ src/
 4. **Phase Management**: Game has distinct phases (lobby → playing → scoring) controlled by `gameState.status` and `currentRound.status`. Clients show/hide sections based on phase.
 
 5. **Two-step Answer Reopening**:
-   - When all answers are in, both "Begin Scoring" and "Re-open Answering" buttons appear
-   - **"Begin Scoring" button**: Navigate to scoring view (no server state change)
-   - **"Back to Answering" button** (in scoring): Host-only UI navigation back to answering view, like browser back button. Server state unchanged, players unaffected. Both buttons remain visible.
-   - **"Re-open Answering" button**: Emits `backToAnswering` event to server, which calls `returnToAnswering()`. This preserves existing answers in `gameState.currentRound.answers` (for pre-filling), clears `submittedInCurrentPhase` tracking, and notifies all players to return to answering phase. Hides both buttons and notification. Players must actively submit again for the round to complete.
+   - `allAnswersIn` is derived from gameState: `submittedInCurrentPhase.length >= playerCount`
+   - When `allAnswersIn` is true, both "Begin Scoring" and "Re-open Answering" buttons appear automatically
+   - **"Begin Scoring" button**: Sets host phase to scoring (no server state change)
+   - **"Back to Answering" button** (in scoring): Host-only UI navigation back to answering view. Server state unchanged, players unaffected. Buttons remain visible since `allAnswersIn` is still true.
+   - **"Re-open Answering" button**: Emits `backToAnswering` event to server, which calls `returnToAnswering()`. This preserves existing answers in `gameState.currentRound.answers` (for pre-filling), clears `submittedInCurrentPhase` tracking, and notifies all players to return to answering phase. Since `submittedInCurrentPhase` is cleared, `allAnswersIn` becomes false and buttons hide automatically. Players must actively submit again for the round to complete.
 
 6. **Team References**: Teams store `player1Id` and `player2Id` (socket IDs), players store `partnerId` and `teamId`. On reconnect, both must be updated (see `gameState.reconnectPlayer()`).
 
@@ -197,7 +201,7 @@ src/
 
 11. **View-Based Navigation**: Navigation between game phases (lobby → playing → ended) happens via React state changes, not route changes. GamePage stays at `/game?room=CODE` and conditionally renders different child pages based on `gameState.status`. This keeps the room code visible in the URL throughout the game lifecycle.
 
-12. **State Initialization on Mount**: HostPage and PlayerPage initialize their UI state from GameContext when they mount. This ensures proper state restoration on page refresh or when transitioning from other views. The initialization happens via an effect that calls `updateFromGameState()` once on mount.
+12. **Derived State Pattern**: HostPage and PlayerPage derive their UI state (phase, status, submission info) from GameContext rather than duplicating it in local state. This ensures proper state restoration on page refresh - the UI simply recomputes from the current gameState. Socket handlers primarily dispatch `SET_GAME_STATE` actions; the UI reacts to derived values. Only truly local state (form inputs, animation flags) is stored in component state.
 
 ### Round Variants
 
