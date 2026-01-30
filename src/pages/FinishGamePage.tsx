@@ -1,14 +1,14 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useGameContext } from '../context/GameContext';
-import { useCelebrationConfetti } from '../hooks/useConfetti';
-import { ExitButton } from '../components/common/ExitButton';
-import { TeamName } from '../components/common/TeamName';
-import { PlaceBadge } from '../components/common/PlaceBadge';
-import type { Team } from '../types/game';
-import { findPlayerBySocketId } from '../utils/playerUtils';
-import { sortTeamsWithTiebreaker, calculateAllPlaces } from '../utils/rankingUtils';
+import {useMemo} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useGameContext} from '../context/GameContext';
+import {useCelebrationConfetti} from '../hooks/useConfetti';
+import {ExitButton} from '../components/common/ExitButton';
+import {TeamName} from '../components/common/TeamName';
+import {PlaceBadge} from '../components/common/PlaceBadge';
+import type {Team} from '../types/game';
+import {findPlayerBySocketId} from '../utils/playerUtils';
+import {calculateAllPlaces, sortTeamsWithTiebreaker} from '../utils/rankingUtils';
 
 function formatTotalTime(ms: number): string {
   const seconds = ms / 1000;
@@ -57,11 +57,6 @@ export function FinishGamePage() {
     const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
     const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
     return { player1, player2 };
-  };
-
-  const handleReturnHome = () => {
-    clearPlayerInfo();
-    navigate('/');
   };
 
   // Determine if confetti should be shown (host or player on winning team)
@@ -146,15 +141,6 @@ export function FinishGamePage() {
                 );
               })}
             </div>
-          </div>
-
-          <div className="box has-background-light">
-            <p className="mb-4 has-text-grey-dark has-text-centered">
-              Thanks for playing! Click below to return to the home page.
-            </p>
-            <button className="button is-primary is-fullwidth is-large" onClick={handleReturnHome}>
-              Return to Home
-            </button>
           </div>
         </div>
       </div>
