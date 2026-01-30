@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
@@ -14,8 +14,33 @@ import {ScoringStatus} from '../components/player/ScoringStatus';
 import {transformBinaryOptions} from '../utils/playerUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
+import type {GameState} from '../types/game';
 
-type PlayerSection = 'waiting' | 'answering' | 'submitted' | 'scoring';
+type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'scoring' | 'ended';
+
+function derivePlayerPhase(gameState: GameState | null, playerName: string | undefined): PlayerPhase {
+  if (!gameState) return 'waiting';
+  if (gameState.status === 'ended') return 'ended';
+  if (gameState.status === 'scoring') return 'scoring';
+
+  if (gameState.status === 'playing') {
+    if (!gameState.currentRound) return 'waiting';
+
+    const hasSubmitted = playerName
+      ? gameState.currentRound.submittedInCurrentPhase.includes(playerName)
+      : false;
+
+    if (!hasSubmitted) return 'answering';
+
+    // Check if all non-host players have submitted
+    const nonHostPlayers = gameState.players.filter(p => p.name !== gameState.host.name);
+    const allAnswersIn = gameState.currentRound.submittedInCurrentPhase.length >= nonHostPlayers.length;
+
+    return allAnswersIn ? 'scoring' : 'submitted';
+  }
+
+  return 'waiting';
+}
 
 export function PlayerPage() {
   const { isConnected, emit, on } = useSocket();
@@ -23,27 +48,34 @@ export function PlayerPage() {
   const { gameState, dispatch, myPlayer, myTeam, myPartner } = useGameContext();
   const { requestWakeLock, isSupported: wakeLockSupported } = useWakeLock();
 
-  const [section, setSection] = useState<PlayerSection>('waiting');
+  // Form input state (pre-submission, genuinely local)
   const [answer, setAnswer] = useState('');
-  const [submittedAnswer, setSubmittedAnswer] = useState('');
-  const [isCelebrating, setIsCelebrating] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [selectedOption, setSelectedOption] = useState('');
+  const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
 
-  // Refs to access latest state in socket handlers without causing re-subscriptions
-  const gameStateRef = useRef(gameState);
-  const playerInfoRef = useRef(playerInfo);
-  const myPlayerRef = useRef(myPlayer);
-  const hasSubmittedRef = useRef(hasSubmitted);
+  // UI feedback state (ephemeral, genuinely local)
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
 
   const { error, showError } = useGameError();
   const { responseTime, startTimer, stopTimer, getFinalTime } = useTimer();
-  const [variant, setVariant] = useState<string>('open_ended');
-  const [options, setOptions] = useState<string[] | null>(null);
-  const [selectedOption, setSelectedOption] = useState<string>('');
-  // Dual answer mode state (when answerForBoth is true)
-  const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
-  // Points feedback: null = not scored yet, number = points awarded this round
-  const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
+
+  // Derive phase and round info from gameState (single source of truth)
+  const phase = derivePlayerPhase(gameState, playerInfo?.name);
+  const currentRound = gameState?.currentRound;
+  const variant = currentRound?.variant ?? 'open_ended';
+  const hasSubmitted = playerInfo?.name
+    ? currentRound?.submittedInCurrentPhase.includes(playerInfo.name) ?? false
+    : false;
+  const submittedAnswer = playerInfo?.name
+    ? currentRound?.answers?.[playerInfo.name]?.text ?? ''
+    : '';
+
+  // Transform binary options with team member names
+  const options = useMemo(() => {
+    if (!currentRound?.options) return null;
+    return transformBinaryOptions(currentRound.options, variant, gameState?.players ?? [], myTeam);
+  }, [currentRound?.options, variant, gameState?.players, myTeam]);
 
   // Sync sessionStorage playerInfo to GameContext on mount (handles page refresh)
   useEffect(() => {
@@ -59,144 +91,57 @@ export function PlayerPage() {
     }
   }, [gameState?.status, wakeLockSupported, requestWakeLock]);
 
-  // Keep refs in sync with state for socket handlers
+  // Start timer when entering answering phase (on mount or when round changes)
   useEffect(() => {
-    gameStateRef.current = gameState;
-    playerInfoRef.current = playerInfo;
-    myPlayerRef.current = myPlayer;
-    hasSubmittedRef.current = hasSubmitted;
-  }, [gameState, playerInfo, myPlayer, hasSubmitted]);
-
-  // Initialize from GameContext when PlayerPage mounts (handles reconnection)
-  useEffect(() => {
-    if (!gameState || !playerInfo) return;
-
-    dispatch({ type: 'SET_GAME_STATE', payload: gameState });
-
-    // Check game status - now currentRound is null when status is 'playing'
-    if (gameState.status === 'playing') {
-      if (!gameState.currentRound) {
-        // Host is setting up the next round
-        setSection('waiting');
-      } else {
-        // Round is active - check if player has submitted in current phase
-        const roundVariant = gameState.currentRound.variant;
-        setVariant(roundVariant);
-
-        // For binary: replace placeholders with actual team member names
-        setOptions(transformBinaryOptions(
-          gameState.currentRound.options,
-          roundVariant,
-          gameState.players,
-          myTeam
-        ));
-
-        const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
-        const hasSubmittedInCurrentPhase = gameState.currentRound.submittedInCurrentPhase.includes(playerInfo.name);
-
-        if (hasSubmittedInCurrentPhase) {
-          // Player has submitted in the current phase
-          setAnswer(previousAnswer?.text ?? '');
-          setSubmittedAnswer(previousAnswer?.text ?? '');
-          setHasSubmitted(true);
-          setSection('submitted');
-        } else {
-          // Player hasn't submitted in current phase (may have old answer from reopened round)
-          setAnswer(previousAnswer?.text ?? ''); // Pre-fill with previous answer if exists
-          setHasSubmitted(false);
-          setSection('answering');
-          // Start timer from server timestamp to maintain accurate timing across reconnection
-          startTimer(gameState.currentRound.createdAt);
-        }
-      }
-      return;
+    if (phase === 'answering' && currentRound?.createdAt) {
+      startTimer(currentRound.createdAt);
     }
+  }, [phase, currentRound?.createdAt, startTimer]);
 
-    // If we're in scoring status, show scoring screen
-    if (gameState.status === 'scoring' && gameState.currentRound) {
-      const roundVariant = gameState.currentRound.variant;
-      setVariant(roundVariant);
-
-      // For binary: replace placeholders with actual team member names
-      setOptions(transformBinaryOptions(
-        gameState.currentRound.options,
-        roundVariant,
-        gameState.players,
-        myTeam
-      ));
-
-      const previousAnswer = gameState.currentRound.answers?.[playerInfo.name];
+  // Pre-fill answer from previous submission when returning to answering phase
+  useEffect(() => {
+    if (phase === 'answering' && playerInfo?.name && currentRound?.answers) {
+      const previousAnswer = currentRound.answers[playerInfo.name];
       if (previousAnswer) {
-        setSubmittedAnswer(previousAnswer.text);
+        setAnswer(previousAnswer.text);
       }
-      setSection('scoring');
-      return;
     }
+  }, [phase, playerInfo?.name, currentRound?.answers]);
 
-    // Default to waiting
-    setSection('waiting');
-  }, [startTimer]); // Only run on mount (startTimer is stable)
-
-  // Socket event handlers - use refs to access latest state without causing re-subscriptions
+  // Socket event handlers - simplified to just update gameState
   useEffect(() => {
     const unsubscribers = [
       on('joinSuccess', ({ gameState: state }) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
-      on('roundStarted', ({ gameState: state, variant: v, options: opts, questionCreatedAt }) => {
+      on('roundStarted', ({ gameState: state, questionCreatedAt }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
-
-        setVariant(v);
-
-        // For binary: replace placeholders with actual team member names
-        const pInfo = playerInfoRef.current;
-        const gState = state ?? gameStateRef.current;
-        if (v === 'binary' && opts && pInfo && gState) {
-          const players = gState.players;
-          const teams = gState.teams;
-          const currentPlayer = players.find(p => p.name === pInfo.name);
-          const currentTeam = currentPlayer
-            ? teams.find(t => t.player1Id === currentPlayer.socketId || t.player2Id === currentPlayer.socketId)
-            : null;
-
-          setOptions(transformBinaryOptions(opts, v, players, currentTeam ?? null));
-        } else {
-          setOptions(opts);
-        }
-
+        // Reset form inputs for new round
         setAnswer('');
         setSelectedOption('');
         setDualAnswers({ self: '', partner: '' });
-        setHasSubmitted(false);
         setMyTeamPointsThisRound(null);
-        setSection('answering');
         startTimer(questionCreatedAt);
       }),
 
-      on('answerSubmitted', ({ playerName, answer: ans, gameState: state }) => {
+      on('answerSubmitted', ({ gameState: state }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
-        }
-        if (playerName === playerInfoRef.current?.name) {
-          setHasSubmitted(true);
-          setSubmittedAnswer(ans);
-          setSection('submitted');
         }
       }),
 
       on('allAnswersIn', () => {
         setMyTeamPointsThisRound(null);
-        setSection('scoring');
       }),
 
       on('scoreUpdated', ({ teamId, newScore, pointsAwarded }) => {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
 
-        // Check if this is my team
-        if (myPlayerRef.current?.teamId === teamId) {
+        // Check if this is my team (use myPlayer from closure - ok since we just need teamId match)
+        if (myPlayer?.teamId === teamId) {
           setMyTeamPointsThisRound(pointsAwarded);
           if (pointsAwarded > 0) {
             setIsCelebrating(true);
@@ -207,43 +152,20 @@ export function PlayerPage() {
 
       on('readyForNextRound', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
-        setSection('waiting');
       }),
 
       on('returnedToAnswering', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
-
-        const pInfo = playerInfoRef.current;
-        if (state.currentRound?.answers && pInfo) {
-          const previousAnswer = state.currentRound.answers[pInfo.name];
-          if (previousAnswer) {
-            setAnswer(previousAnswer.text);
-          } else {
-            setAnswer('');
-          }
-        } else {
-          setAnswer('');
-        }
-        setHasSubmitted(false);
-        setSection('answering');
+        // Pre-fill will happen via the effect above
         startTimer(state.currentRound?.createdAt);
       }),
 
       on('error', ({ message }) => {
         showError(message);
-        if (hasSubmittedRef.current) {
-          setHasSubmitted(false);
-          setSection('answering');
-        }
       }),
 
       on('playerDisconnected', ({ socketId }) => {
-        const gState = gameStateRef.current;
-        if (!gState) return;
-        const updatedPlayers = gState.players.map((p) =>
-          p.socketId === socketId ? { ...p, connected: false } : p
-        );
-        dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
+        dispatch({ type: 'SET_PLAYER_CONNECTED', payload: { socketId, connected: false } });
       }),
 
       on('playerReconnected', ({ gameState: state }) => {
@@ -254,7 +176,7 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError, startTimer]);
+  }, [on, dispatch, showError, startTimer, myPlayer?.teamId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,16 +251,16 @@ export function PlayerPage() {
             />
           </div>
 
-          {(section === 'scoring' || section === 'waiting') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
+          {(phase === 'scoring' || phase === 'waiting') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
-          {section === 'waiting' && (
-            <WaitingStatus host={gameState?.host} />
+          {phase === 'waiting' && gameState?.host && (
+            <WaitingStatus host={gameState.host} />
           )}
 
-          {section === 'answering' && (
+          {phase === 'answering' && (
             <AnswerSubmissionForm
-              roundNumber={gameState?.currentRound?.roundNumber || 0}
-              question={gameState?.currentRound?.question || ''}
+              roundNumber={currentRound?.roundNumber ?? 0}
+              question={currentRound?.question ?? ''}
               responseTime={responseTime}
               variant={variant}
               options={options}
@@ -347,7 +269,7 @@ export function PlayerPage() {
               onAnswerChange={setAnswer}
               onOptionChange={setSelectedOption}
               onSubmit={handleSubmit}
-              answerForBoth={gameState?.currentRound?.answerForBoth ?? false}
+              answerForBoth={currentRound?.answerForBoth ?? false}
               player={{ name: myPlayer?.name ?? '', avatar: myPlayer?.avatar ?? null }}
               partner={{ name: myPartner?.name ?? '', avatar: myPartner?.avatar ?? null }}
               dualAnswers={dualAnswers}
@@ -355,12 +277,12 @@ export function PlayerPage() {
             />
           )}
 
-          {(section === 'submitted' || section === 'scoring') && (
+          {(phase === 'submitted' || phase === 'scoring') && (
             <SubmittedStatus
               submittedAnswer={submittedAnswer}
               partner={myPartner ? { name: myPartner.name, avatar: myPartner.avatar } : null}
-              partnerSubmitted={gameState?.currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
-              totalAnswersCount={Object.keys(gameState?.currentRound?.answers ?? {}).length}
+              partnerSubmitted={currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
+              totalAnswersCount={Object.keys(currentRound?.answers ?? {}).length}
               totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
             />
           )}

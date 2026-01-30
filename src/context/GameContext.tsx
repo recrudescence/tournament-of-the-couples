@@ -15,6 +15,7 @@ type GameAction =
   | { type: 'UPDATE_PLAYERS'; payload: Player[] }
   | { type: 'UPDATE_TEAMS'; payload: Team[] }
   | { type: 'UPDATE_TEAM_SCORE'; payload: { teamId: string; newScore: number } }
+  | { type: 'SET_PLAYER_CONNECTED'; payload: { socketId: string; connected: boolean } }
   | { type: 'RESET' };
 
 function gameReducer(state: GameContextState, action: GameAction): GameContextState {
@@ -47,6 +48,19 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
             team.teamId === action.payload.teamId
               ? { ...team, score: action.payload.newScore }
               : team
+          ),
+        },
+      };
+    case 'SET_PLAYER_CONNECTED':
+      if (!state.gameState) return state;
+      return {
+        ...state,
+        gameState: {
+          ...state.gameState,
+          players: state.gameState.players.map((player) =>
+            player.socketId === action.payload.socketId
+              ? { ...player, connected: action.payload.connected }
+              : player
           ),
         },
       };

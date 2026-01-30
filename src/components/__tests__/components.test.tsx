@@ -198,10 +198,14 @@ describe('Component Smoke Tests', () => {
 
     describe('WaitingStatus', () => {
       it('renders waiting message with host name', () => {
-        render(<WaitingStatus hostName="GameHost" />);
+        const mockHost = {
+          socketId: 'host-123',
+          name: 'GameHost',
+          avatar: { color: '#ff0000', emoji: '🎮' }
+        };
+        render(<WaitingStatus host={mockHost} />);
 
-        expect(screen.getByText(/Your host is setting up/)).toBeInTheDocument();
-        expect(screen.getByText(/Waiting for GameHost/)).toBeInTheDocument();
+        expect(screen.getByText(/GameHost is setting up the next round/)).toBeInTheDocument();
       });
     });
 
