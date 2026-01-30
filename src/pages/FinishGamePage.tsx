@@ -5,8 +5,10 @@ import { useGameContext } from '../context/GameContext';
 import { useCelebrationConfetti } from '../hooks/useConfetti';
 import { ExitButton } from '../components/common/ExitButton';
 import { TeamName } from '../components/common/TeamName';
+import { PlaceBadge } from '../components/common/PlaceBadge';
 import type { Team } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
+import { sortTeamsWithTiebreaker, calculateAllPlaces } from '../utils/rankingUtils';
 
 function formatTotalTime(ms: number): string {
   const seconds = ms / 1000;
@@ -34,12 +36,21 @@ export function FinishGamePage() {
     );
   }
 
-  // Sort teams by score (descending)
+  // Sort teams by score (descending), using response time as tiebreaker
+  const responseTimes = gameState.teamTotalResponseTimes ?? {};
   const sortedTeams = useMemo(
-    () => [...gameState.teams].sort((a, b) => b.score - a.score),
-    [gameState.teams]
+    () => sortTeamsWithTiebreaker(gameState.teams, responseTimes),
+    [gameState.teams, responseTimes]
+  );
+  const places = useMemo(
+    () => calculateAllPlaces(gameState.teams, responseTimes),
+    [gameState.teams, responseTimes]
   );
 
+  // Check if anyone has scored (hide badges if all teams have 0 points)
+  const hasAnyScores = sortedTeams.some(t => t.score > 0);
+
+  // Winner is the team in 1st place (ties broken by response time, so only one)
   const winningTeam = sortedTeams[0];
 
   const getTeamPlayers = (team: Team) => {
@@ -53,13 +64,13 @@ export function FinishGamePage() {
     navigate('/');
   };
 
-  // Determine if confetti should be shown
-  const shouldShowConfetti = useMemo(
-    () =>
-      playerInfo?.isHost || // Host always gets confetti
-      (playerInfo && gameState.players.find(p => p.name === playerInfo.name)?.teamId === winningTeam?.teamId), // Player is on winning team
-    [playerInfo, gameState.players, winningTeam?.teamId]
-  );
+  // Determine if confetti should be shown (host or player on winning team)
+  const shouldShowConfetti = useMemo(() => {
+    if (playerInfo?.isHost) return true;
+    if (!playerInfo || !winningTeam) return false;
+    const playerTeamId = gameState.players.find(p => p.name === playerInfo.name)?.teamId;
+    return playerTeamId === winningTeam.teamId;
+  }, [playerInfo, gameState.players, winningTeam]);
 
   // Trigger confetti for host and winning team
   useCelebrationConfetti(!!shouldShowConfetti);
@@ -95,31 +106,41 @@ export function FinishGamePage() {
           <div className="mb-6">
             <h2 className="subtitle is-4 mb-4">Final Standings</h2>
             <div>
-              {sortedTeams.map((team, index) => {
+              {sortedTeams.map((team) => {
                 const { player1, player2 } = getTeamPlayers(team);
                 const totalTime = gameState.teamTotalResponseTimes?.[team.teamId] ?? 0;
+                const place = places.get(team.teamId) ?? 999;
+                const isWinner = place === 1 && hasAnyScores;
+                const showBadge = hasAnyScores && place <= 3;
                 return (
                   <div
                     key={team.teamId}
-                    className={`box mb-3 is-flex is-justify-content-space-between is-align-items-center ${
-                      index === 0 ? 'has-background-link-light winning-team-border' : ''
+                    className={`box mb-3 ${
+                      isWinner ? 'has-background-link-light winning-team-border' : ''
                     }`}
+                    style={{ overflow: 'visible' }}
                   >
-                    <div className="is-flex is-align-items-center">
-                      <span className="has-text-weight-bold is-size-5 mr-3">
-                        #{index + 1}
-                      </span>
-                      <TeamName player1={player1} player2={player2} />
-                    </div>
-                    <div className="has-text-right">
-                      <div className={`title is-4 mb-0 ${index === 0 ? 'has-text-link' : 'has-text-grey'}`}>
-                        {team.score} {team.score === 1 ? 'pt' : 'pts'}
+                    <div className="is-flex is-justify-content-space-between is-align-items-center">
+                      <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
+                        {showBadge ? (
+                          <PlaceBadge place={place} size={isWinner ? 'large' : 'medium'} />
+                        ) : (
+                          <span className="has-text-weight-bold is-size-5" style={{ color: '#666' }}>
+                            #{place}
+                          </span>
+                        )}
+                        <TeamName player1={player1} player2={player2} />
                       </div>
-                      {totalTime > 0 && (
-                        <div className="is-size-6 has-text-grey is-italic">
-                          {formatTotalTime(totalTime)} thinking time!
+                      <div className="has-text-right">
+                        <div className={`title is-4 mb-0 ${showBadge ? 'has-text-link' : 'has-text-grey'}`}>
+                          {team.score} {team.score === 1 ? 'pt' : 'pts'}
                         </div>
-                      )}
+                        {totalTime > 0 && (
+                          <div className="is-size-6 has-text-grey is-italic">
+                            {formatTotalTime(totalTime)} thinking time!
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

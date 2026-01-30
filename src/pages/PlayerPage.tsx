@@ -12,6 +12,7 @@ import {AnswerSubmissionForm} from '../components/player/AnswerSubmissionForm';
 import {SubmittedStatus} from '../components/player/SubmittedStatus';
 import {ScoringStatus} from '../components/player/ScoringStatus';
 import {transformBinaryOptions} from '../utils/playerUtils';
+import {calculatePlace} from '../utils/rankingUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
 import type {GameState} from '../types/game';
@@ -76,6 +77,12 @@ export function PlayerPage() {
     if (!currentRound?.options) return null;
     return transformBinaryOptions(currentRound.options, variant, gameState?.players ?? [], myTeam);
   }, [currentRound?.options, variant, gameState?.players, myTeam]);
+
+  // Calculate team's current place in the standings (ties broken by response time)
+  const teamPlace = useMemo(() => {
+    if (!gameState?.teams || !myTeam) return null;
+    return calculatePlace(gameState.teams, myTeam.teamId, gameState.teamTotalResponseTimes);
+  }, [gameState?.teams, gameState?.teamTotalResponseTimes, myTeam]);
 
   // Sync sessionStorage playerInfo to GameContext on mount (handles page refresh)
   useEffect(() => {
@@ -247,6 +254,7 @@ export function PlayerPage() {
               player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
               partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}
               teamScore={myTeam?.score || 0}
+              teamPlace={teamPlace}
               isCelebrating={isCelebrating}
             />
           </div>
@@ -287,7 +295,11 @@ export function PlayerPage() {
             />
           )}
 
-          <TeamScoreboard teams={gameState?.teams || []} players={gameState?.players || []} />
+          <TeamScoreboard
+            teams={gameState?.teams || []}
+            players={gameState?.players || []}
+            responseTimes={gameState?.teamTotalResponseTimes}
+          />
 
           {error && <div className="notification is-danger is-light mt-4">{error}</div>}
         </div>

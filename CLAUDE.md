@@ -34,6 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **PlayerAvatar**: Reusable avatar component displaying player's color + emoji. Supports three sizes (small/medium/large), optional bump animation, and click-to-randomize for the current player.
   - **PlayerCard**: Unpaired player display with avatar, click-to-pair interaction, and host kick functionality. Players can tap their own avatar to randomize it.
   - **TeamCard**: Paired team display showing two player mini-cards side-by-side with avatars, break-up/kick actions. Avatar tap-to-randomize supported.
+  - **PlaceBadge**: Animated 1st/2nd/3rd place badges with gold/silver/bronze styling. Features floating, shimmer, and vibrate effects. Used in TeamScoreboard, PlayerHeader, and FinishGamePage.
 
 - `/src/components/host/` - Host-specific components (used by HostPage)
   - **HostHeader**: Round number, game status, host info display
@@ -107,6 +108,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `flipInLeft`, `flipInRight` - 3D card flip entrances
 - `cardEntrance`, `scalePop`, `emojiSpin`, `popInSpin`
 - `modalBackdrop`, `flipCard`
+- `badgeEntrance` - scale up with rotation for place badges
+
+**Badge Animations (continuous):**
+- `badgeFloat` / `badgeFloatTransition` - subtle y bob
+- `badgeShimmer` / `badgeShimmerTransition(fast)` - metallic shine sweep
+- `badgeVibrate` / `badgeVibrateTransition` - gold badge excitement
+- `badgeShadowKeyframes(color)` - pulsing shadow for float effect
 
 **Interaction Presets (hover/tap):**
 - `buttonHover`/`buttonTap` - subtle scale (1.05/0.95)
@@ -135,6 +143,7 @@ import { slideInLeft, springDefault, staggerDelay, buttonHover, buttonTap } from
 - `TeamCard` - 3D flip entrance, card hover effects
 - `ScoringModal` - 3D modal entrance/exit with AnimatePresence
 - `FlipCard` - Reusable 3D card flip for answer reveals
+- `PlaceBadge` - Animated gold/silver/bronze badges with float, shimmer, and vibrate effects
 - `SinglePlayerScoring` / `BothPlayersScoring` - Staggered slide-in animations
 
 ## Important Configuration Notes

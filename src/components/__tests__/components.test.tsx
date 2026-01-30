@@ -170,6 +170,7 @@ describe('Component Smoke Tests', () => {
             player={{ name: 'Alice', avatar: null }}
             partner={{ name: 'Bob', avatar: null }}
             teamScore={5}
+            teamPlace={4}
             isCelebrating={false}
           />
         );
@@ -177,22 +178,24 @@ describe('Component Smoke Tests', () => {
         expect(screen.getByText('GameHost')).toBeInTheDocument();
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.getByText('Bob')).toBeInTheDocument();
-        expect(screen.getByText('5')).toBeInTheDocument();
+        expect(screen.getByText('#4 • 5 pts')).toBeInTheDocument();
       });
 
-      it('applies celebration style when isCelebrating is true', () => {
+      it('renders place badge for top 3', () => {
         render(
           <PlayerHeader
             host={{ name: 'GameHost', avatar: null }}
             player={{ name: 'Alice', avatar: null }}
             partner={{ name: 'Bob', avatar: null }}
-            teamScore={5}
-            isCelebrating={true}
+            teamScore={10}
+            teamPlace={1}
+            isCelebrating={false}
           />
         );
 
-        const scoreElement = screen.getByText('5');
-        expect(scoreElement).toHaveClass('has-text-success');
+        // Should show gold badge with 1st place
+        expect(screen.getByText('1st')).toBeInTheDocument();
+        expect(screen.getByText('🥇')).toBeInTheDocument();
       });
     });
 

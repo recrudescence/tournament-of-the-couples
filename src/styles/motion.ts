@@ -163,6 +163,58 @@ export const flipCard: Variants = {
 };
 
 // ============================================================================
+// PLACE BADGE - Animated badges for 1st/2nd/3rd place
+// ============================================================================
+
+/** Badge entrance - scale up with slight rotation */
+export const badgeEntrance: Variants = {
+  hidden: { scale: 0, rotate: -10 },
+  visible: { scale: 1, rotate: 0 },
+};
+
+/** Badge floating animation (continuous) */
+export const badgeFloat = {
+  y: [0, -3, 0],
+};
+
+export const badgeFloatTransition: Transition = {
+  duration: 2,
+  repeat: Infinity,
+  ease: 'easeInOut',
+};
+
+/** Shimmer sweep animation (continuous) */
+export const badgeShimmer = {
+  backgroundPosition: ['200% 0%', '-200% 0%'],
+};
+
+export const badgeShimmerTransition = (fast: boolean): Transition => ({
+  duration: fast ? 1.5 : 2,
+  repeat: Infinity,
+  ease: 'linear',
+  repeatDelay: fast ? 0.5 : 1,
+});
+
+/** Gold badge vibrate animation (continuous) */
+export const badgeVibrate = {
+  rotate: [-1, 1, -1, 1, 0],
+  scale: [1, 1.05, 1],
+};
+
+export const badgeVibrateTransition: Transition = {
+  duration: 0.5,
+  repeat: Infinity,
+  repeatDelay: 1.5,
+};
+
+/** Badge shadow pulse - creates floating shadow effect */
+export function badgeShadowKeyframes(shadowColor: string) {
+  const base = `0 4px 12px ${shadowColor}, inset 0 1px 2px rgba(255,255,255,0.4)`;
+  const lifted = `0 8px 20px ${shadowColor}, inset 0 1px 2px rgba(255,255,255,0.4)`;
+  return [base, lifted, base];
+}
+
+// ============================================================================
 // HELPER: Create staggered delay transition
 // ============================================================================
 

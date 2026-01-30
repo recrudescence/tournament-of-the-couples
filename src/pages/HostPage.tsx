@@ -291,7 +291,11 @@ export function HostPage() {
         )}
 
         {/* Scoreboard (Always Visible) */}
-        <TeamScoreboard teams={gameState?.teams || []} players={gameState?.players || []} />
+        <TeamScoreboard
+          teams={gameState?.teams || []}
+          players={gameState?.players || []}
+          responseTimes={gameState?.teamTotalResponseTimes}
+        />
 
         <RoundControls onEndGame={handleEndGame} />
 

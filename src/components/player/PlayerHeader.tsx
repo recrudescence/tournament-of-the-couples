@@ -1,4 +1,5 @@
 import { PlayerAvatar } from '../common/PlayerAvatar';
+import { PlaceBadge } from '../common/PlaceBadge';
 import type { PlayerIdentity } from '../../types/game';
 
 interface PlayerHeaderProps {
@@ -6,6 +7,7 @@ interface PlayerHeaderProps {
   player: PlayerIdentity;
   partner: PlayerIdentity;
   teamScore: number;
+  teamPlace: number | null;
   isCelebrating: boolean;
 }
 
@@ -14,10 +16,13 @@ export function PlayerHeader({
   player,
   partner,
   teamScore,
+  teamPlace,
   isCelebrating
 }: PlayerHeaderProps) {
+  const showBadge = teamPlace !== null && teamPlace <= 3;
+
   return (
-    <div className="box">
+    <div className="box" style={{ overflow: 'visible' }}>
       <div className="columns is-mobile is-multiline has-text-centered">
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Host</p>
@@ -42,9 +47,15 @@ export function PlayerHeader({
         </div>
         <div className="column is-half-mobile is-one-quarter-tablet">
           <p className="heading">Team Score</p>
-          <p className={`title is-6 ${isCelebrating ? 'has-text-success' : ''}`}>
-            {teamScore}
-          </p>
+          <div className="is-flex is-justify-content-center is-align-items-center" style={{ minHeight: '2rem' }}>
+            {showBadge ? (
+              <PlaceBadge place={teamPlace} score={teamScore} size="small" />
+            ) : (
+              <p className={`title is-6 mb-0 ${isCelebrating ? 'has-text-success' : ''}`}>
+                {teamPlace !== null ? `#${teamPlace} • ` : ''}{teamScore} pts
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
