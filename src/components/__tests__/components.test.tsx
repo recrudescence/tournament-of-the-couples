@@ -278,9 +278,7 @@ describe('Component Smoke Tests', () => {
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={1}
-            showAllAnswersNotification={false}
-            showReopenBtn={false}
-            showStartScoringBtn={false}
+            allAnswersIn={false}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
           />
@@ -296,9 +294,7 @@ describe('Component Smoke Tests', () => {
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={1}
-            showAllAnswersNotification={false}
-            showReopenBtn={false}
-            showStartScoringBtn={false}
+            allAnswersIn={false}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
           />
@@ -320,9 +316,7 @@ describe('Component Smoke Tests', () => {
             players={playersWithDisconnected}
             currentRound={mockRound}
             submittedCount={0}
-            showAllAnswersNotification={false}
-            showReopenBtn={false}
-            showStartScoringBtn={false}
+            allAnswersIn={false}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
           />
@@ -338,9 +332,7 @@ describe('Component Smoke Tests', () => {
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={1}
-            showAllAnswersNotification={false}
-            showReopenBtn={false}
-            showStartScoringBtn={false}
+            allAnswersIn={false}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
           />
@@ -349,40 +341,22 @@ describe('Component Smoke Tests', () => {
         expect(screen.getByText('1 / 2 answers submitted')).toBeInTheDocument();
       });
 
-      it('shows all answers notification when all submitted', () => {
+      it('shows all answers notification and buttons when allAnswersIn is true', () => {
         render(
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={2}
-            showAllAnswersNotification={true}
-            showReopenBtn={false}
-            showStartScoringBtn={false}
+            allAnswersIn={true}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
           />
         );
 
         expect(screen.getByText(/All answers are in! Ready to score/)).toBeInTheDocument();
-      });
-
-      it('shows Begin Scoring button when showStartScoringBtn is true', () => {
-        render(
-          <AnsweringPhase
-            question="Test question"
-            players={mockPlayers}
-            currentRound={mockRound}
-            submittedCount={2}
-            showAllAnswersNotification={true}
-            showReopenBtn={false}
-            showStartScoringBtn={true}
-            onReopenAnswering={vi.fn()}
-            onStartScoring={vi.fn()}
-          />
-        );
-
         expect(screen.getByRole('button', { name: 'Begin Scoring' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Re-open Answering' })).toBeInTheDocument();
       });
 
       it('calls onStartScoring when Begin Scoring is clicked', () => {
@@ -393,9 +367,7 @@ describe('Component Smoke Tests', () => {
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={2}
-            showAllAnswersNotification={true}
-            showReopenBtn={false}
-            showStartScoringBtn={true}
+            allAnswersIn={true}
             onReopenAnswering={vi.fn()}
             onStartScoring={onStartScoring}
           />
@@ -403,24 +375,6 @@ describe('Component Smoke Tests', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Begin Scoring' }));
         expect(onStartScoring).toHaveBeenCalledTimes(1);
-      });
-
-      it('shows Re-open Answering button when showReopenBtn is true', () => {
-        render(
-          <AnsweringPhase
-            question="Test question"
-            players={mockPlayers}
-            currentRound={mockRound}
-            submittedCount={2}
-            showAllAnswersNotification={true}
-            showReopenBtn={true}
-            showStartScoringBtn={false}
-            onReopenAnswering={vi.fn()}
-            onStartScoring={vi.fn()}
-          />
-        );
-
-        expect(screen.getByRole('button', { name: 'Re-open Answering' })).toBeInTheDocument();
       });
 
       it('calls onReopenAnswering when Re-open Answering is clicked', () => {
@@ -431,9 +385,7 @@ describe('Component Smoke Tests', () => {
             players={mockPlayers}
             currentRound={mockRound}
             submittedCount={2}
-            showAllAnswersNotification={true}
-            showReopenBtn={true}
-            showStartScoringBtn={false}
+            allAnswersIn={true}
             onReopenAnswering={onReopenAnswering}
             onStartScoring={vi.fn()}
           />

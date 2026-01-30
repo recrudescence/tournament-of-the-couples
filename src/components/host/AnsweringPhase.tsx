@@ -7,9 +7,7 @@ interface AnsweringPhaseProps {
   players: Player[];
   currentRound: CurrentRound | null;
   submittedCount: number;
-  showAllAnswersNotification: boolean;
-  showReopenBtn: boolean;
-  showStartScoringBtn: boolean;
+  allAnswersIn: boolean;
   onReopenAnswering: () => void;
   onStartScoring: () => void;
 }
@@ -19,9 +17,7 @@ export function AnsweringPhase({
   players,
   currentRound,
   submittedCount,
-  showAllAnswersNotification,
-  showReopenBtn,
-  showStartScoringBtn,
+  allAnswersIn,
   onReopenAnswering,
   onStartScoring
 }: AnsweringPhaseProps) {
@@ -67,33 +63,31 @@ export function AnsweringPhase({
         })}
       </div>
 
-      {!showAllAnswersNotification && (
+      {!allAnswersIn && (
         <p className="has-text-centered has-text-grey mb-4">
           {submittedCount} / {players.length} answers submitted
         </p>
       )}
-      {showAllAnswersNotification && (
+      {allAnswersIn && (
         <div className="notification is-success is-light mb-4">
           ✅ All answers are in! Ready to score.
         </div>
       )}
 
-      <div className="field is-grouped is-grouped-centered">
-        {showReopenBtn && (
+      {allAnswersIn && (
+        <div className="field is-grouped is-grouped-centered">
           <div className="control">
             <button className="button is-info" onClick={onReopenAnswering}>
               Re-open Answering
             </button>
           </div>
-        )}
-        {showStartScoringBtn && (
           <div className="control">
             <button className="button is-primary" onClick={onStartScoring}>
               Begin Scoring
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

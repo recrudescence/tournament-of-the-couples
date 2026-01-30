@@ -251,7 +251,7 @@ export function PlayerPage() {
             />
           </div>
 
-          {(phase === 'scoring' || phase === 'waiting') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
+          {(phase === 'scoring') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
           {phase === 'waiting' && gameState?.host && (
             <WaitingStatus host={gameState.host} />

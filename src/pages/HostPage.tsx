@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { usePlayerInfo } from '../hooks/usePlayerInfo';
 import { useGameContext } from '../context/GameContext';
@@ -22,16 +22,8 @@ export function HostPage() {
   const { gameState, dispatch } = useGameContext();
   const { error, showError } = useGameError();
 
-  // Ref to access latest gameState in socket handlers without causing re-subscriptions
-  const gameStateRef = useRef(gameState);
-  // Ref to track pending timeouts for cleanup
-  const pendingTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
-
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
-  const [gameStatus, setGameStatus] = useState('Setting Up');
-  const [showAllAnswersNotification, setShowAllAnswersNotification] = useState(false);
-  const [showStartScoringBtn, setShowStartScoringBtn] = useState(false);
-  const [showReopenBtn, setShowReopenBtn] = useState(false);
+  const [roundNumber, setRoundNumber] = useState(1);
   const [showFinishBtn, setShowFinishBtn] = useState(false);
   const [teamPointsAwarded, setTeamPointsAwarded] = useState<Record<string, number>>({});
   const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
@@ -40,22 +32,28 @@ export function HostPage() {
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
-  // Keep ref in sync with gameState
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
+  // Derived values
+  const playerCount = gameState?.players.length ?? 0;
+  const submittedCount = gameState?.currentRound?.submittedInCurrentPhase.length ?? 0;
+  const allAnswersIn = phase === 'answering' && playerCount > 0 && submittedCount >= playerCount;
+
+  const gameStatus = useMemo(() => {
+    if (phase === 'roundSetup') return 'Setting Up';
+    if (phase === 'scoring') return 'Scoring';
+    if (allAnswersIn) return 'All Answers In';
+    return 'Answering';
+  }, [phase, allAnswersIn]);
 
   // Initialize phase from gameState on mount
   useEffect(() => {
     if (gameState?.currentRound) {
+      setRoundNumber(gameState.currentRound.roundNumber);
       if (gameState.status === 'scoring' || gameState.currentRound.status === 'complete') {
-        setGameStatus('Scoring');
         setPhase('scoring');
       } else if (gameState.currentRound.status === 'answering') {
         setPhase('answering');
       }
     } else if (gameState?.status === 'playing') {
-      setGameStatus('Playing');
       setPhase('roundSetup');
     }
   }, []); // Only run on mount
@@ -70,12 +68,11 @@ export function HostPage() {
       on('roundStarted', ({ gameState: state }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
+          if (state.currentRound?.roundNumber) {
+            setRoundNumber(state.currentRound.roundNumber);
+          }
         }
         setRevealedAnswers(new Set());
-        setGameStatus('Answering');
-        setShowAllAnswersNotification(false);
-        setShowStartScoringBtn(false);
-        setShowReopenBtn(false);
         setPhase('answering');
       }),
 
@@ -85,25 +82,14 @@ export function HostPage() {
         }
       }),
 
-      on('allAnswersIn', () => {
-        setShowAllAnswersNotification(true);
-        setShowStartScoringBtn(true);
-        setShowReopenBtn(true);
-        setGameStatus('All Answers In');
-      }),
+      // allAnswersIn is now derived from gameState, no handler needed
 
       on('answerRevealed', ({ playerName, responseTime }) => {
         setRevealedAnswers((prev) => new Set([...prev, playerName]));
-
-        // Reveal response time with a delay for emphasis
-        const timeoutId = setTimeout(() => {
-          setRevealedResponseTimes((prev) => ({
-            ...prev,
-            [playerName]: responseTime
-          }));
-          pendingTimeoutsRef.current.delete(timeoutId);
-        }, 0);
-        pendingTimeoutsRef.current.add(timeoutId);
+        setRevealedResponseTimes((prev) => ({
+          ...prev,
+          [playerName]: responseTime
+        }));
       }),
 
       on('scoreUpdated', ({ teamId, newScore }) => {
@@ -112,7 +98,7 @@ export function HostPage() {
 
       on('readyForNextRound', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
-        setGameStatus('Setting Up');
+        setRoundNumber(prev => prev + 1);
         setShowFinishBtn(false);
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
@@ -121,10 +107,6 @@ export function HostPage() {
 
       on('returnedToAnswering', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
-        setShowStartScoringBtn(false);
-        setShowReopenBtn(false);
-        setShowAllAnswersNotification(false);
-        setGameStatus('Answering - Reopened');
         setPhase('answering');
       }),
 
@@ -134,12 +116,7 @@ export function HostPage() {
       }),
 
       on('playerDisconnected', ({ socketId }) => {
-        const currentState = gameStateRef.current;
-        if (!currentState) return;
-        const updatedPlayers = currentState.players.map((p) =>
-          p.socketId === socketId ? { ...p, connected: false } : p
-        );
-        dispatch({ type: 'UPDATE_PLAYERS', payload: updatedPlayers });
+        dispatch({ type: 'SET_PLAYER_CONNECTED', payload: { socketId, connected: false } });
       }),
 
       on('error', ({ message }) => {
@@ -147,12 +124,7 @@ export function HostPage() {
       }),
     ];
 
-    return () => {
-      unsubscribers.forEach((unsub) => unsub());
-      // Clear all pending timeouts
-      pendingTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-      pendingTimeoutsRef.current.clear();
-    };
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, [on, dispatch, showError]);
 
   const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => {
@@ -167,7 +139,6 @@ export function HostPage() {
   const handleStartScoring = () => {
     setCurrentTeamIndex(0);
     setRevealedAnswers(new Set());
-    setGameStatus('Scoring');
     setTeamPointsAwarded({});
     setRevealedResponseTimes({});
     setShowFinishBtn(false);
@@ -176,16 +147,13 @@ export function HostPage() {
 
   const handleBackToAnswering = () => {
     // Just navigate back to answering view (UI only)
-    setGameStatus('All Answers In');
-    setShowAllAnswersNotification(true);
-    setShowStartScoringBtn(true);
-    setShowReopenBtn(true);
+    // allAnswersIn will still be true since answers haven't been cleared
     setPhase('answering');
   };
 
   const handleReopenAnswering = () => {
+    // Server clears submittedInCurrentPhase, which makes allAnswersIn false
     emit('backToAnswering');
-    setShowReopenBtn(false);
   };
 
   const handleRevealAnswer = (playerName: string) => {
@@ -259,16 +227,6 @@ export function HostPage() {
     }
   };
 
-  // Computed values
-  const submittedCount = useMemo(() => {
-    if (!gameState?.currentRound) return 0;
-
-    if (gameState.currentRound.status === 'complete') {
-      return Object.keys(gameState.currentRound.answers).length;
-    }
-    return gameState.currentRound.submittedInCurrentPhase.length;
-  }, [gameState?.currentRound]);
-
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
@@ -287,7 +245,12 @@ export function HostPage() {
         <div className="container container-md">
           <div className="block">
             <GameTitle />
-            <HostHeader gameState={gameState} gameStatus={gameStatus}/>
+            <HostHeader
+              hostName={gameState?.host.name ?? '-'}
+              hostAvatar={gameState?.host.avatar}
+              roundNumber={roundNumber}
+              gameStatus={gameStatus}
+            />
           </div>
 
         {/* Round Setup Phase */}
@@ -302,9 +265,7 @@ export function HostPage() {
             players={gameState.players}
             currentRound={gameState.currentRound}
             submittedCount={submittedCount}
-            showAllAnswersNotification={showAllAnswersNotification}
-            showReopenBtn={showReopenBtn}
-            showStartScoringBtn={showStartScoringBtn}
+            allAnswersIn={allAnswersIn}
             onReopenAnswering={handleReopenAnswering}
             onStartScoring={handleStartScoring}
           />
