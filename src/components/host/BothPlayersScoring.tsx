@@ -1,6 +1,8 @@
+import { motion } from 'framer-motion';
 import type { CurrentRound, Player } from '../../types/game';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 import { formatResponseTime } from '../../utils/formatUtils';
+import { FlipCard } from './FlipCard';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -73,12 +75,24 @@ export function BothPlayersScoring({
 
   return (
     <div className="both-players-scoring">
-      {playerSections.map(({ subject, partner, partnerAnswerKey, partnerAnswerText, selfAnswerKey, selfAnswerText }) => {
+      {playerSections.map(({ subject, partner, partnerAnswerKey, partnerAnswerText, selfAnswerKey, selfAnswerText }, sectionIndex) => {
         const partnerRevealed = revealedAnswers.has(partnerAnswerKey);
         const selfRevealed = revealedAnswers.has(selfAnswerKey);
+        const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
 
         return (
-          <div key={subject.socketId} className="box has-background-white-ter mb-3">
+          <motion.div
+            key={subject.socketId}
+            className="box has-background-white-ter mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 25,
+              delay: sectionIndex * 0.15,
+            }}
+          >
             {/* Player header */}
             <div className="is-flex is-align-items-center mb-3" style={{ gap: '0.5rem', fontSize: '1.5rem' }}>
               Answers about
@@ -89,64 +103,77 @@ export function BothPlayersScoring({
             {/* Two answer cards side by side */}
             <div className="columns is-mobile">
               {/* Partner's answer about this player */}
-              <div className="column">
-                <div className="box" style={{ minHeight: '10rem' }}>
-                  <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
-                    <PlayerAvatar avatar={partner.avatar} size="small" />
-                    <span className="is-size-5 has-text-grey">{partner.name} said that {subject.name} would write...</span>
-                  </div>
-                  {(() => {
-                    const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
-                    return !partnerRevealed ? (
-                      <div className="has-text-centered">
-                        <button
-                          className="button is-link is-medium"
-                          onClick={() => onRevealAnswer(partnerAnswerKey)}
-                        >
-                          Reveal
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="notification is-light is-size-3 py-2 px-3">
-                        <strong>{partnerAnswerText}</strong>
-                        {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
-                          <span className="has-text-grey ml-2 is-size-5">
-                            (took {formatResponseTime(partnerResponseTime)} seconds)
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })()}
+              <motion.div
+                className="column"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: sectionIndex * 0.15 + 0.1 }}
+              >
+                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                  <PlayerAvatar avatar={partner.avatar} size="small" />
+                  <span className="is-size-5 has-text-grey">{partner.name} said that {subject.name} would write...</span>
                 </div>
-              </div>
+                <FlipCard
+                  isRevealed={partnerRevealed}
+                  onReveal={() => onRevealAnswer(partnerAnswerKey)}
+                  front={
+                    <div className="has-text-centered">
+                      <motion.button
+                        className="button is-link is-medium"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Reveal
+                      </motion.button>
+                    </div>
+                  }
+                  back={
+                    <div className="notification is-light is-size-3 py-2 px-3 mb-0">
+                      <strong>{partnerAnswerText}</strong>
+                      {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
+                        <span className="has-text-grey ml-2 is-size-5">
+                          (took {formatResponseTime(partnerResponseTime)} seconds)
+                        </span>
+                      )}
+                    </div>
+                  }
+                />
+              </motion.div>
 
               {/* Player's own answer about themselves */}
-              <div className="column">
-                <div className="box" style={{ minHeight: '10rem' }}>
-                  <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
-                    <PlayerAvatar avatar={subject.avatar} size="small" />
-                    <span className="is-size-5 has-text-grey">{subject.name} actually said...</span>
-                  </div>
-                  {(() => {
-                    return !selfRevealed ? (
-                      <div className="has-text-centered">
-                        <button
-                          className="button is-link is-medium"
-                          onClick={() => onRevealAnswer(selfAnswerKey)}
-                        >
-                          Reveal
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="notification is-light is-size-3 py-2 px-3">
-                        <strong>{selfAnswerText}</strong>
-                      </div>
-                    );
-                  })()}
+              <motion.div
+                className="column"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: sectionIndex * 0.15 + 0.15 }}
+              >
+                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                  <PlayerAvatar avatar={subject.avatar} size="small" />
+                  <span className="is-size-5 has-text-grey">{subject.name} actually said...</span>
                 </div>
-              </div>
+                <FlipCard
+                  isRevealed={selfRevealed}
+                  onReveal={() => onRevealAnswer(selfAnswerKey)}
+                  front={
+                    <div className="has-text-centered">
+                      <motion.button
+                        className="button is-link is-medium"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Reveal
+                      </motion.button>
+                    </div>
+                  }
+                  back={
+                    <div className="notification is-light is-size-3 py-2 px-3 mb-0">
+                      <strong>{selfAnswerText}</strong>
+                    </div>
+                  }
+                />
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         );
       })}
     </div>

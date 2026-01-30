@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
 import {type CurrentRound, type Player, type Team} from '../../types/game';
 import {TeamName} from '../common/TeamName';
 import {BothPlayersScoring} from './BothPlayersScoring';
@@ -24,8 +25,6 @@ interface ScoringModalProps {
   onClose: () => void;
 }
 
-const CLOSE_ANIMATION_MS = 200;
-
 export function ScoringModal({
                                player1,
                                player2,
@@ -38,9 +37,12 @@ export function ScoringModal({
                                onAwardPoints,
                                onClose
                              }: ScoringModalProps) {
-  const [isClosing, setIsClosing] = useState(false);
-  // Random spin between -10 and 10 degrees
-  const [spinDeg] = useState(() => (Math.random() - 0.5) * 20);
+  const [isExiting, setIsExiting] = useState(false);
+  // Random tilt for playful entrance
+  const [initialTilt] = useState(() => ({
+    rotateZ: (Math.random() - 0.5) * 8,
+    rotateX: -20 + Math.random() * 10,
+  }));
 
   // Handle escape key
   useEffect(() => {
@@ -54,13 +56,19 @@ export function ScoringModal({
   }, []);
 
   const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(onClose, CLOSE_ANIMATION_MS);
+    setIsExiting(true);
   };
 
   const handleAwardPoints = (points: number) => {
-    setIsClosing(true);
-    setTimeout(() => onAwardPoints(points), CLOSE_ANIMATION_MS);
+    setIsExiting(true);
+    // Store points to pass after animation
+    setTimeout(() => onAwardPoints(points), 250);
+  };
+
+  const handleExitComplete = () => {
+    if (isExiting) {
+      onClose();
+    }
   };
 
   // Calculate if all answers are revealed for showing total time
@@ -82,63 +90,140 @@ export function ScoringModal({
   })();
 
   return (
-    <div className={`modal is-active scoring-modal ${isClosing ? 'modal-closing' : 'modal-opening'}`}>
-      <div className="modal-background" onClick={handleClose}></div>
-      <div className="modal-card" style={{'--spin-deg': `${spinDeg}deg`} as React.CSSProperties}>
-        <header className="modal-card-head" style={{position: 'relative'}}>
-          <div className="modal-card-title is-flex is-align-items-center" style={{gap: '0.5rem', fontSize: '2rem'}}>
-            <TeamName player1={player1} player2={player2} size="large"/>
-          </div>
-          {allRevealed && totalResponseTime < Infinity && (
-            <span
-              className="tag is-info is-large time-badge-slam"
-              style={{transform: 'translateX(-50%)'}}
+    <AnimatePresence onExitComplete={handleExitComplete}>
+      {!isExiting && (
+        <div className="modal is-active scoring-modal">
+          {/* Backdrop */}
+          <motion.div
+            className="modal-background"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={handleClose}
+          />
+
+          {/* Modal Card - 3D flip entrance */}
+          <motion.div
+            className="modal-card"
+            style={{ perspective: 1500, transformStyle: 'preserve-3d' }}
+            initial={{
+              scale: 0.3,
+              rotateX: initialTilt.rotateX,
+              rotateZ: initialTilt.rotateZ,
+              y: -100,
+              opacity: 0,
+            }}
+            animate={{
+              scale: 1,
+              rotateX: 0,
+              rotateZ: 0,
+              y: 0,
+              opacity: 1,
+            }}
+            exit={{
+              scale: 0.5,
+              rotateX: 20,
+              y: 100,
+              opacity: 0,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 25,
+            }}
+          >
+            <header className="modal-card-head" style={{ position: 'relative' }}>
+              <motion.div
+                className="modal-card-title is-flex is-align-items-center"
+                style={{ gap: '0.5rem', fontSize: '2rem' }}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.15 }}
+              >
+                <TeamName player1={player1} player2={player2} size="large" />
+              </motion.div>
+              <AnimatePresence>
+                {allRevealed && totalResponseTime < Infinity && (
+                  <motion.span
+                    className="tag is-info is-large mr-5"
+                    style={{ transform: 'translateX(-50%)' }}
+                    initial={{ scale: 0, rotate: -180, y: -50 }}
+                    animate={{ scale: 1, rotate: 0, y: 0 }}
+                    exit={{ scale: 0, y: -30 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 400,
+                      damping: 15,
+                    }}
+                  >
+                    ⏱️ {formatResponseTime(totalResponseTime)}s
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              <button className="delete" aria-label="close" onClick={handleClose}></button>
+            </header>
+
+            <motion.section
+              className="modal-card-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
             >
-              ⏱️ {formatResponseTime(totalResponseTime)}s
-            </span>
-          )}
-          <button className="delete" aria-label="close" onClick={handleClose}></button>
-        </header>
-        <section className="modal-card-body">
-          {currentRound.answerForBoth ? (
-            <BothPlayersScoring
-              player1={player1}
-              player2={player2}
-              currentRound={currentRound}
-              revealedAnswers={revealedAnswers}
-              onRevealAnswer={onRevealAnswer}
-            />
-          ) : (
-            <SinglePlayerScoring
-              sortedPlayers={sortedPlayers}
-              currentRound={currentRound}
-              revealedAnswers={revealedAnswers}
-              revealedResponseTimes={revealedResponseTimes}
-              onRevealAnswer={onRevealAnswer}
-            />
-          )}
-        </section>
-        <footer className="modal-card-foot is-justify-content-center">
-          <button
-            className="button is-family-secondary is-large ml-1 mr-1"
-            onClick={() => handleAwardPoints(0)}
-          >
-            zero pts 😔
-          </button>
-          <button
-            className="button is-success is-large ml-1 mr-1"
-            onClick={() => handleAwardPoints(1)}
-          >
-            one point ⭐
-          </button>
-          <button
-            className="button is-warning is-large ml-1 mr-1"
-            onClick={() => handleAwardPoints(2)}
-          >
-            🌟 two! ptz! 🌟
-          </button>
-        </footer>
-      </div>
-    </div>
+              {currentRound.answerForBoth ? (
+                <BothPlayersScoring
+                  player1={player1}
+                  player2={player2}
+                  currentRound={currentRound}
+                  revealedAnswers={revealedAnswers}
+                  onRevealAnswer={onRevealAnswer}
+                />
+              ) : (
+                <SinglePlayerScoring
+                  sortedPlayers={sortedPlayers}
+                  currentRound={currentRound}
+                  revealedAnswers={revealedAnswers}
+                  revealedResponseTimes={revealedResponseTimes}
+                  onRevealAnswer={onRevealAnswer}
+                />
+              )}
+            </motion.section>
+
+            <footer className="modal-card-foot is-justify-content-center" style={{ gap: '0.5rem' }}>
+              {[
+                { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
+                { points: 1, label: 'one point ⭐', className: 'is-success' },
+                { points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' },
+              ].map(({ points, label, className }, index) => (
+                <motion.button
+                  key={points}
+                  className={`button is-large ${className}`}
+                  onClick={() => handleAwardPoints(points)}
+                  initial={{ y: 50, opacity: 0, rotateX: -30 }}
+                  animate={{ y: 0, opacity: 1, rotateX: 0 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 20,
+                    delay: 0.2 + index * 0.08,
+                  }}
+                  whileHover={{
+                    scale: 1.08,
+                    y: -4,
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                  }}
+                  whileTap={{
+                    scale: 0.92,
+                    y: 2,
+                  }}
+                >
+                  {label}
+                </motion.button>
+              ))}
+            </footer>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
