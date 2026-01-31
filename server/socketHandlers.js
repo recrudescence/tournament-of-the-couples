@@ -328,13 +328,17 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        gameState.startRound(roomCode, question, variant, options, answerForBoth);
+        // Get round count from database to derive next round number
+        const roundCount = await database.getRoundCount(roomCode);
+        const roundNumber = roundCount + 1;
+
+        gameState.startRound(roomCode, question, variant, options, answerForBoth, roundNumber);
         const state = gameState.getGameState(roomCode);
 
         // Persist round to database
         const roundId = await database.saveRound(
           roomCode,  // gameId is now roomCode
-          state.currentRound.roundNumber,
+          roundNumber,
           question,
           variant,
           options

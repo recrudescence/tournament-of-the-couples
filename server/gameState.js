@@ -47,6 +47,7 @@ function initializeGame(roomCode) {
     players: [],
     teams: [],
     currentRound: null,
+    lastRoundNumber: 0, // Persists across rounds for reconnection
     teamTotalResponseTimes: {} // Cumulative response times per team (teamId -> total ms)
   };
 
@@ -300,7 +301,7 @@ function endGame(roomCode) {
 }
 
 // Start a new round
-function startRound(roomCode, question, variant = 'open_ended', options = null, answerForBoth = false) {
+function startRound(roomCode, question, variant = 'open_ended', options = null, answerForBoth = false, roundNumber = null) {
   const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
@@ -327,7 +328,13 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     throw new Error('Open ended should not have options');
   }
 
-  const roundNumber = gameState.currentRound ? gameState.currentRound.roundNumber + 1 : 1;
+  // Use provided roundNumber (from database count) or fallback to in-memory calculation
+  if (roundNumber === null) {
+    roundNumber = gameState.currentRound ? gameState.currentRound.roundNumber + 1 : 1;
+  }
+
+  // Persist for reconnection (survives currentRound being cleared)
+  gameState.lastRoundNumber = roundNumber;
 
   gameState.currentRound = {
     roundNumber,

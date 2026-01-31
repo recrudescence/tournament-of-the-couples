@@ -54,6 +54,10 @@ export function HostPage() {
         setPhase('answering');
       }
     } else if (gameState?.status === 'playing') {
+      // Use lastRoundNumber for reconnection when between rounds
+      if (gameState.lastRoundNumber) {
+        setRoundNumber(gameState.lastRoundNumber);
+      }
       setPhase('roundSetup');
     }
   }, []); // Only run on mount

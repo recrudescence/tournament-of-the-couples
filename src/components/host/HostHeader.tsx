@@ -1,5 +1,7 @@
-import {PlayerAvatar} from "../../components/common/PlayerAvatar.tsx";
-import type {PlayerAvatar as PlayerAvatarType} from "../../types/game.ts";
+import {motion, AnimatePresence} from "framer-motion";
+import {PlayerAvatar} from "../common/PlayerAvatar";
+import type {PlayerAvatar as PlayerAvatarType} from "../../types/game";
+import {flipInLeft, scalePop, springBouncy, springDefault} from "../../styles/motion";
 
 interface HostHeaderProps {
   hostName: string;
@@ -8,10 +10,25 @@ interface HostHeaderProps {
   gameStatus: string;
 }
 
+const ROUND_COLORS = ["is-primary", "is-success", "is-info", "is-link", "is-warning"];
+
+function getRoundColor(round: number): string {
+  return ROUND_COLORS[(round - 1) % ROUND_COLORS.length] ?? "is-primary";
+}
+
+function getStatusColor(status: string): string {
+  const lower = status.toLowerCase();
+  if (lower.includes("waiting")) return "is-info";
+  if (lower.includes("answering")) return "is-warning";
+  if (lower.includes("scoring")) return "is-success";
+  if (lower.includes("finished")) return "is-dark";
+  return "is-light";
+}
+
 export function HostHeader({hostName, hostAvatar, roundNumber, gameStatus}: HostHeaderProps) {
   return (
     <div className="box">
-      <div className="columns is-mobile has-text-centered">
+      <div className="columns is-mobile has-text-centered is-vcentered">
         <div className="column">
           <p className="heading">Host</p>
           <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
@@ -21,11 +38,37 @@ export function HostHeader({hostName, hostAvatar, roundNumber, gameStatus}: Host
         </div>
         <div className="column">
           <p className="heading">Round</p>
-          <p className="title is-6">{roundNumber}</p>
+          <div style={{ perspective: 200 }}>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={roundNumber}
+                className={`tag is-rounded is-medium has-text-weight-bold ${getRoundColor(roundNumber)}`}
+                variants={flipInLeft}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, rotateY: 90 }}
+                transition={springBouncy}
+              >
+                {roundNumber}
+              </motion.span>
+            </AnimatePresence>
+          </div>
         </div>
         <div className="column">
           <p className="heading">Status</p>
-          <p className="title is-6">{gameStatus}</p>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={gameStatus}
+              className={`tag is-medium has-text-weight-semibold ${getStatusColor(gameStatus)}`}
+              variants={scalePop}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={springDefault}
+            >
+              {gameStatus}
+            </motion.span>
+          </AnimatePresence>
         </div>
       </div>
     </div>

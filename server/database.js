@@ -119,6 +119,20 @@ async function saveAnswer(roundId, playerName, teamId, answerText, responseTime 
   }
 }
 
+// Get count of rounds for a game
+async function getRoundCount(gameId) {
+  try {
+    const result = await get(
+      'SELECT COUNT(*) as count FROM rounds WHERE game_code = ?',
+      [gameId]
+    );
+    return result?.count ?? 0;
+  } catch (err) {
+    console.error('Error getting round count:', err.message);
+    throw err;
+  }
+}
+
 // Get all rounds and answers for a game
 async function getGameRounds(gameId) {
   try {
@@ -151,5 +165,6 @@ module.exports = {
   endGame,
   saveRound,
   saveAnswer,
+  getRoundCount,
   getGameRounds
 };
