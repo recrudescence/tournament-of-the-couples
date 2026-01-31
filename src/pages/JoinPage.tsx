@@ -49,12 +49,14 @@ export function JoinPage() {
   const [creatingNew, setCreatingNew] = useState(false);
   const [joiningExisting, setJoiningExisting] = useState(false);
 
-  // Show error from location state if present (e.g., from failed join attempt)
+  // Show error from location state if present (e.g., from failed join attempt or being kicked)
   useEffect(() => {
-    const state = location.state as { error?: string } | null;
-    if (state?.error) {
+    const state = location.state as { error?: string; kicked?: boolean } | null;
+    if (state?.kicked) {
+      showError('You were kicked from the game by the host');
+      navigate(location.pathname, { replace: true });
+    } else if (state?.error) {
       showError(state.error);
-      // Clear the location state to prevent showing the error again on refresh
       navigate(location.pathname, { replace: true });
     }
   }, [location, showError, navigate]);

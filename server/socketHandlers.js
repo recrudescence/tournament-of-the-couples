@@ -151,7 +151,7 @@ function setupSocketHandlers(io) {
       }
     });
 
-    // Host kicks a player from the lobby
+    // Host kicks a player
     socket.on('kickPlayer', ({ targetSocketId }) => {
       const roomCode = socket.roomCode;
       if (!roomCode) {
@@ -171,12 +171,6 @@ function setupSocketHandlers(io) {
         return;
       }
 
-      // Only allow kicking in lobby
-      if (state.status !== 'lobby') {
-        socket.emit('error', { message: 'Can only kick players in lobby' });
-        return;
-      }
-
       try {
         // Get the player's info before removing them
         const targetPlayer = state.players.find(p => p.socketId === targetSocketId);
@@ -185,14 +179,27 @@ function setupSocketHandlers(io) {
           return;
         }
 
-        // Remove the player from the game
-        gameState.removePlayer(roomCode, targetSocketId);
+        if (state.status === 'lobby') {
+          // In lobby: fully remove the player
+          gameState.removePlayer(roomCode, targetSocketId);
+        } else {
+          // During gameplay: mark as disconnected (keeps team intact)
+          gameState.disconnectPlayer(roomCode, targetSocketId);
+        }
+
         const updatedState = gameState.getGameState(roomCode);
 
         // Notify the kicked player
         io.to(targetSocketId).emit('playerKicked');
 
-        // Update all other players in the lobby
+        // Force disconnect the kicked player's socket
+        const targetSocket = io.sockets.sockets.get(targetSocketId);
+        if (targetSocket) {
+          targetSocket.leave(roomCode);
+          delete targetSocket.roomCode;
+        }
+
+        // Update all other players
         io.to(roomCode).emit('lobbyUpdate', updatedState);
       } catch (err) {
         console.error('Kick player error:', err);
@@ -392,6 +399,39 @@ function setupSocketHandlers(io) {
         }
       } catch (err) {
         console.error('Submit answer error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host starts scoring (can be called before all answers are in for force-start)
+    socket.on('startScoring', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can start scoring' });
+        return;
+      }
+
+      try {
+        // Mark round as complete (sets status to 'scoring')
+        gameState.completeRound(roomCode);
+        const updatedState = gameState.getGameState(roomCode);
+
+        // Notify all clients that scoring has begun
+        io.to(roomCode).emit('scoringStarted', updatedState);
+      } catch (err) {
+        console.error('Start scoring error:', err);
         socket.emit('error', { message: err.message });
       }
     });

@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
@@ -44,8 +45,9 @@ function derivePlayerPhase(gameState: GameState | null, playerName: string | und
 }
 
 export function PlayerPage() {
+  const navigate = useNavigate();
   const { isConnected, emit, on } = useSocket();
-  const { playerInfo } = usePlayerInfo();
+  const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer, myTeam, myPartner } = useGameContext();
   const { requestWakeLock, isSupported: wakeLockSupported } = useWakeLock();
 
@@ -144,6 +146,11 @@ export function PlayerPage() {
         setMyTeamPointsThisRound(null);
       }),
 
+      on('scoringStarted', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+        setMyTeamPointsThisRound(null);
+      }),
+
       on('scoreUpdated', ({ teamId, newScore, pointsAwarded }) => {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
 
@@ -180,10 +187,15 @@ export function PlayerPage() {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
       }),
+
+      on('playerKicked', () => {
+        clearPlayerInfo();
+        navigate('/', { state: { kicked: true } });
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError, startTimer, myPlayer?.teamId]);
+  }, [on, dispatch, showError, startTimer, myPlayer?.teamId, clearPlayerInfo, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

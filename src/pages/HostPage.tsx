@@ -1,17 +1,17 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useSocket } from '../hooks/useSocket';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useGameContext } from '../context/GameContext';
-import { useGameError } from '../hooks/useGameError';
-import { ExitButton } from '../components/common/ExitButton';
-import { QuestionForm } from '../components/host/QuestionForm';
-import { AnsweringPhase } from '../components/host/AnsweringPhase';
-import { ScoringInterface } from '../components/host/ScoringInterface';
-import { TeamScoreboard } from '../components/host/TeamScoreboard';
-import { RoundControls } from '../components/host/RoundControls';
-import { type GameState } from '../types/game';
-import { findPlayerBySocketId } from '../utils/playerUtils';
-import { GameTitle } from '../components/common/GameTitle';
+import {useEffect, useMemo, useState} from 'react';
+import {useSocket} from '../hooks/useSocket';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useGameContext} from '../context/GameContext';
+import {useGameError} from '../hooks/useGameError';
+import {ExitButton} from '../components/common/ExitButton';
+import {QuestionForm} from '../components/host/QuestionForm';
+import {AnsweringPhase} from '../components/host/AnsweringPhase';
+import {ScoringInterface} from '../components/host/ScoringInterface';
+import {TeamScoreboard} from '../components/host/TeamScoreboard';
+import {RoundControls} from '../components/host/RoundControls';
+import {type GameState} from '../types/game';
+import {findPlayerBySocketId} from '../utils/playerUtils';
+import {GameTitle} from '../components/common/GameTitle';
 import {HostHeader} from "../components/host/HostHeader.tsx";
 
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
@@ -84,6 +84,10 @@ export function HostPage() {
 
       // allAnswersIn is now derived from gameState, no handler needed
 
+      on('scoringStarted', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+      }),
+
       on('answerRevealed', ({ playerName, responseTime }) => {
         setRevealedAnswers((prev) => new Set([...prev, playerName]));
         setRevealedResponseTimes((prev) => ({
@@ -143,6 +147,8 @@ export function HostPage() {
     setRevealedResponseTimes({});
     setShowFinishBtn(false);
     setPhase('scoring');
+    // Notify server/players that scoring has begun
+    emit('startScoring');
   };
 
   const handleBackToAnswering = () => {
@@ -227,6 +233,10 @@ export function HostPage() {
     }
   };
 
+  const handleKickPlayer = (socketId: string) => {
+    emit('kickPlayer', { targetSocketId: socketId });
+  };
+
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
@@ -297,7 +307,15 @@ export function HostPage() {
           responseTimes={gameState?.teamTotalResponseTimes}
         />
 
-        <RoundControls onEndGame={handleEndGame} />
+        <RoundControls
+          players={gameState?.players || []}
+          phase={phase}
+          allAnswersIn={allAnswersIn}
+          onKickPlayer={handleKickPlayer}
+          onReopenAnswering={handleReopenAnswering}
+          onStartScoring={handleStartScoring}
+          onEndGame={handleEndGame}
+        />
 
         {error && <div className="notification is-danger is-light mt-4">{error}</div>}
       </div>

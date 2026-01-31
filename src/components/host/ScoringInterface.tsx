@@ -33,7 +33,6 @@ export function ScoringInterface({
   revealedAnswers,
   revealedResponseTimes,
   showFinishBtn,
-  onBackToAnswering,
   onRevealAnswer,
   onAwardPoints,
   onReopenTeamScoring,
@@ -113,9 +112,6 @@ export function ScoringInterface({
 
   return (
     <div className="box">
-      <button className="button is-info is-small mb-3" onClick={onBackToAnswering}>
-        ← Back to Answering
-      </button>
       <Question question={currentRound?.question}/>
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 

@@ -22,6 +22,7 @@ export interface ClientToServerEvents {
   startGame: () => void;
   startRound: (data: { question: string; variant: string; options?: string[]; answerForBoth?: boolean }) => void;
   submitAnswer: (data: { answer: string; responseTime: number }) => void;
+  startScoring: () => void;
   revealAnswer: (data: { playerName: string }) => void;
   awardPoint: (data: { teamId: string; points: number }) => void;
   removePoint: (data: { teamId: string; points: number }) => void;
@@ -85,6 +86,7 @@ export interface ServerToClientEvents {
     gameState: GameState;
   }) => void;
   allAnswersIn: () => void;
+  scoringStarted: (data: GameState) => void;
   returnedToAnswering: (data: GameState) => void;
   answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number; pointsAwarded: number }) => void;

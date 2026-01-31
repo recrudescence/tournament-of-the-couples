@@ -1,6 +1,6 @@
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import { PlaceBadge } from '../common/PlaceBadge';
-import type { PlayerIdentity } from '../../types/game';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {PlaceBadge} from '../common/PlaceBadge';
+import type {PlayerIdentity} from '../../types/game';
 
 interface PlayerHeaderProps {
   host: PlayerIdentity;
@@ -19,7 +19,7 @@ export function PlayerHeader({
   teamPlace,
   isCelebrating
 }: PlayerHeaderProps) {
-  const showBadge = teamPlace !== null && teamPlace <= 3;
+  const showBadge = teamPlace !== null && teamPlace <= 3 && teamScore > 0;
 
   return (
     <div className="box" style={{ overflow: 'visible' }}>
@@ -52,7 +52,7 @@ export function PlayerHeader({
               <PlaceBadge place={teamPlace} score={teamScore} size="small" />
             ) : (
               <p className={`title is-6 mb-0 ${isCelebrating ? 'has-text-success' : ''}`}>
-                {teamPlace !== null ? `#${teamPlace} • ` : ''}{teamScore} pts
+                {teamPlace !== null && teamScore > 0 ? `#${teamPlace} • ` : ''}{teamScore} pts
               </p>
             )}
           </div>

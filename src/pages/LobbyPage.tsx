@@ -44,7 +44,7 @@ export function LobbyPage() {
       on('playerKicked', () => {
         // Player was kicked by host - clear their info and redirect to join page
         clearPlayerInfo();
-        navigate('/');
+        navigate('/', { state: { kicked: true } });
       }),
 
       on('gameCancelled', () => {
