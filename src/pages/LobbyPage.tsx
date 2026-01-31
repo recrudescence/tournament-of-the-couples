@@ -1,6 +1,6 @@
 import {useEffect, useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {AnimatePresence, LayoutGroup} from 'framer-motion';
+import {AnimatePresence} from 'framer-motion';
 import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
@@ -290,48 +290,46 @@ export function LobbyPage() {
             {teamCount !== 1 ? 's' : ''} formed
           </div>
 
-          <LayoutGroup>
-            <div className="columns mb-5">
-              <div className="column has-text-centered">
-                <h2 className="subtitle is-5 mb-3">Singles</h2>
-                <AnimatePresence mode="popLayout">
-                  {/* Current player on own row (large) - player view only */}
-                  {currentPlayerUnpaired && (
-                    <div className="mb-4">
-                      {renderUnpairedPlayer(currentPlayerUnpaired, 0, 'large')}
-                    </div>
-                  )}
-                  {/* Other unpaired players */}
-                  {otherUnpairedPlayers.length > 0 ? (
-                    otherUnpairedPlayers.map((player, index) =>
-                      renderUnpairedPlayer(player, index + 1, 'normal')
-                    )
-                  ) : !currentPlayerUnpaired ? (
-                    <p className="has-text-grey-light is-italic">No singles mingling</p>
-                  ) : null}
-                </AnimatePresence>
-              </div>
-              <div className="column has-text-centered">
-                <h2 className="subtitle is-5 mb-3">Couples</h2>
-                <AnimatePresence mode="popLayout">
-                  {/* Current player's team on own row (large) - player view only */}
-                  {currentTeam && (
-                    <div className="mb-4">
-                      {renderTeamCard(currentTeam, 0, 'large')}
-                    </div>
-                  )}
-                  {/* Other teams */}
-                  {otherTeams.length > 0 ? (
-                    otherTeams.map((team, index) =>
-                      renderTeamCard(team, index + 1, 'normal')
-                    )
-                  ) : !currentTeam ? (
-                    <p className="has-text-grey-light is-italic">No teams coupled up yet</p>
-                  ) : null}
-                </AnimatePresence>
-              </div>
+          <div className="columns mb-5">
+            <div className="column has-text-centered">
+              <h2 className="subtitle is-5 mb-3">Singles</h2>
+              <AnimatePresence mode="sync">
+                {/* Current player on own row (large) - player view only */}
+                {currentPlayerUnpaired && (
+                  <div className="mb-4">
+                    {renderUnpairedPlayer(currentPlayerUnpaired, 0, 'large')}
+                  </div>
+                )}
+                {/* Other unpaired players */}
+                {otherUnpairedPlayers.length > 0 ? (
+                  otherUnpairedPlayers.map((player, index) =>
+                    renderUnpairedPlayer(player, index + 1, 'normal')
+                  )
+                ) : !currentPlayerUnpaired ? (
+                  <p className="has-text-grey-light is-italic">No singles mingling</p>
+                ) : null}
+              </AnimatePresence>
             </div>
-          </LayoutGroup>
+            <div className="column has-text-centered">
+              <h2 className="subtitle is-5 mb-3">Couples</h2>
+              <AnimatePresence mode="sync">
+                {/* Current player's team on own row (large) - player view only */}
+                {currentTeam && (
+                  <div className="mb-4">
+                    {renderTeamCard(currentTeam, 0, 'large')}
+                  </div>
+                )}
+                {/* Other teams */}
+                {otherTeams.length > 0 ? (
+                  otherTeams.map((team, index) =>
+                    renderTeamCard(team, index + 1, 'normal')
+                  )
+                ) : !currentTeam ? (
+                  <p className="has-text-grey-light is-italic">No teams coupled up yet</p>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          </div>
 
           {playerInfo.isHost && playerCount > 0 && (
             <div className="box has-background-primary-light">

@@ -4,12 +4,10 @@ import type {Player} from '../../types/game';
 import {usePrevious} from '../../hooks/usePrevious';
 import {PlayerAvatar} from './PlayerAvatar';
 import {
-  bubbleEntrance,
   bubbleFloat,
   bubbleFloatTransition,
   bubbleHover,
   bubbleTap,
-  springBouncy,
 } from '../../styles/motion';
 
 type BubbleSize = 'normal' | 'large';
@@ -79,14 +77,12 @@ export function PlayerCard({
 
   return (
     <motion.div
-      layoutId={`player-bubble-${player.socketId}`}
       className="mb-3 mr-1 ml-1"
-      variants={bubbleEntrance}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={springBouncy}
       style={{ display: 'inline-block' }}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
     >
       <motion.div
         style={bubbleStyle}

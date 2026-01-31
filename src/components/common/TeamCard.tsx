@@ -4,13 +4,10 @@ import type {Player} from '../../types/game';
 import {usePrevious} from '../../hooks/usePrevious';
 import {PlayerAvatar} from './PlayerAvatar';
 import {
-  bubbleEntrance,
   bubbleFloat,
   bubbleFloatTransition,
   fadeIn,
   nervousHover,
-  springBouncy,
-  springGentle,
 } from '../../styles/motion';
 
 type BubbleSize = 'normal' | 'large';
@@ -131,13 +128,7 @@ export function TeamCard({
     );
 
     return (
-      <motion.div
-        layoutId={`player-bubble-${player.socketId}`}
-        style={bubbleStyle(player, side)}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ ...springGentle, delay: side === 'left' ? 0 : 0.1 }}
-      >
+      <div style={bubbleStyle(player, side)}>
         {side === 'left' ? (
           <>
             {avatarElement}
@@ -149,7 +140,7 @@ export function TeamCard({
             {avatarElement}
           </>
         )}
-      </motion.div>
+      </div>
     );
   };
 
@@ -170,11 +161,10 @@ export function TeamCard({
   return (
     <motion.div
       className="mb-4"
-      variants={bubbleEntrance}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={springBouncy}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
     >
       {/* Floating container for the paired bubbles */}
       <motion.div
