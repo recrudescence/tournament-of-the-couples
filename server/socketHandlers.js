@@ -473,7 +473,8 @@ function setupSocketHandlers(io) {
 
           io.to(roomCode).emit('answerRevealed', {
             socketId: player?.socketId,
-            playerName: responderName, // Send actual player name, not composite key
+            playerName, // Full composite key for HostPage matching
+            responderName, // Simple name for PlayerPage display
             answer: answerObj?.text,
             responseTime: answerObj?.responseTime
           });

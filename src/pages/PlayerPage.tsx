@@ -154,10 +154,12 @@ export function PlayerPage() {
         setMyTeamPointsThisRound(null);
       }),
 
-      on('answerRevealed', ({ playerName, answer, responseTime }) => {
+      on('answerRevealed', ({ playerName, responderName, answer, responseTime }) => {
+        // Use responderName for dual mode (composite key), fall back to playerName for single mode
+        const key = responderName ?? playerName;
         setRevealedAnswers(prev => ({
           ...prev,
-          [playerName]: { text: answer, responseTime }
+          [key]: { text: answer, responseTime }
         }));
       }),
 

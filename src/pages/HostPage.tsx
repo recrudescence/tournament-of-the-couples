@@ -219,18 +219,35 @@ export function HostPage() {
     if (team && gameState?.players) {
       const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
       const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
+      const isDualMode = gameState?.currentRound?.answerForBoth;
 
       const newRevealedAnswers = new Set(revealedAnswers);
-      if (player1) newRevealedAnswers.delete(player1.name);
-      if (player2) newRevealedAnswers.delete(player2.name);
+      if (player1 && player2 && isDualMode) {
+        // Dual mode: clear all 4 composite keys
+        newRevealedAnswers.delete(`${player1.name}:${player1.name}`);
+        newRevealedAnswers.delete(`${player1.name}:${player2.name}`);
+        newRevealedAnswers.delete(`${player2.name}:${player1.name}`);
+        newRevealedAnswers.delete(`${player2.name}:${player2.name}`);
+      } else {
+        // Single mode: clear by player name
+        if (player1) newRevealedAnswers.delete(player1.name);
+        if (player2) newRevealedAnswers.delete(player2.name);
+      }
       setRevealedAnswers(newRevealedAnswers);
       setCurrentTeamIndex(teamIndex);
 
-      // Clear response times for these players
+      // Clear response times for these players (keyed by composite or simple name)
       setRevealedResponseTimes((prev) => {
         const updated = { ...prev };
-        if (player1) delete updated[player1.name];
-        if (player2) delete updated[player2.name];
+        if (player1 && player2 && isDualMode) {
+          delete updated[`${player1.name}:${player1.name}`];
+          delete updated[`${player1.name}:${player2.name}`];
+          delete updated[`${player2.name}:${player1.name}`];
+          delete updated[`${player2.name}:${player2.name}`];
+        } else {
+          if (player1) delete updated[player1.name];
+          if (player2) delete updated[player2.name];
+        }
         return updated;
       });
     }

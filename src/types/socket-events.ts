@@ -90,7 +90,7 @@ export interface ServerToClientEvents {
   allAnswersIn: () => void;
   scoringStarted: (data: GameState) => void;
   returnedToAnswering: (data: GameState) => void;
-  answerRevealed: (data: { playerName: string; answer: string; responseTime: number }) => void;
+  answerRevealed: (data: { playerName: string; responderName?: string; answer: string; responseTime: number }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number; pointsAwarded: number }) => void;
   readyForNextRound: (data: GameState) => void;
 
