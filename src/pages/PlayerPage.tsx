@@ -274,7 +274,10 @@ export function PlayerPage() {
           {(phase === 'scoring') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
           {phase === 'waiting' && gameState?.host && (
-            <WaitingStatus host={gameState.host} />
+            <WaitingStatus
+              host={gameState.host}
+              isInitialRound={gameState.lastRoundNumber === 0}
+            />
           )}
 
           {phase === 'answering' && (
