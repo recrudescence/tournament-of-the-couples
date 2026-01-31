@@ -215,6 +215,48 @@ export function badgeShadowKeyframes(shadowColor: string) {
 }
 
 // ============================================================================
+// BUBBLE ANIMATIONS - For lobby player bubbles
+// ============================================================================
+
+/** Bubble float animation (continuous) - varies by index for staggered effect */
+export function bubbleFloat(index: number) {
+  const yAmount = 4 + (index % 3); // 4-6px variation
+  const rotateAmount = 1 + (index % 2); // 1-2deg variation
+  return {
+    y: [0, -yAmount, 0],
+    rotate: [0, rotateAmount, 0, -rotateAmount, 0],
+  };
+}
+
+export function bubbleFloatTransition(index: number): Transition {
+  const baseDuration = 3 + (index % 3) * 0.5; // 3-4.5s variation
+  return {
+    duration: baseDuration,
+    repeat: Infinity,
+    ease: 'easeInOut',
+    delay: index * 0.2, // stagger start times
+  };
+}
+
+/** Bubble entrance - scale + slight rotation */
+export const bubbleEntrance: Variants = {
+  hidden: { opacity: 0, scale: 0.5, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.5, y: -20 },
+};
+
+/** Bubble hover - lift with shadow */
+export const bubbleHover = {
+  scale: 1.05,
+  y: -4,
+  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+};
+
+export const bubbleTap = {
+  scale: 0.95,
+};
+
+// ============================================================================
 // HELPER: Create staggered delay transition
 // ============================================================================
 

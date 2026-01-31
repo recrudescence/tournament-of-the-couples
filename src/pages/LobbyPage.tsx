@@ -1,17 +1,18 @@
-import { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSocket } from '../hooks/useSocket';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useGameContext } from '../context/GameContext';
-import { useGameError } from '../hooks/useGameError';
-import { useSnowEffect } from '../hooks/useConfetti';
-import { useTheme } from '../hooks/useTheme';
-import { ExitButton } from '../components/common/ExitButton';
-import { PlayerAvatar } from '../components/common/PlayerAvatar';
-import { PlayerCard } from '../components/common/PlayerCard';
-import { TeamCard } from '../components/common/TeamCard';
-import type { Player, Team } from '../types/game';
-import { findPlayerBySocketId } from '../utils/playerUtils';
+import {useEffect, useMemo} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {AnimatePresence, LayoutGroup} from 'framer-motion';
+import {useSocket} from '../hooks/useSocket';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useGameContext} from '../context/GameContext';
+import {useGameError} from '../hooks/useGameError';
+import {useSnowEffect} from '../hooks/useConfetti';
+import {useTheme} from '../hooks/useTheme';
+import {ExitButton} from '../components/common/ExitButton';
+import {PlayerAvatar} from '../components/common/PlayerAvatar';
+import {PlayerCard} from '../components/common/PlayerCard';
+import {TeamCard} from '../components/common/TeamCard';
+import type {Player, Team} from '../types/game';
+import {findPlayerBySocketId} from '../utils/playerUtils';
 
 export function LobbyPage() {
   const navigate = useNavigate();
@@ -167,7 +168,32 @@ export function LobbyPage() {
     [connectedNonHostPlayers.length, gameState.teams.length]
   );
 
-  const renderTeamCard = (team: Team) => {
+  // Split players/teams for player view: separate "you" from others
+  const currentPlayerUnpaired = useMemo(() => {
+    if (playerInfo.isHost) return null;
+    return sortedUnpairedPlayers.find(p => p.socketId === currentPlayer?.socketId) || null;
+  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo.isHost]);
+
+  const otherUnpairedPlayers = useMemo(() => {
+    if (playerInfo.isHost) return sortedUnpairedPlayers;
+    return sortedUnpairedPlayers.filter(p => p.socketId !== currentPlayer?.socketId);
+  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo.isHost]);
+
+  const currentTeam = useMemo(() => {
+    if (playerInfo.isHost) return null;
+    return sortedTeams.find(t =>
+      t.player1Id === currentPlayer?.socketId || t.player2Id === currentPlayer?.socketId
+    ) || null;
+  }, [sortedTeams, currentPlayer?.socketId, playerInfo.isHost]);
+
+  const otherTeams = useMemo(() => {
+    if (playerInfo.isHost) return sortedTeams;
+    return sortedTeams.filter(t =>
+      t.player1Id !== currentPlayer?.socketId && t.player2Id !== currentPlayer?.socketId
+    );
+  }, [sortedTeams, currentPlayer?.socketId, playerInfo.isHost]);
+
+  const renderTeamCard = (team: Team, index: number, size: 'normal' | 'large' = 'normal') => {
     const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
     const player2 = findPlayerBySocketId(gameState.players, team.player2Id);
 
@@ -188,6 +214,8 @@ export function LobbyPage() {
         isHost={playerInfo.isHost}
         isViewerTeam={Boolean(isCurrentPlayerInTeam)}
         canUnpair={canUnpair}
+        index={index}
+        size={size}
         onUnpair={handleUnpair}
         onKick={handleKick}
         onRandomizeAvatar={isCurrentPlayerInTeam ? handleRandomizeAvatar : undefined}
@@ -195,7 +223,7 @@ export function LobbyPage() {
     );
   };
 
-  const renderUnpairedPlayer = (player: Player) => {
+  const renderUnpairedPlayer = (player: Player, index: number, size: 'normal' | 'large' = 'normal') => {
     const isCurrentPlayer = currentPlayer && player.socketId === currentPlayer.socketId;
     const canPair =
       !isCurrentPlayer &&
@@ -210,6 +238,8 @@ export function LobbyPage() {
         isCurrentPlayer={Boolean(isCurrentPlayer)}
         canPair={Boolean(canPair)}
         isHost={playerInfo.isHost}
+        index={index}
+        size={size}
         onPair={handlePair}
         onKick={handleKick}
         onRandomizeAvatar={isCurrentPlayer ? handleRandomizeAvatar : undefined}
@@ -260,26 +290,50 @@ export function LobbyPage() {
             {teamCount !== 1 ? 's' : ''} formed
           </div>
 
-          <div className="columns mb-5">
-            <div className="column">
-              <h2 className="subtitle is-5 mb-3">Singles</h2>
-              {sortedUnpairedPlayers.length > 0 ? (
-                sortedUnpairedPlayers.map(renderUnpairedPlayer)
-              ) : (
-                <p className="has-text-grey-light is-italic">No singles mingling</p>
-              )}
+          <LayoutGroup>
+            <div className="columns mb-5">
+              <div className="column has-text-centered">
+                <h2 className="subtitle is-5 mb-3">Singles</h2>
+                <AnimatePresence mode="popLayout">
+                  {/* Current player on own row (large) - player view only */}
+                  {currentPlayerUnpaired && (
+                    <div className="mb-4">
+                      {renderUnpairedPlayer(currentPlayerUnpaired, 0, 'large')}
+                    </div>
+                  )}
+                  {/* Other unpaired players */}
+                  {otherUnpairedPlayers.length > 0 ? (
+                    otherUnpairedPlayers.map((player, index) =>
+                      renderUnpairedPlayer(player, index + 1, 'normal')
+                    )
+                  ) : !currentPlayerUnpaired ? (
+                    <p className="has-text-grey-light is-italic">No singles mingling</p>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+              <div className="column has-text-centered">
+                <h2 className="subtitle is-5 mb-3">Couples</h2>
+                <AnimatePresence mode="popLayout">
+                  {/* Current player's team on own row (large) - player view only */}
+                  {currentTeam && (
+                    <div className="mb-4">
+                      {renderTeamCard(currentTeam, 0, 'large')}
+                    </div>
+                  )}
+                  {/* Other teams */}
+                  {otherTeams.length > 0 ? (
+                    otherTeams.map((team, index) =>
+                      renderTeamCard(team, index + 1, 'normal')
+                    )
+                  ) : !currentTeam ? (
+                    <p className="has-text-grey-light is-italic">No teams coupled up yet</p>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
-            <div className="column">
-              <h2 className="subtitle is-5 mb-3">Couples</h2>
-              {sortedTeams.length > 0 ? (
-                sortedTeams.map(renderTeamCard)
-              ) : (
-                <p className="has-text-grey-light is-italic">No teams coupled up yet</p>
-              )}
-            </div>
-          </div>
+          </LayoutGroup>
 
-          {playerInfo.isHost && (
+          {playerInfo.isHost && playerCount > 0 && (
             <div className="box has-background-primary-light">
               <p className={`notification ${allPaired ? 'is-success' : 'is-warning'} is-light has-text-centered mt-0`}>
                 {allPaired

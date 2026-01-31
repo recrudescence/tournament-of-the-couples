@@ -1,13 +1,26 @@
-import { useState, useEffect } from 'react';
-import type { Player } from '../../types/game';
-import { usePrevious } from '../../hooks/usePrevious';
-import { PlayerAvatar } from './PlayerAvatar';
+import {useEffect, useState} from 'react';
+import {motion} from 'framer-motion';
+import type {Player} from '../../types/game';
+import {usePrevious} from '../../hooks/usePrevious';
+import {PlayerAvatar} from './PlayerAvatar';
+import {
+  bubbleEntrance,
+  bubbleFloat,
+  bubbleFloatTransition,
+  bubbleHover,
+  bubbleTap,
+  springBouncy,
+} from '../../styles/motion';
+
+type BubbleSize = 'normal' | 'large';
 
 interface PlayerCardProps {
   player: Player;
   isCurrentPlayer: boolean;
   canPair: boolean;
   isHost: boolean;
+  index: number;
+  size?: BubbleSize;
   onPair: (socketId: string) => void;
   onKick: (socketId: string, playerName: string) => void;
   onRandomizeAvatar?: () => void;
@@ -18,6 +31,8 @@ export function PlayerCard({
   isCurrentPlayer,
   canPair,
   isHost,
+  index,
+  size = 'normal',
   onPair,
   onKick,
   onRandomizeAvatar
@@ -33,7 +48,7 @@ export function PlayerCard({
     if (
       prevAvatar &&
       (prevAvatar.color !== player.avatar.color || prevAvatar.emoji !== player.avatar.emoji) &&
-      !isBumping // Don't double-bump if already animating from local click
+      !isBumping
     ) {
       setIsBumping(true);
       setTimeout(() => setIsBumping(false), 200);
@@ -48,21 +63,47 @@ export function PlayerCard({
     }
   };
 
+  // Pill bubble style - scales based on size prop
+  const isLarge = size === 'large';
+  const bubbleStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: isLarge ? '0.75rem' : '0.5rem',
+    padding: isLarge ? '0.75rem 1.25rem 0.75rem 0.75rem' : '0.5rem 1rem 0.5rem 0.5rem',
+    borderRadius: '2rem',
+    backgroundColor: isCurrentPlayer ? 'hsl(217, 71%, 95%)' : 'white',
+    cursor: canPair ? 'pointer' : 'default',
+    border: isCurrentPlayer ? '2px solid hsl(217, 71%, 53%)' : '2px solid transparent',
+    fontSize: isLarge ? '1.1rem' : undefined,
+  };
+
   return (
-    <div
-      className={`box ${canPair ? 'is-clickable has-background-white-ter' : ''}`}
-      onClick={canPair ? () => onPair(player.socketId) : undefined}
-      style={canPair ? { cursor: 'pointer' } : {}}
+    <motion.div
+      layoutId={`player-bubble-${player.socketId}`}
+      className="mb-3 mr-1 ml-1"
+      variants={bubbleEntrance}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      transition={springBouncy}
+      style={{ display: 'inline-block' }}
     >
-      <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
+      <motion.div
+        style={bubbleStyle}
+        animate={bubbleFloat(index)}
+        transition={bubbleFloatTransition(index)}
+        whileHover={canPair ? bubbleHover : undefined}
+        whileTap={canPair ? bubbleTap : undefined}
+        onClick={canPair ? () => onPair(player.socketId) : undefined}
+      >
         <PlayerAvatar
           avatar={player.avatar}
-          size="large"
+          size={isLarge ? 'large' : 'medium'}
           isBumping={isBumping}
           onClick={canRandomize ? handleAvatarClick : undefined}
           title={canRandomize ? 'Tap to randomize' : undefined}
         />
-        <div className="is-flex-grow-1">
+        <div>
           <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
             {player.name}
             {isCurrentPlayer && ' (You)'}
@@ -71,7 +112,7 @@ export function PlayerCard({
         </div>
         {isHost && !isCurrentPlayer && (
           <button
-            className="button is-small is-danger"
+            className="button is-small is-danger ml-2"
             onClick={(e) => {
               e.stopPropagation();
               onKick(player.socketId, player.name);
@@ -80,7 +121,7 @@ export function PlayerCard({
             Kick
           </button>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

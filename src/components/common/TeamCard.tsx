@@ -1,24 +1,19 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import type { Player } from '../../types/game';
-import { usePrevious } from '../../hooks/usePrevious';
-import { PlayerAvatar } from './PlayerAvatar';
+import {useEffect, useState} from 'react';
+import {motion} from 'framer-motion';
+import type {Player} from '../../types/game';
+import {usePrevious} from '../../hooks/usePrevious';
+import {PlayerAvatar} from './PlayerAvatar';
 import {
-  cardEntrance,
-  scalePop,
-  flipInLeft,
-  flipInRight,
-  emojiSpin,
+  bubbleEntrance,
+  bubbleFloat,
+  bubbleFloatTransition,
   fadeIn,
-  springDefault,
-  springGentle,
-  springBouncy,
-  cardHover,
-  cardTap,
-  buttonHover,
-  buttonTap,
   nervousHover,
+  springBouncy,
+  springGentle,
 } from '../../styles/motion';
+
+type BubbleSize = 'normal' | 'large';
 
 interface TeamCardProps {
   player1: Player;
@@ -27,6 +22,8 @@ interface TeamCardProps {
   isHost: boolean;
   isViewerTeam: boolean;
   canUnpair: boolean;
+  index: number;
+  size?: BubbleSize;
   onUnpair: () => void;
   onKick: (socketId: string, playerName: string) => void;
   onRandomizeAvatar?: () => void;
@@ -39,10 +36,13 @@ export function TeamCard({
   isHost,
   isViewerTeam,
   canUnpair,
+  index,
+  size = 'normal',
   onUnpair,
   onKick,
   onRandomizeAvatar
 }: TeamCardProps) {
+  const isLarge = size === 'large';
   const [bumpingPlayer, setBumpingPlayer] = useState<string | null>(null);
   const isPlayer1Current = player1.name === currentPlayerName;
 
@@ -86,99 +86,144 @@ export function TeamCard({
     }
   };
 
-  const renderPlayerMiniCard = (player: Player, side: 'left' | 'right') => {
+  const bubbleStyle = (player: Player, side: 'left' | 'right'): React.CSSProperties => {
+    const isCurrent = player.name === currentPlayerName;
+    const paddingLeft = isLarge ? '0.75rem 1rem 0.75rem 0.75rem' : '0.5rem 0.75rem 0.5rem 0.5rem';
+    const paddingRight = isLarge ? '0.75rem 0.75rem 0.75rem 1rem' : '0.5rem 0.5rem 0.5rem 0.75rem';
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: isLarge ? '0.75rem' : '0.5rem',
+      padding: side === 'left' ? paddingLeft : paddingRight,
+      borderRadius: '2rem',
+      backgroundColor: isCurrent ? 'hsl(217, 71%, 95%)' : 'white',
+      border: isCurrent ? '2px solid hsl(217, 71%, 53%)' : '2px solid transparent',
+      // Overlap: negative margin pulls bubbles together
+      marginRight: side === 'left' ? '-0.25rem' : 0,
+      marginLeft: side === 'right' ? '-0.25rem' : 0,
+      position: 'relative' as const,
+      zIndex: side === 'left' ? 1 : 2,
+    };
+  };
+
+  const renderBubble = (player: Player, side: 'left' | 'right') => {
     const isCurrent = player.name === currentPlayerName;
     const canRandomize = isCurrent && onRandomizeAvatar;
     const isThisPlayerBumping = bumpingPlayer === player.socketId;
 
+    // Arrange content based on side (avatar on outside, name on inside)
+    const avatarElement = (
+      <PlayerAvatar
+        avatar={player.avatar}
+        size={isLarge ? 'large' : 'medium'}
+        isBumping={isThisPlayerBumping}
+        onClick={canRandomize ? () => handleAvatarClick(player.socketId) : undefined}
+        title={canRandomize ? 'Tap to randomize' : undefined}
+      />
+    );
+
+    const textSizeClass = isLarge ? 'is-size-6' : 'is-size-7';
+    const nameElement = (
+      <span className={`has-text-weight-semibold ${textSizeClass} ${isCurrent ? 'has-text-primary' : ''}`}>
+        {player.name}
+        {isCurrent && <span className="has-text-grey-light"> (you)</span>}
+      </span>
+    );
+
     return (
       <motion.div
-        className="box mb-0 p-3 has-text-centered"
-        style={{ flex: '1 1 0', minWidth: 0, transformStyle: 'preserve-3d', perspective: 1000 }}
-        variants={side === 'left' ? flipInLeft : flipInRight}
-        initial="hidden"
-        animate="visible"
+        layoutId={`player-bubble-${player.socketId}`}
+        style={bubbleStyle(player, side)}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ ...springGentle, delay: side === 'left' ? 0 : 0.1 }}
-        whileHover={cardHover}
-        whileTap={cardTap}
       >
-        <div className="is-flex is-justify-content-center">
-          <PlayerAvatar
-            avatar={player.avatar}
-            size="medium"
-            isBumping={isThisPlayerBumping}
-            onClick={canRandomize ? () => handleAvatarClick(player.socketId) : undefined}
-            title={canRandomize ? 'Tap to randomize' : undefined}
-          />
-        </div>
-        <div
-          className={`has-text-weight-semibold mt-2 ${isCurrent ? 'has-text-primary' : ''}`}
-          style={{ wordBreak: 'break-word' }}
-        >
-          {player.name}
-          {isCurrent && <span className="has-text-grey-light"> (you)</span>}
-        </div>
-        {isHost && (
-          <motion.button
-            className="button is-small is-danger mt-2"
-            onClick={() => onKick(player.socketId, player.name)}
-            whileHover={buttonHover}
-            whileTap={buttonTap}
-          >
-            Kick
-          </motion.button>
+        {side === 'left' ? (
+          <>
+            {avatarElement}
+            {nameElement}
+          </>
+        ) : (
+          <>
+            {nameElement}
+            {avatarElement}
+          </>
         )}
       </motion.div>
     );
   };
 
-  const cardBackground = isViewerTeam ? 'has-background-link-light' : 'has-background-white-ter';
+  // Merge blob style - creates the "bulge" effect at overlap
+  const mergeBlobStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '1.5rem',
+    height: '2.5rem',
+    background: 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,182,193,0.6) 50%, rgba(255,255,255,0.9) 100%)',
+    borderRadius: '50%',
+    zIndex: 0,
+    filter: 'blur(2px)',
+  };
 
   return (
     <motion.div
-      className={`box ${cardBackground}`}
-      style={{ transformStyle: 'preserve-3d', perspective: 1200 }}
-      variants={cardEntrance}
+      className="mb-4"
+      variants={bubbleEntrance}
       initial="hidden"
       animate="visible"
-      transition={springGentle}
+      exit="exit"
+      transition={springBouncy}
     >
+      {/* Floating container for the paired bubbles */}
       <motion.div
-        className="is-flex is-align-items-center"
-        style={{ gap: '0.5rem', perspective: 1000 }}
-        variants={scalePop}
-        initial="hidden"
-        animate="visible"
-        transition={springDefault}
+        style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+        animate={bubbleFloat(index + 10)} // offset index for different float pattern
+        transition={bubbleFloatTransition(index + 10)}
       >
-        {renderPlayerMiniCard(leftPlayer, 'left')}
-        <motion.span
-          className="is-size-4"
-          variants={emojiSpin}
-          initial="hidden"
-          animate="visible"
-          transition={{ ...springBouncy, delay: 0.2 }}
-        >
-          🤝🏼
-        </motion.span>
-        {renderPlayerMiniCard(rightPlayer, 'right')}
+        {renderBubble(leftPlayer, 'left')}
+        {/* Merge blob for bulge effect */}
+        <div style={mergeBlobStyle} />
+        {renderBubble(rightPlayer, 'right')}
       </motion.div>
-      {canUnpair && (
+
+      {/* Action buttons below the bubbles - centered */}
+      {(canUnpair || isHost) && (
         <motion.div
-          className="mt-3"
+          className="mt-2 is-flex is-justify-content-center is-align-items-center"
+          style={{ gap: '0.5rem' }}
           variants={fadeIn}
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.3 }}
         >
-          <motion.button
-            className="button is-small is-danger is-light"
-            onClick={onUnpair}
-            whileHover={nervousHover}
-            whileTap={{ scale: 0.9 }}
-          >
-            {"Break up </3"}
-          </motion.button>
+          {canUnpair && (
+            <motion.button
+              className="button is-small is-danger is-light"
+              onClick={onUnpair}
+              whileHover={nervousHover}
+              whileTap={{ scale: 0.9 }}
+            >
+              {"Break up </3"}
+            </motion.button>
+          )}
+          {isHost && (
+            <>
+              <button
+                className="button is-small is-danger is-outlined"
+                onClick={() => onKick(leftPlayer.socketId, leftPlayer.name)}
+              >
+                Kick {leftPlayer.name}
+              </button>
+              <button
+                className="button is-small is-danger is-outlined"
+                onClick={() => onKick(rightPlayer.socketId, rightPlayer.name)}
+              >
+                Kick {rightPlayer.name}
+              </button>
+            </>
+          )}
         </motion.div>
       )}
     </motion.div>
