@@ -192,6 +192,11 @@ export function PlayerPage() {
         clearPlayerInfo();
         navigate('/', { state: { kicked: true } });
       }),
+
+      on('gameReset', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+        navigate('/game?room=' + state.roomCode);
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());

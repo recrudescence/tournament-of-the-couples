@@ -7,12 +7,14 @@ import { useGameError } from '../hooks/useGameError';
 import { useSnowEffect } from '../hooks/useConfetti';
 import { useTheme, Theme } from '../hooks/useTheme';
 import { GameTitle } from '../components/common/GameTitle';
+import { PlayerAvatar } from '../components/common/PlayerAvatar';
 
 type JoinStep = 'menu' | 'reconnect';
 
 interface GameListItem {
   roomCode: string;
   hostName: string;
+  hostAvatar: { color: string; emoji: string } | null;
   status: string;
   playerCount: number;
   canJoin: boolean;
@@ -253,9 +255,10 @@ export function JoinPage() {
                     disabled={!game.canJoin}
                     className={`button is-fullwidth is-justify-content-space-between ${!game.canJoin ? '' : 'is-link is-light'}`}
                   >
-                    <div>
+                    <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                      {game.hostAvatar && <PlayerAvatar avatar={game.hostAvatar} size="small" />}
                       <span className="has-text-weight-semibold">{game.hostName}'s Game</span>
-                      <span className="ml-2 has-text-grey is-size-7">{formatGameStatus(game.status)}</span>
+                      <span className="has-text-grey is-size-7">{formatGameStatus(game.status)}</span>
                     </div>
                     {!game.canJoin && <span className="tag is-danger is-light">Ended</span>}
                   </button>

@@ -30,6 +30,7 @@ export interface ClientToServerEvents {
   nextRound: () => void;
   backToAnswering: () => void;
   endGame: () => void;
+  resetGame: () => void;
 }
 
 export interface ServerToClientEvents {
@@ -43,6 +44,7 @@ export interface ServerToClientEvents {
   gameStarted: (data: GameState) => void;
   gameCancelled: (data: { reason: string }) => void;
   gameEnded: (data: GameState) => void;
+  gameReset: (data: GameState) => void;
 
   // player state
   joinSuccess: (data: {

@@ -3,6 +3,10 @@ const database = require('./database');
 const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 
+// Track pending room deletions (for host disconnect grace period)
+const pendingDeletions = new Map();
+const HOST_DISCONNECT_GRACE_PERIOD = 5000; // 5 seconds
+
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
 
@@ -60,6 +64,12 @@ function setupSocketHandlers(io) {
 
         // Route to appropriate handler based on join type
         if (isHost) {
+          // Cancel any pending room deletion (host is reconnecting)
+          if (pendingDeletions.has(roomCode)) {
+            clearTimeout(pendingDeletions.get(roomCode));
+            pendingDeletions.delete(roomCode);
+            console.log(`Cancelled pending deletion for ${roomCode} - host reconnected`);
+          }
           result = handleHostJoin(roomCode, socket, name, state);
         } else if (isReconnect) {
           result = handlePlayerReconnect(roomCode, socket, name, state);
@@ -597,6 +607,24 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host resets the game back to lobby
+    socket.on('resetGame', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.resetGame(roomCode);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('gameReset', state);
+      } catch (err) {
+        console.error('Reset game error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
       const roomCode = socket.roomCode;
@@ -606,11 +634,29 @@ function setupSocketHandlers(io) {
       if (state) {
         // Check if this is the host
         if (state.host && state.host.socketId === socket.id) {
-          // Host disconnecting in lobby cancels the game
+          // Host disconnecting in lobby - schedule deletion with grace period for refresh
           if (state.status === 'lobby') {
-            console.log(`Host disconnected from lobby, cancelling game ${roomCode}`);
-            io.to(roomCode).emit('gameCancelled', { reason: 'Host disconnected' });
-            gameState.deleteRoom(roomCode);
+            console.log(`Host disconnected from lobby, scheduling deletion for ${roomCode}`);
+            gameState.disconnectHost(roomCode);
+
+            // Cancel any existing pending deletion
+            if (pendingDeletions.has(roomCode)) {
+              clearTimeout(pendingDeletions.get(roomCode));
+            }
+
+            // Schedule room deletion after grace period
+            const timeout = setTimeout(() => {
+              const currentState = gameState.getGameState(roomCode);
+              // Only delete if host is still disconnected
+              if (currentState && currentState.host && !currentState.host.connected) {
+                console.log(`Grace period expired, deleting room ${roomCode}`);
+                io.to(roomCode).emit('gameCancelled', { reason: 'Host disconnected' });
+                gameState.deleteRoom(roomCode);
+              }
+              pendingDeletions.delete(roomCode);
+            }, HOST_DISCONNECT_GRACE_PERIOD);
+
+            pendingDeletions.set(roomCode, timeout);
           } else {
             // During active game, just mark as disconnected
             const hostName = state.host.name;

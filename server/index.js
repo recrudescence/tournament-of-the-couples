@@ -30,6 +30,7 @@ app.get('/api/games', (req, res) => {
       .map(game => ({
         roomCode: game.roomCode,
         hostName: game.host.name,
+        hostAvatar: game.host.avatar,
         status: game.status, // 'lobby', 'playing', 'scoring', 'ended'
         playerCount: game.players.length,
         canJoin: game.status !== 'ended' // All states except 'ended' are joinable (lobby for new, playing/scoring for reconnect)

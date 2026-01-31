@@ -47,10 +47,10 @@ export function LobbyPage() {
         navigate('/', { state: { kicked: true } });
       }),
 
-      on('gameCancelled', () => {
+      on('gameCancelled', ({ reason }) => {
         // Game was canceled (host left lobby) - clear info and redirect
         clearPlayerInfo();
-        navigate('/');
+        navigate('/', { state: { error: reason } });
       }),
 
       on('error', ({ message }) => {

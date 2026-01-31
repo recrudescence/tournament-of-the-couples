@@ -300,6 +300,31 @@ function endGame(roomCode) {
   log('Game ended');
 }
 
+// Reset the game back to lobby state
+function resetGame(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (gameState.status === 'lobby') {
+    throw new Error('Game is already in lobby');
+  }
+
+  // Reset to lobby state
+  gameState.status = 'lobby';
+  gameState.currentRound = null;
+  gameState.lastRoundNumber = 0;
+  gameState.teamTotalResponseTimes = {};
+
+  // Reset all team scores to 0
+  for (const team of gameState.teams) {
+    team.score = 0;
+  }
+
+  log('Game reset to lobby');
+}
+
 // Start a new round
 function startRound(roomCode, question, variant = 'open_ended', options = null, answerForBoth = false, roundNumber = null) {
   const gameState = gameStates.get(roomCode);
@@ -573,6 +598,7 @@ module.exports = {
   unpairPlayers,
   startGame,
   endGame,
+  resetGame,
   startRound,
   submitAnswer,
   isRoundComplete,

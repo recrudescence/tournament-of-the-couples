@@ -27,7 +27,8 @@ export function GamePage() {
     return code !== null && /^[a-z]+$/.test(code);
   };
 
-  // Route guards
+  // Route guards - only redirect for invalid room codes or mismatched room codes
+  // Missing playerInfo is handled by showing loading state and redirecting after a delay
   useEffect(() => {
     // Validate room code format
     if (!validateRoomCode(roomCode)) {
@@ -35,18 +36,27 @@ export function GamePage() {
       return;
     }
 
-    // Validate player info exists
-    if (!playerInfo?.name || !playerInfo?.roomCode) {
-      navigate(`/?room=${roomCode}`);
-      return;
-    }
-
-    // If room code in URL doesn't match sessionStorage, redirect to join with new code
-    if (playerInfo.roomCode !== roomCode) {
-      navigate(`/?room=${roomCode}`);
+    // If room code in URL doesn't match sessionStorage, redirect to home
+    if (playerInfo?.roomCode && playerInfo.roomCode !== roomCode) {
+      navigate('/');
       return;
     }
   }, [roomCode, playerInfo, navigate]);
+
+  // Delayed redirect if playerInfo is missing (gives sessionStorage time to load)
+  // Don't redirect if we already have gameState (active session)
+  useEffect(() => {
+    if (!validateRoomCode(roomCode)) return;
+    if (playerInfo?.name && playerInfo?.roomCode) return;
+    if (gameState) return; // Don't redirect if we have an active game session
+
+    // Wait a moment before redirecting in case sessionStorage is still loading
+    const timeout = setTimeout(() => {
+      navigate('/');
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [roomCode, playerInfo, gameState, navigate]);
 
   // Handle socket events for GamePage coordination
   useEffect(() => {

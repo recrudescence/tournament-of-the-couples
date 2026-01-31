@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
@@ -17,6 +18,7 @@ import {HostHeader} from "../components/host/HostHeader.tsx";
 type HostPhase = 'roundSetup' | 'answering' | 'scoring';
 
 export function HostPage() {
+  const navigate = useNavigate();
   const { isConnected, emit, on } = useSocket();
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
@@ -123,6 +125,11 @@ export function HostPage() {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
       }),
 
+      on('gameReset', (state) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+        navigate('/game?room=' + state.roomCode);
+      }),
+
       on('playerDisconnected', ({ socketId }) => {
         dispatch({ type: 'SET_PLAYER_CONNECTED', payload: { socketId, connected: false } });
       }),
@@ -133,7 +140,7 @@ export function HostPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError]);
+  }, [on, dispatch, showError, navigate]);
 
   const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => {
     emit('startRound', {
@@ -237,6 +244,12 @@ export function HostPage() {
     }
   };
 
+  const handleResetGame = () => {
+    if (window.confirm('Are you sure you want to reset the game? This will return everyone to the lobby with scores reset to 0.')) {
+      emit('resetGame');
+    }
+  };
+
   const handleKickPlayer = (socketId: string) => {
     emit('kickPlayer', { targetSocketId: socketId });
   };
@@ -318,6 +331,7 @@ export function HostPage() {
           onKickPlayer={handleKickPlayer}
           onReopenAnswering={handleReopenAnswering}
           onStartScoring={handleStartScoring}
+          onResetGame={handleResetGame}
           onEndGame={handleEndGame}
         />
 
