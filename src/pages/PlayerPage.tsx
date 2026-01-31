@@ -13,7 +13,6 @@ import {AnswerSubmissionForm} from '../components/player/AnswerSubmissionForm';
 import {SubmittedStatus} from '../components/player/SubmittedStatus';
 import {ScoringStatus} from '../components/player/ScoringStatus';
 import {transformBinaryOptions} from '../utils/playerUtils';
-import {calculatePlace} from '../utils/rankingUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
 import type {GameState} from '../types/game';
@@ -57,8 +56,13 @@ export function PlayerPage() {
   const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
 
   // UI feedback state (ephemeral, genuinely local)
-  const [isCelebrating, setIsCelebrating] = useState(false);
   const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
+
+  // Track revealed answers (reset each round)
+  const [revealedAnswers, setRevealedAnswers] = useState<Record<string, { text: string; responseTime: number }>>({});
+
+  // Track response times for ordering (player's own + partner's from answerSubmitted event)
+  const [responseTimes, setResponseTimes] = useState<Record<string, number>>({});
 
   const { error, showError } = useGameError();
   const { responseTime, startTimer, stopTimer, getFinalTime } = useTimer();
@@ -80,11 +84,6 @@ export function PlayerPage() {
     return transformBinaryOptions(currentRound.options, variant, gameState?.players ?? [], myTeam);
   }, [currentRound?.options, variant, gameState?.players, myTeam]);
 
-  // Calculate team's current place in the standings (ties broken by response time)
-  const teamPlace = useMemo(() => {
-    if (!gameState?.teams || !myTeam) return null;
-    return calculatePlace(gameState.teams, myTeam.teamId, gameState.teamTotalResponseTimes);
-  }, [gameState?.teams, gameState?.teamTotalResponseTimes, myTeam]);
 
   // Sync sessionStorage playerInfo to GameContext on mount (handles page refresh)
   useEffect(() => {
@@ -133,13 +132,17 @@ export function PlayerPage() {
         setSelectedOption('');
         setDualAnswers({ self: '', partner: '' });
         setMyTeamPointsThisRound(null);
+        setRevealedAnswers({});
+        setResponseTimes({});
         startTimer(questionCreatedAt);
       }),
 
-      on('answerSubmitted', ({ gameState: state }) => {
+      on('answerSubmitted', ({ playerName, responseTime, gameState: state }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
+        // Track response time for ordering
+        setResponseTimes(prev => ({ ...prev, [playerName]: responseTime }));
       }),
 
       on('allAnswersIn', () => {
@@ -151,16 +154,19 @@ export function PlayerPage() {
         setMyTeamPointsThisRound(null);
       }),
 
+      on('answerRevealed', ({ playerName, answer, responseTime }) => {
+        setRevealedAnswers(prev => ({
+          ...prev,
+          [playerName]: { text: answer, responseTime }
+        }));
+      }),
+
       on('scoreUpdated', ({ teamId, newScore, pointsAwarded }) => {
         dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
 
         // Check if this is my team (use myPlayer from closure - ok since we just need teamId match)
         if (myPlayer?.teamId === teamId) {
           setMyTeamPointsThisRound(pointsAwarded);
-          if (pointsAwarded > 0) {
-            setIsCelebrating(true);
-            setTimeout(() => setIsCelebrating(false), 500);
-          }
         }
       }),
 
@@ -265,14 +271,10 @@ export function PlayerPage() {
       <section className="section">
         <div className="container container-md">
           <div className="block">
-            <GameTitle />
+            <GameTitle host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }} />
             <PlayerHeader
-              host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }}
               player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
               partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}
-              teamScore={myTeam?.score || 0}
-              teamPlace={teamPlace}
-              isCelebrating={isCelebrating}
             />
           </div>
 
@@ -307,9 +309,15 @@ export function PlayerPage() {
 
           {(phase === 'submitted' || phase === 'scoring') && (
             <SubmittedStatus
+              questionText={currentRound?.question ?? ''}
               submittedAnswer={submittedAnswer}
+              host={{ name: gameState?.host.name ?? '', avatar: gameState?.host.avatar ?? null }}
+              player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
+              playerResponseTime={responseTimes[playerInfo.name] ?? null}
               partner={myPartner ? { name: myPartner.name, avatar: myPartner.avatar } : null}
               partnerSubmitted={currentRound?.answers?.[myPartner?.name ?? ''] !== undefined}
+              partnerAnswer={revealedAnswers[myPartner?.name ?? '']?.text ?? null}
+              partnerResponseTime={responseTimes[myPartner?.name ?? ''] ?? null}
               totalAnswersCount={Object.keys(currentRound?.answers ?? {}).length}
               totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
             />

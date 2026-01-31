@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useSocket } from '../hooks/useSocket';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useGameContext } from '../context/GameContext';
-import { useGameError } from '../hooks/useGameError';
-import { useSnowEffect } from '../hooks/useConfetti';
-import { useTheme, Theme } from '../hooks/useTheme';
-import { GameTitle } from '../components/common/GameTitle';
-import { PlayerAvatar } from '../components/common/PlayerAvatar';
+import {useEffect, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {useSocket} from '../hooks/useSocket';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useGameContext} from '../context/GameContext';
+import {useGameError} from '../hooks/useGameError';
+import {useSnowEffect} from '../hooks/useConfetti';
+import {Theme, useTheme} from '../hooks/useTheme';
+import {GameTitle} from '../components/common/GameTitle';
+import {PlayerAvatar} from '../components/common/PlayerAvatar';
 
 type JoinStep = 'menu' | 'reconnect';
 
@@ -114,7 +114,7 @@ export function JoinPage() {
           // Can join as new player - show name entry form
           setJoiningExisting(true);
         } else {
-          showError('Cannot join this game');
+          showError(inProgress ? 'Game is already in progress!' : 'Cannot join this game');
           setSelectedRoomCode(null);
           setJoiningExisting(false);
         }
@@ -347,8 +347,8 @@ export function JoinPage() {
       {error && <div className="notification is-danger is-light mt-4">{error}</div>}
 
         <div className="theme-picker">
-          <span className="theme-picker-label">Themes:</span>
-          <span className="theme-picker-buttons">
+          {/*<div className="theme-picker-label mb-4">Themes</div>*/}
+          <span className="theme-picker-buttons is-flex-wrap-wrap is-justify-content-center ">
             {(['holiday', 'valentines', 'halloween', 'hyper', 'nick', 'default'] as Theme[]).map((t) => (
               <button
                 key={t}

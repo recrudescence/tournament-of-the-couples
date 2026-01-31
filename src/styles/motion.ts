@@ -267,3 +267,25 @@ export function withDelay(transition: Transition, delay: number): Transition {
 export function staggerDelay(index: number, base = 0, increment = 0.1): number {
   return base + index * increment;
 }
+
+// ============================================================================
+// CHAT BUBBLE ANIMATIONS - iMessage-style message entrances
+// ============================================================================
+
+/** Chat bubble slide in from left (for host/partner messages) */
+export const chatBubbleLeft: Variants = {
+  hidden: { opacity: 0, x: -20, scale: 0.9 },
+  visible: { opacity: 1, x: 0, scale: 1 },
+};
+
+/** Chat bubble slide in from right (for player's own messages) */
+export const chatBubbleRight: Variants = {
+  hidden: { opacity: 0, x: 20, scale: 0.9 },
+  visible: { opacity: 1, x: 0, scale: 1 },
+};
+
+/** Blur reveal animation for partner answer */
+export const blurReveal: Variants = {
+  blurred: { filter: 'blur(6px)' },
+  revealed: { filter: 'blur(0px)' },
+};

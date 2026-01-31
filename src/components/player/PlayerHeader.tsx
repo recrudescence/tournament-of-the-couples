@@ -1,61 +1,58 @@
 import {PlayerAvatar} from '../common/PlayerAvatar';
-import {PlaceBadge} from '../common/PlaceBadge';
 import type {PlayerIdentity} from '../../types/game';
 
 interface PlayerHeaderProps {
-  host: PlayerIdentity;
   player: PlayerIdentity;
   partner: PlayerIdentity;
-  teamScore: number;
-  teamPlace: number | null;
-  isCelebrating: boolean;
 }
 
-export function PlayerHeader({
-  host,
-  player,
-  partner,
-  teamScore,
-  teamPlace,
-  isCelebrating
-}: PlayerHeaderProps) {
-  const showBadge = teamPlace !== null && teamPlace <= 3 && teamScore > 0;
+export function PlayerHeader({ player, partner }: PlayerHeaderProps) {
+  const bubbleStyle = (isPlayer: boolean, side: 'left' | 'right'): React.CSSProperties => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: side === 'left' ? '0.5rem 0.75rem 0.5rem 0.5rem' : '0.5rem 0.5rem 0.5rem 0.75rem',
+    borderRadius: '2rem',
+    backgroundColor: isPlayer ? 'hsl(217, 71%, 95%)' : 'white',
+    border: isPlayer ? '2px solid hsl(217, 71%, 53%)' : '2px solid hsl(0, 0%, 86%)',
+    marginRight: side === 'left' ? '-0.25rem' : 0,
+    marginLeft: side === 'right' ? '-0.25rem' : 0,
+    position: 'relative' as const,
+    zIndex: side === 'left' ? 1 : 2,
+  });
+
+  const mergeBlobStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '1.5rem',
+    height: '2.5rem',
+    background: 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,182,193,0.6) 50%, rgba(255,255,255,0.9) 100%)',
+    borderRadius: '50%',
+    zIndex: 0,
+    filter: 'blur(2px)',
+  };
 
   return (
-    <div className="box" style={{ overflow: 'visible' }}>
-      <div className="columns is-mobile is-multiline has-text-centered">
-        <div className="column is-half-mobile is-one-quarter-tablet">
-          <p className="heading">Host</p>
-          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {host.avatar && <PlayerAvatar avatar={host.avatar} size="small" />}
-            <span className="title is-6">{host.name}</span>
-          </div>
+    <div className="has-text-centered">
+      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+        {/* Player (you) - left bubble */}
+        <div style={bubbleStyle(true, 'left')}>
+          {player.avatar && <PlayerAvatar avatar={player.avatar} size="medium" />}
+          <span className="has-text-weight-semibold is-size-7 has-text-primary">
+            {player.name}
+            <span className="has-text-grey-light"> (you)</span>
+          </span>
         </div>
-        <div className="column is-half-mobile is-one-quarter-tablet">
-          <p className="heading">You</p>
-          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
-            <span className="title is-6 has-text-primary mb-0">{player.name}</span>
-          </div>
-        </div>
-        <div className="column is-half-mobile is-one-quarter-tablet">
-          <p className="heading">Partner</p>
-          <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
-            {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
-            <span className="title is-6 mb-0">{partner.name}</span>
-          </div>
-        </div>
-        <div className="column is-half-mobile is-one-quarter-tablet">
-          <p className="heading">Team Score</p>
-          <div className="is-flex is-justify-content-center is-align-items-center" style={{ minHeight: '2rem' }}>
-            {showBadge ? (
-              <PlaceBadge place={teamPlace} score={teamScore} size="small" />
-            ) : (
-              <p className={`title is-6 mb-0 ${isCelebrating ? 'has-text-success' : ''}`}>
-                {teamPlace !== null && teamScore > 0 ? `#${teamPlace} • ` : ''}{teamScore} pts
-              </p>
-            )}
-          </div>
+
+        {/* Merge blob */}
+        <div style={mergeBlobStyle} />
+
+        {/* Partner - right bubble */}
+        <div style={bubbleStyle(false, 'right')}>
+          <span className="has-text-weight-semibold is-size-7">{partner.name}</span>
+          {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="medium" />}
         </div>
       </div>
     </div>

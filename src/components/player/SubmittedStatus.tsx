@@ -1,5 +1,7 @@
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import type { PlayerIdentity } from '../../types/game';
+import {motion} from 'framer-motion';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {chatBubbleLeft, chatBubbleRight, springDefault, staggerDelay} from '../../styles/motion';
+import type {PlayerIdentity, PlayerAvatar as PlayerAvatarType} from '../../types/game';
 
 // Try to parse JSON answer (for dual answer mode)
 function parseAnswer(answer: string): Record<string, string> | null {
@@ -15,52 +17,157 @@ function parseAnswer(answer: string): Record<string, string> | null {
 }
 
 interface SubmittedStatusProps {
+  questionText: string;
   submittedAnswer: string;
+  host: { name: string; avatar: PlayerAvatarType | null };
+  player: { name: string; avatar: PlayerAvatarType | null };
+  playerResponseTime: number | null;
   partner: PlayerIdentity | null;
   partnerSubmitted: boolean;
+  partnerAnswer: string | null; // Only populated after host reveals
+  partnerResponseTime: number | null;
+  answerForBoth?: boolean; // Dual answer mode - reserved for future use
   totalAnswersCount: number;
   totalPlayersCount: number;
 }
 
+function TypingIndicator() {
+  return (
+    <div className="typing-indicator">
+      <span className="typing-dot" />
+      <span className="typing-dot" />
+      <span className="typing-dot" />
+    </div>
+  );
+}
+
+function AnswerContent({ answer }: { answer: string }) {
+  const parsedAnswer = parseAnswer(answer);
+
+  if (parsedAnswer) {
+    return (
+      <div>
+        {Object.entries(parsedAnswer).map(([name, text]) => (
+          <p key={name} className="chat-bubble__text mb-1">
+            <strong>{name}:</strong> {text}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  return <p className="chat-bubble__text">{answer}</p>;
+}
+
+function BlurredPlaceholder() {
+  return (
+    <p className="chat-bubble__text chat-bubble__text--blurred" aria-hidden="true">
+      ●●●●●●●●●●
+    </p>
+  );
+}
+
 export function SubmittedStatus({
+  questionText,
   submittedAnswer,
+  host,
+  player,
+  playerResponseTime,
   partner,
   partnerSubmitted,
+  partnerAnswer,
+  partnerResponseTime,
   totalAnswersCount,
   totalPlayersCount
 }: SubmittedStatusProps) {
-  const parsedAnswer = parseAnswer(submittedAnswer);
+  // Determine ordering by response time (faster first)
+  const playerAnsweredFirst = playerResponseTime !== null && partnerResponseTime !== null
+    ? playerResponseTime <= partnerResponseTime
+    : true; // Default to player first if times unknown
+
+  const hostBubble = (
+    <motion.div
+      className="chat-bubble chat-bubble--left chat-bubble--host"
+      variants={chatBubbleLeft}
+      initial="hidden"
+      animate="visible"
+      transition={{ ...springDefault, delay: staggerDelay(0) }}
+    >
+      {host.avatar && (
+        <PlayerAvatar avatar={host.avatar} size="small" />
+      )}
+      <div className="chat-bubble__content">
+        <div className="chat-bubble__name">{host.name}</div>
+        <p className="chat-bubble__text">{questionText}</p>
+      </div>
+    </motion.div>
+  );
+
+  const playerBubble = (index: number) => (
+    <motion.div
+      key="player"
+      className="chat-bubble chat-bubble--right chat-bubble--self"
+      variants={chatBubbleRight}
+      initial="hidden"
+      animate="visible"
+      transition={{ ...springDefault, delay: staggerDelay(index) }}
+    >
+      {player.avatar && (
+        <PlayerAvatar avatar={player.avatar} size="small" />
+      )}
+      <div className="chat-bubble__content">
+        <div className="chat-bubble__name">{player.name}</div>
+        <AnswerContent answer={submittedAnswer} />
+      </div>
+    </motion.div>
+  );
+
+  const partnerBubble = (index: number) => partner && partner.avatar && (
+    <motion.div
+      key="partner"
+      className="chat-bubble chat-bubble--left chat-bubble--partner"
+      variants={chatBubbleLeft}
+      initial="hidden"
+      animate="visible"
+      transition={{ ...springDefault, delay: staggerDelay(index) }}
+    >
+      <PlayerAvatar avatar={partner.avatar} size="small" />
+      <div className="chat-bubble__content">
+        <div className="chat-bubble__name">{partner.name}</div>
+        {!partnerSubmitted ? (
+          <TypingIndicator />
+        ) : partnerAnswer ? (
+          <AnswerContent answer={partnerAnswer} />
+        ) : (
+          <BlurredPlaceholder />
+        )}
+      </div>
+    </motion.div>
+  );
 
   return (
     <div className="box">
-      <h2 className="subtitle is-4 has-text-success mb-4">Answer Submitted!</h2>
-      <div className="notification is-success is-light mb-4">
-        <p className="has-text-weight-semibold mb-2">You said:</p>
-        {parsedAnswer ? (
-          <div>
-            {Object.entries(parsedAnswer).map(([name, answer]) => (
-              <p key={name} className="is-size-6 mb-1">
-                <strong>{name}:</strong> {answer}
-              </p>
-            ))}
-          </div>
+      <h2 className="subtitle is-4 has-text-success has-text-centered mb-4">Answer Submitted!</h2>
+
+      <div className="chat-container">
+        {hostBubble}
+        {playerAnsweredFirst ? (
+          <>
+            {playerBubble(1)}
+            {partnerBubble(2)}
+          </>
         ) : (
-          <p className="is-size-5">{submittedAnswer}</p>
+          <>
+            {partnerBubble(1)}
+            {playerBubble(2)}
+          </>
         )}
       </div>
-      {partner && partner.avatar && (
-        <div className="notification is-info is-light mb-4">
-          <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-            <PlayerAvatar avatar={partner.avatar} size="small" />
-            <span>
-              <strong>{partner.name}:</strong>{' '}
-              <i>{partnerSubmitted ? '✓ Submitted' : 'is thinking...'}</i>
-            </span>
-          </div>
-        </div>
-      )}
+
       {totalAnswersCount < totalPlayersCount && (
-        <p className="has-text-centered has-text-grey">Waiting for other players to finish...</p>
+        <p className="has-text-centered has-text-grey mt-4">
+          Waiting for other players to finish...
+        </p>
       )}
     </div>
   );

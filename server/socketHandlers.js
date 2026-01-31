@@ -461,16 +461,21 @@ function setupSocketHandlers(io) {
       try {
         const state = gameState.getGameState(roomCode);
 
-        // For dual answer mode, playerName may be "Alice:Bob" format (answerer:subject)
-        // In that case, we just echo back the key - client handles parsing
+        // For dual answer mode, playerName may be "responder:subject" format (e.g., "Bob:Alice")
+        // Extract the responder name to look up their answer
         const isDualKey = playerName.includes(':');
+        const responderName = isDualKey ? playerName.split(':')[0] : playerName;
 
         if (isDualKey) {
-          // Dual mode: just broadcast the reveal key
+          // Dual mode: look up the responder's full answer (contains JSON for both players)
+          const answerObj = state.currentRound.answers[responderName];
+          const player = state.players.find(p => p.name === responderName);
+
           io.to(roomCode).emit('answerRevealed', {
-            playerName: playerName,
-            answer: null,
-            responseTime: null
+            socketId: player?.socketId,
+            playerName: responderName, // Send actual player name, not composite key
+            answer: answerObj?.text,
+            responseTime: answerObj?.responseTime
           });
         } else {
           // Single mode: look up the actual answer
@@ -638,6 +643,7 @@ function setupSocketHandlers(io) {
           if (state.status === 'lobby') {
             console.log(`Host disconnected from lobby, scheduling deletion for ${roomCode}`);
             gameState.disconnectHost(roomCode);
+            io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
 
             // Cancel any existing pending deletion
             if (pendingDeletions.has(roomCode)) {

@@ -401,58 +401,82 @@ describe('Component Smoke Tests', () => {
   });
 
   describe('Player Components - SubmittedStatus', () => {
+    const mockHost = { name: 'Host', avatar: { color: '#888888', emoji: '👑' } };
+    const mockPlayer = { name: 'Alice', avatar: { color: '#ff0000', emoji: '🦊' } };
     const mockPartner = { name: 'Bob', avatar: { color: '#0000ff', emoji: '🎉' } };
 
+    const defaultProps = {
+      questionText: 'What is your favorite color?',
+      submittedAnswer: 'Blue',
+      host: mockHost,
+      player: mockPlayer,
+      playerResponseTime: 5000,
+      partner: mockPartner,
+      partnerSubmitted: false,
+      partnerAnswer: null,
+      partnerResponseTime: null,
+      totalAnswersCount: 1,
+      totalPlayersCount: 2,
+    };
+
     it('renders submitted answer', () => {
-      render(
-        <SubmittedStatus
-          submittedAnswer="Blue"
-          partner={mockPartner}
-          partnerSubmitted={false}
-          totalAnswersCount={1}
-          totalPlayersCount={2}
-        />
-      );
+      render(<SubmittedStatus {...defaultProps} />);
 
       expect(screen.getByText('Answer Submitted!')).toBeInTheDocument();
       expect(screen.getByText('Blue')).toBeInTheDocument();
     });
 
-    it('shows partner thinking status when partner has not submitted', () => {
-      render(
-        <SubmittedStatus
-          submittedAnswer="Blue"
-          partner={mockPartner}
-          partnerSubmitted={false}
-          totalAnswersCount={1}
-          totalPlayersCount={2}
-        />
-      );
+    it('shows host question in chat bubble', () => {
+      render(<SubmittedStatus {...defaultProps} />);
 
-      expect(screen.getByText(/Bob:/)).toBeInTheDocument();
-      expect(screen.getByText(/is thinking.../)).toBeInTheDocument();
+      expect(screen.getByText('What is your favorite color?')).toBeInTheDocument();
+      expect(screen.getByText('Host')).toBeInTheDocument();
     });
 
-    it('shows partner submitted status when partner has submitted', () => {
+    it('shows typing indicator when partner has not submitted', () => {
+      render(<SubmittedStatus {...defaultProps} />);
+
+      // Typing indicator renders 3 dots
+      const typingIndicator = document.querySelector('.typing-indicator');
+      expect(typingIndicator).toBeInTheDocument();
+    });
+
+    it('shows blurred placeholder when partner has submitted but not yet revealed', () => {
       render(
         <SubmittedStatus
-          submittedAnswer="Blue"
-          partner={mockPartner}
+          {...defaultProps}
           partnerSubmitted={true}
+          partnerAnswer={null}
           totalAnswersCount={2}
-          totalPlayersCount={2}
         />
       );
 
-      expect(screen.getByText(/✓ Submitted/)).toBeInTheDocument();
+      // Should show blurred placeholder (not real text)
+      const blurredText = document.querySelector('.chat-bubble__text--blurred');
+      expect(blurredText).toBeInTheDocument();
+      expect(blurredText?.textContent).toContain('●');
+    });
+
+    it('shows revealed partner answer after host reveals', () => {
+      render(
+        <SubmittedStatus
+          {...defaultProps}
+          partnerSubmitted={true}
+          partnerAnswer="Red"
+          totalAnswersCount={2}
+        />
+      );
+
+      // Partner answer should be visible (not blurred)
+      expect(screen.getByText('Red')).toBeInTheDocument();
+      const blurredText = document.querySelector('.chat-bubble__text--blurred');
+      expect(blurredText).not.toBeInTheDocument();
     });
 
     it('shows waiting message when not all players submitted', () => {
       render(
         <SubmittedStatus
-          submittedAnswer="Blue"
-          partner={mockPartner}
-          partnerSubmitted={false}
+          {...defaultProps}
           totalAnswersCount={1}
           totalPlayersCount={4}
         />
@@ -464,9 +488,9 @@ describe('Component Smoke Tests', () => {
     it('does not show waiting message when all players submitted', () => {
       render(
         <SubmittedStatus
-          submittedAnswer="Blue"
-          partner={mockPartner}
+          {...defaultProps}
           partnerSubmitted={true}
+          partnerAnswer={null}
           totalAnswersCount={4}
           totalPlayersCount={4}
         />
@@ -479,29 +503,25 @@ describe('Component Smoke Tests', () => {
       const dualAnswer = JSON.stringify({ 'Alice': 'Pizza', 'Bob': 'Sushi' });
       render(
         <SubmittedStatus
+          {...defaultProps}
           submittedAnswer={dualAnswer}
-          partner={mockPartner}
           partnerSubmitted={true}
+          partnerAnswer={null}
           totalAnswersCount={2}
-          totalPlayersCount={2}
         />
       );
 
-      // Check for the parsed answer content
+      // Check for the parsed answer content (player's own answer)
       expect(screen.getByText('Pizza')).toBeInTheDocument();
-      expect(screen.getByText('Sushi')).toBeInTheDocument();
-      // There are two Bob: elements (one in parsed answer, one in partner status)
-      // so we use getAllByText to verify both exist
-      const bobLabels = screen.getAllByText(/Bob:/);
-      expect(bobLabels.length).toBeGreaterThanOrEqual(1);
     });
 
     it('handles null partner gracefully', () => {
       render(
         <SubmittedStatus
-          submittedAnswer="Blue"
+          {...defaultProps}
           partner={null}
           partnerSubmitted={false}
+          partnerAnswer={null}
           totalAnswersCount={1}
           totalPlayersCount={2}
         />
