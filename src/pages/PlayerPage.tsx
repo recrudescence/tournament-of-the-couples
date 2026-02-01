@@ -257,7 +257,7 @@ export function PlayerPage() {
     return (
       <section className="section">
         <div className="container container-md">
-          <GameTitle />
+          <GameTitle compact />
           <p className="has-text-centered">Loading...</p>
         </div>
       </section>
@@ -273,7 +273,7 @@ export function PlayerPage() {
       <section className="section">
         <div className="container container-md">
           <div className="block">
-            <GameTitle host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }} />
+            <GameTitle host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }} compact />
             <PlayerHeader
               player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
               partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}

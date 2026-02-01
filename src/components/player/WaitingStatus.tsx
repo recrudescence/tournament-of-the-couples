@@ -23,10 +23,13 @@ export function WaitingStatus({ host, isInitialRound = false }: WaitingStatusPro
 
   return (
     <div className="box has-text-centered has-background-warning-light">
-      <div className="is-flex is-justify-content-center is-align-items-center mb-3" style={{ gap: '0.5rem' }}>
-        <PlayerAvatar avatar={host.avatar} size="large" />
-        <h2 className="subtitle is-4 mb-0">{host.name} is setting up the next round</h2>
-      </div>
+      <h2 className="subtitle is-4 mb-3">
+        <span className="is-inline-flex is-align-items-center" style={{ gap: '0.35rem', verticalAlign: 'bottom' }}>
+          <PlayerAvatar avatar={host.avatar} size="small" />
+          <strong>{host.name}</strong>
+        </span>
+        {' '}is setting up the next round
+      </h2>
       <p className="has-text-grey">get ready to think heheh</p>
     </div>
   );
