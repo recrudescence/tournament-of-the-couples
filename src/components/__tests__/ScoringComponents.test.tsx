@@ -161,9 +161,9 @@ describe('BothPlayersScoring', () => {
     expect(screen.getByText('Tacos')).toBeInTheDocument();
     // Alice's actual answer for herself
     expect(screen.getByText('Pizza')).toBeInTheDocument();
-    // Only 2 reveal buttons remaining (for Bob's section)
+    // All 4 reveal buttons still in DOM (FlipCard keeps both faces rendered)
     const revealButtons = screen.getAllByRole('button', { name: 'Reveal' });
-    expect(revealButtons).toHaveLength(2);
+    expect(revealButtons).toHaveLength(4);
   });
 
   it('returns null when player1 is undefined', () => {
@@ -299,7 +299,8 @@ describe('SinglePlayerScoring', () => {
 
     expect(screen.getByText('Blue')).toBeInTheDocument();
     expect(screen.getByText('Red')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Reveal Answer' })).not.toBeInTheDocument();
+    // FlipCard keeps both faces in DOM, buttons still present but visually hidden
+    expect(screen.getAllByRole('button', { name: 'Reveal Answer' })).toHaveLength(2);
   });
 
   it('shows response times when revealed', () => {
@@ -416,51 +417,7 @@ describe('ScoringInterface', () => {
     createdAt: Date.now() - 5000
   };
 
-  it('renders back to answering button', () => {
-    render(
-      <ScoringInterface
-        teams={[mockTeam]}
-        players={mockPlayers}
-        currentRound={mockRound}
-        currentTeamIndex={0}
-        teamPointsAwarded={{}}
-        revealedAnswers={new Set()}
-        revealedResponseTimes={{}}
-        showFinishBtn={false}
-        onBackToAnswering={vi.fn()}
-        onRevealAnswer={vi.fn()}
-        onAwardPoints={vi.fn()}
-        onReopenTeamScoring={vi.fn()}
-        onFinishRound={vi.fn()}
-      />
-    );
-
-    expect(screen.getByRole('button', { name: /Back to Answering/i })).toBeInTheDocument();
-  });
-
-  it('calls onBackToAnswering when back button is clicked', () => {
-    const onBackToAnswering = vi.fn();
-    render(
-      <ScoringInterface
-        teams={[mockTeam]}
-        players={mockPlayers}
-        currentRound={mockRound}
-        currentTeamIndex={0}
-        teamPointsAwarded={{}}
-        revealedAnswers={new Set()}
-        revealedResponseTimes={{}}
-        showFinishBtn={false}
-        onBackToAnswering={onBackToAnswering}
-        onRevealAnswer={vi.fn()}
-        onAwardPoints={vi.fn()}
-        onReopenTeamScoring={vi.fn()}
-        onFinishRound={vi.fn()}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /Back to Answering/i }));
-    expect(onBackToAnswering).toHaveBeenCalledTimes(1);
-  });
+  // Note: "Back to Answering" button was moved to RoundControls component
 
   it('renders question', () => {
     render(

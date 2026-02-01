@@ -471,7 +471,7 @@ describe('PlayerPage Reconnection Scenarios', () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText(/Waiting for/i)).toBeInTheDocument();
+      expect(screen.getByText(/setting up the next round/i)).toBeInTheDocument();
     });
 
     it('handles player without team correctly', () => {

@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { PlayerCard } from '../common/PlayerCard';
 import { TeamCard } from '../common/TeamCard';
@@ -155,7 +156,7 @@ describe('Component Smoke Tests', () => {
           />
         );
 
-        const kickButtons = screen.getAllByRole('button', { name: 'Kick' });
+        const kickButtons = screen.getAllByRole('button', { name: /^Kick / });
         expect(kickButtons).toHaveLength(2);
       });
     });
@@ -166,36 +167,25 @@ describe('Component Smoke Tests', () => {
       it('renders all player info', () => {
         render(
           <PlayerHeader
-            host={{ name: 'GameHost', avatar: null }}
             player={{ name: 'Alice', avatar: null }}
             partner={{ name: 'Bob', avatar: null }}
-            teamScore={5}
-            teamPlace={4}
-            isCelebrating={false}
           />
         );
 
-        expect(screen.getByText('GameHost')).toBeInTheDocument();
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.getByText('Bob')).toBeInTheDocument();
-        expect(screen.getByText('#4 • 5 pts')).toBeInTheDocument();
       });
 
-      it('renders place badge for top 3', () => {
+      it('renders player and partner with avatars', () => {
         render(
           <PlayerHeader
-            host={{ name: 'GameHost', avatar: null }}
-            player={{ name: 'Alice', avatar: null }}
-            partner={{ name: 'Bob', avatar: null }}
-            teamScore={10}
-            teamPlace={1}
-            isCelebrating={false}
+            player={{ name: 'Alice', avatar: mockAvatar }}
+            partner={{ name: 'Bob', avatar: { color: '#0000ff', emoji: '🎉' } }}
           />
         );
 
-        // Should show gold badge with 1st place
-        expect(screen.getByText('1st')).toBeInTheDocument();
-        expect(screen.getByText('🥇')).toBeInTheDocument();
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.getByText('Bob')).toBeInTheDocument();
       });
     });
 
@@ -208,7 +198,8 @@ describe('Component Smoke Tests', () => {
         };
         render(<WaitingStatus host={mockHost} />);
 
-        expect(screen.getByText(/GameHost is setting up the next round/)).toBeInTheDocument();
+        expect(screen.getByText('GameHost')).toBeInTheDocument();
+        expect(screen.getByText(/setting up the next round/)).toBeInTheDocument();
       });
     });
 
@@ -248,8 +239,22 @@ describe('Component Smoke Tests', () => {
     });
 
     describe('RoundControls', () => {
-      it('renders end game button', () => {
-        render(<RoundControls onEndGame={vi.fn()} />);
+      it('renders end game button when expanded', async () => {
+        render(
+          <RoundControls
+            players={[]}
+            phase="roundSetup"
+            allAnswersIn={false}
+            onKickPlayer={vi.fn()}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+            onResetGame={vi.fn()}
+            onEndGame={vi.fn()}
+          />
+        );
+
+        // Expand the controls
+        await userEvent.click(screen.getByRole('button', { name: /Host Controls/ }));
 
         expect(screen.getByRole('button', { name: /End Game/ })).toBeInTheDocument();
       });
@@ -511,8 +516,9 @@ describe('Component Smoke Tests', () => {
         />
       );
 
-      // Check for the parsed answer content (player's own answer)
-      expect(screen.getByText('Pizza')).toBeInTheDocument();
+      // Check for the parsed answer content with "would say" format
+      expect(screen.getByText(/I would say/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pizza/)).toBeInTheDocument();
     });
 
     it('handles null partner gracefully', () => {

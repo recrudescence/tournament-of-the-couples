@@ -294,7 +294,7 @@ describe('Page Smoke Tests', () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText(/Waiting for/i)).toBeInTheDocument();
+      expect(screen.getByText(/setting up the next round/i)).toBeInTheDocument();
     });
   });
 
