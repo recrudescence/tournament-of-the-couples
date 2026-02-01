@@ -69,7 +69,7 @@ export function AnsweringPhase({
         </p>
       )}
       {allAnswersIn && (
-        <div className="notification is-success is-light mb-4">
+        <div className="notification is-success mb-4">
           ✅ All answers are in! Ready to score.
         </div>
       )}

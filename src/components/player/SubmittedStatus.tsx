@@ -41,17 +41,25 @@ function TypingIndicator() {
   );
 }
 
-function AnswerContent({ answer }: { answer: string }) {
+interface AnswerContentProps {
+  answer: string;
+  partnerName?: string;
+}
+
+function AnswerContent({ answer, partnerName }: AnswerContentProps) {
   const parsedAnswer = parseAnswer(answer);
 
   if (parsedAnswer) {
     return (
       <div>
-        {Object.entries(parsedAnswer).map(([name, text]) => (
-          <p key={name} className="chat-bubble__text mb-1">
-            <strong>{name}:</strong> {text}
-          </p>
-        ))}
+        {Object.entries(parsedAnswer).map(([name, text]) => {
+          const prefix = name === partnerName ? partnerName : 'I';
+          return (
+            <p key={name} className="chat-bubble__text mb-1">
+              <strong>{prefix} would say</strong>: {text}
+            </p>
+          );
+        })}
       </div>
     );
   }
@@ -117,7 +125,7 @@ export function SubmittedStatus({
       )}
       <div className="chat-bubble__content">
         <div className="chat-bubble__name">{player.name}</div>
-        <AnswerContent answer={submittedAnswer} />
+        <AnswerContent answer={submittedAnswer} partnerName={partner?.name} />
       </div>
     </motion.div>
   );
@@ -137,7 +145,7 @@ export function SubmittedStatus({
         {!partnerSubmitted ? (
           <TypingIndicator />
         ) : partnerAnswer ? (
-          <AnswerContent answer={partnerAnswer} />
+          <AnswerContent answer={partnerAnswer} partnerName={partner.name} />
         ) : (
           <BlurredPlaceholder />
         )}
