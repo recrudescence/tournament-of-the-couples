@@ -18,6 +18,8 @@
   --theme-title-color: #363636;
   --theme-box-border: rgba(0, 0, 0, 0.1);
   --theme-box-shadow: rgba(0, 0, 0, 0.1);
+  --theme-text-muted: #666666;
+  --theme-text-body: #363636;
 }
 
 /* ======================
@@ -34,6 +36,8 @@
   --theme-title-color: #01411C;
   --theme-box-border: rgba(196, 30, 58, 0.1);
   --theme-box-shadow: rgba(196, 30, 58, 0.1);
+  --theme-text-muted: #666666;
+  --theme-text-body: #363636;
 
   /* Bulma overrides for holiday */
   --bulma-primary-h: 349deg;
@@ -64,6 +68,8 @@
   --theme-title-color: #880E4F;
   --theme-box-border: rgba(233, 30, 99, 0.15);
   --theme-box-shadow: rgba(233, 30, 99, 0.1);
+  --theme-text-muted: #666666;
+  --theme-text-body: #363636;
 
   /* Bulma overrides for valentines */
   --bulma-primary-h: 340deg;
@@ -94,6 +100,8 @@
   --theme-title-color: #FF6600;
   --theme-box-border: rgba(255, 102, 0, 0.3);
   --theme-box-shadow: rgba(139, 0, 255, 0.2);
+  --theme-text-muted: #AAAAAA;
+  --theme-text-body: #E8E8E8;
 
   /* Bulma overrides for halloween */
   --bulma-primary-h: 24deg;
@@ -177,6 +185,320 @@
   color: #E8E8E8;
 }
 
+/* Halloween - Status background colors (for answer status, etc.) */
+[data-theme="halloween"] .has-background-success-light {
+  background-color: rgba(139, 0, 255, 0.25) !important;
+  color: #D4A5FF;
+}
+
+[data-theme="halloween"] .has-background-warning-light {
+  background-color: rgba(255, 215, 0, 0.2) !important;
+  color: #FFD700;
+}
+
+[data-theme="halloween"] .has-background-danger-light {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+  color: #FF6B6B;
+}
+
+[data-theme="halloween"] .has-background-info-light {
+  background-color: rgba(255, 215, 0, 0.15) !important;
+  color: #FFD700;
+}
+
+[data-theme="halloween"] .has-background-grey-lighter,
+[data-theme="halloween"] .has-background-grey-light {
+  background-color: #2A2A4E !important;
+  color: #999;
+}
+
+/* Halloween - Ensure text inside colored backgrounds is readable */
+[data-theme="halloween"] .has-background-success-light .title,
+[data-theme="halloween"] .has-background-success-light .subtitle {
+  color: #D4A5FF;
+}
+
+[data-theme="halloween"] .has-background-warning-light .title,
+[data-theme="halloween"] .has-background-warning-light .subtitle {
+  color: #FFD700;
+}
+
+[data-theme="halloween"] .has-background-info-light .title,
+[data-theme="halloween"] .has-background-info-light .subtitle {
+  color: #FFD700;
+}
+
+[data-theme="halloween"] .has-background-danger-light .title,
+[data-theme="halloween"] .has-background-danger-light .subtitle {
+  color: #FF6B6B;
+}
+
+/* Halloween - Additional tag colors */
+[data-theme="halloween"] .tag.is-warning {
+  background-color: #FFD700;
+  color: #1A1A2E;
+}
+
+[data-theme="halloween"] .tag.is-success {
+  background-color: #8B00FF;
+  color: #fff;
+}
+
+[data-theme="halloween"] .tag.is-dark {
+  background-color: #0F0F1A;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .tag.is-primary {
+  background-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="halloween"] .tag.is-info {
+  background-color: #FFD700;
+  color: #1A1A2E;
+}
+
+[data-theme="halloween"] .tag.is-link {
+  background-color: #FF6600;
+  color: #fff;
+}
+
+/* Halloween - Heading text (small labels) */
+[data-theme="halloween"] .heading {
+  color: #999;
+}
+
+/* Halloween - Additional text colors */
+[data-theme="halloween"] .has-text-link {
+  color: #FF6600 !important;
+}
+
+[data-theme="halloween"] .has-text-dark {
+  color: #E8E8E8 !important;
+}
+
+/* Halloween - Primary background boxes (e.g., winner box) */
+[data-theme="halloween"] .has-background-primary {
+  background-color: #FF6600 !important;
+}
+
+[data-theme="halloween"] .has-background-primary .title,
+[data-theme="halloween"] .has-background-primary .subtitle,
+[data-theme="halloween"] .has-background-primary p,
+[data-theme="halloween"] .has-text-white {
+  color: #fff !important;
+}
+
+/* Halloween - Tabs */
+[data-theme="halloween"] .tabs a {
+  color: #E8E8E8;
+  border-bottom-color: #3A3A5E;
+}
+
+[data-theme="halloween"] .tabs a:hover {
+  color: #FF6600;
+  border-bottom-color: #FF6600;
+}
+
+[data-theme="halloween"] .tabs li.is-active a {
+  color: #FF6600;
+  border-bottom-color: #FF6600;
+}
+
+[data-theme="halloween"] .tabs.is-boxed a {
+  background-color: #2A2A4E;
+  border-color: #3A3A5E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .tabs.is-boxed li.is-active a {
+  background-color: #FF6600;
+  border-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="halloween"] .tabs.is-boxed a:hover {
+  background-color: rgba(255, 102, 0, 0.2);
+  border-bottom-color: transparent;
+}
+
+/* Halloween - Modal */
+[data-theme="halloween"] .modal-card {
+  background-color: #16213E;
+}
+
+[data-theme="halloween"] .modal-card-head,
+[data-theme="halloween"] .modal-card-foot {
+  background-color: #1A1A2E;
+  border-color: #3A3A5E;
+}
+
+[data-theme="halloween"] .modal-card-title {
+  color: #FF6600;
+}
+
+[data-theme="halloween"] .modal-card-body {
+  background-color: #16213E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .modal-background {
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* Halloween - Progress bar */
+[data-theme="halloween"] .progress {
+  background-color: #2A2A4E;
+}
+
+[data-theme="halloween"] .progress::-webkit-progress-value {
+  background-color: #FF6600;
+}
+
+[data-theme="halloween"] .progress::-moz-progress-bar {
+  background-color: #FF6600;
+}
+
+/* Halloween - Hero sections */
+[data-theme="halloween"] .hero {
+  background-color: transparent;
+}
+
+/* Halloween - Borders and dividers */
+[data-theme="halloween"] .winning-team-border {
+  border-left-color: #FF6600;
+}
+
+/* Halloween - Select dropdowns */
+[data-theme="halloween"] .select select {
+  background-color: #0F0F1A;
+  border-color: #FF6600;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .select::after {
+  border-color: #FF6600;
+}
+
+/* Halloween - Radio/checkbox */
+[data-theme="halloween"] .radio,
+[data-theme="halloween"] .checkbox {
+  color: #E8E8E8;
+}
+
+/* Halloween - Table */
+[data-theme="halloween"] .table {
+  background-color: #16213E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .table th {
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .table td,
+[data-theme="halloween"] .table th {
+  border-color: #3A3A5E;
+}
+
+/* Halloween - Button colors */
+[data-theme="halloween"] .button.is-primary {
+  background-color: #FF6600;
+  border-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="halloween"] .button.is-primary:hover {
+  background-color: #CC5200;
+  border-color: #CC5200;
+}
+
+[data-theme="halloween"] .button.is-link {
+  background-color: #FF6600;
+  border-color: #FF6600;
+  color: #fff;
+}
+
+[data-theme="halloween"] .button.is-link:hover {
+  background-color: #CC5200;
+  border-color: #CC5200;
+}
+
+[data-theme="halloween"] .button.is-success {
+  background-color: #8B00FF;
+  border-color: #8B00FF;
+  color: #fff;
+}
+
+[data-theme="halloween"] .button.is-success:hover {
+  background-color: #7000CC;
+  border-color: #7000CC;
+}
+
+[data-theme="halloween"] .button.is-info {
+  background-color: #FFD700;
+  border-color: #FFD700;
+  color: #1A1A2E;
+}
+
+[data-theme="halloween"] .button.is-info:hover {
+  background-color: #E6C200;
+  border-color: #E6C200;
+}
+
+[data-theme="halloween"] .button.is-danger {
+  background-color: #DC3545;
+  border-color: #DC3545;
+  color: #fff;
+}
+
+[data-theme="halloween"] .button.is-danger:hover {
+  background-color: #C82333;
+  border-color: #C82333;
+}
+
+[data-theme="halloween"] .button.is-danger.is-light {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #FF6B6B;
+}
+
+[data-theme="halloween"] .button.is-danger.is-outlined {
+  background-color: transparent;
+  border-color: #DC3545;
+  color: #FF6B6B;
+}
+
+[data-theme="halloween"] .button.is-danger.is-outlined:hover {
+  background-color: #DC3545;
+  color: #fff;
+}
+
+/* Halloween - Notification colors */
+[data-theme="halloween"] .notification.is-success {
+  background-color: rgba(139, 0, 255, 0.2);
+  color: #D4A5FF;
+}
+
+[data-theme="halloween"] .notification.is-danger {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #FF6B6B;
+}
+
+[data-theme="halloween"] .notification.is-warning {
+  background-color: rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+}
+
+/* Halloween - PlayerHeader bubble styles */
+[data-theme="halloween"] {
+  --player-bubble-bg: rgba(255, 102, 0, 0.2);
+  --partner-bubble-bg: #2A2A4E;
+  --partner-bubble-border: #3A3A5E;
+  --merge-blob-gradient: linear-gradient(90deg, rgba(26, 26, 46, 0.9) 0%, rgba(139, 0, 255, 0.4) 50%, rgba(26, 26, 46, 0.9) 100%);
+  --host-badge-bg: #2A2A4E;
+}
+
 /* ======================
    HYPER THEME
    ====================== */
@@ -191,6 +513,8 @@
   --theme-title-color: #8B5CF6;
   --theme-box-border: rgba(58, 134, 255, 0.3);
   --theme-box-shadow: rgba(139, 92, 246, 0.2);
+  --theme-text-muted: #666666;
+  --theme-text-body: #363636;
 
   /* Bulma overrides for hyper */
   --bulma-primary-h: 258deg;
@@ -424,6 +748,8 @@
   --theme-title-color: #FF6600;
   --theme-box-border: rgba(255, 102, 0, 0.3);
   --theme-box-shadow: rgba(255, 102, 0, 0.15);
+  --theme-text-muted: #666666;
+  --theme-text-body: #363636;
 
   /* Bulma overrides for nick */
   --bulma-primary-h: 24deg;
@@ -662,7 +988,7 @@ body {
 .button.is-primary {
   background-color: var(--theme-primary);
   border-color: var(--theme-primary);
-  color: var(--theme-bg)
+  color: #fff;
 }
 
 .button.is-primary:hover {

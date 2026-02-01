@@ -69,9 +69,9 @@ export function PlayerCard({
     gap: isLarge ? '0.75rem' : '0.5rem',
     padding: isLarge ? '0.75rem 1.25rem 0.75rem 0.75rem' : '0.5rem 1rem 0.5rem 0.5rem',
     borderRadius: '2rem',
-    backgroundColor: isCurrentPlayer ? 'hsl(217, 71%, 95%)' : 'white',
+    backgroundColor: isCurrentPlayer ? 'var(--player-bubble-bg, hsl(217, 71%, 95%))' : 'var(--partner-bubble-bg, white)',
     cursor: canPair ? 'pointer' : 'default',
-    border: isCurrentPlayer ? '2px solid hsl(217, 71%, 53%)' : '2px solid transparent',
+    border: isCurrentPlayer ? '2px solid var(--theme-primary, hsl(217, 71%, 53%))' : '2px solid var(--partner-bubble-border, transparent)',
     fontSize: isLarge ? '1.1rem' : undefined,
   };
 

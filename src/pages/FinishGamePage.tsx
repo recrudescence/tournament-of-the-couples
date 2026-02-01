@@ -120,7 +120,7 @@ export function FinishGamePage() {
                         {showBadge ? (
                           <PlaceBadge place={place} size={isWinner ? 'large' : 'medium'} />
                         ) : (
-                          <span className="has-text-weight-bold is-size-5" style={{ color: '#666' }}>
+                          <span className="has-text-weight-bold is-size-5" style={{ color: 'var(--theme-text-muted)' }}>
                             #{place}
                           </span>
                         )}

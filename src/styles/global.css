@@ -303,3 +303,27 @@ input[type="radio"] {
     transform: translateY(-6px);
   }
 }
+
+/* ============================================================================
+   HALLOWEEN THEME - Dark mode overrides for global elements
+   ============================================================================ */
+
+/* Halloween - Chat bubbles */
+[data-theme="halloween"] .chat-bubble--host .chat-bubble__content {
+  background: #2A2A4E;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .chat-bubble--self .chat-bubble__content {
+  background: #8B00FF;
+  color: white;
+}
+
+[data-theme="halloween"] .chat-bubble--partner .chat-bubble__content {
+  background: #FF6600;
+  color: white;
+}
+
+[data-theme="halloween"] .typing-dot {
+  background: rgba(255, 102, 0, 0.7);
+}

@@ -61,9 +61,9 @@ export function PlaceBadge({ place, score, size = 'medium' }: PlaceBadgeProps) {
   // For places 4+, show simple text
   if (!config) {
     return (
-      <span className="has-text-weight-bold is-size-5" style={{ color: '#666' }}>
+      <span className="has-text-weight-bold is-size-5" style={{ color: 'var(--theme-text-muted)' }}>
         #{place}
-        {score !== undefined && <span className="ml-2 has-text-grey">{score} pts</span>}
+        {score !== undefined && <span className="ml-2" style={{ color: 'var(--theme-text-muted)' }}>{score} pts</span>}
       </span>
     );
   }

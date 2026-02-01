@@ -59,7 +59,7 @@ export function AnswerSubmissionForm({
             <div className="box has-background-light mb-4">
               <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
                 {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
-                {player.name}
+                You would say:
               </h3>
               {variant === 'open_ended' ? (
                 <div className="field">
@@ -102,7 +102,7 @@ export function AnswerSubmissionForm({
             <div className="box has-background-light mb-4">
               <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
                 {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
-                {partner.name}
+                {partner.name} would say:
               </h3>
               {variant === 'open_ended' ? (
                 <div className="field">

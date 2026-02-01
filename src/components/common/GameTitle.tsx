@@ -18,7 +18,7 @@ export function GameTitle({ host }: GameTitleProps) {
             gap: '0.4rem',
             padding: '0.25rem 0.75rem 0.25rem 0.4rem',
             borderRadius: '2rem',
-            backgroundColor: 'hsl(0, 0%, 96%)',
+            backgroundColor: 'var(--host-badge-bg, hsl(0, 0%, 96%))',
             fontSize: '0.85rem',
           }}
         >

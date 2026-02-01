@@ -47,7 +47,7 @@ export function TeamScoreboard({ teams, players, responseTimes = {} }: TeamScore
                   <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
                     {showBadge && <PlaceBadge place={place} size="medium" />}
                     {hasAnyScores && !showBadge && (
-                      <span className="has-text-weight-bold is-size-5" style={{ color: '#666' }}>
+                      <span className="has-text-weight-bold is-size-5" style={{ color: 'var(--theme-text-muted)' }}>
                         #{place}
                       </span>
                     )}

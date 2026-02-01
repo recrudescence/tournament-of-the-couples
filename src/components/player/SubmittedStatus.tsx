@@ -1,7 +1,7 @@
 import {motion} from 'framer-motion';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {chatBubbleLeft, chatBubbleRight, springDefault, staggerDelay} from '../../styles/motion';
-import type {PlayerIdentity, PlayerAvatar as PlayerAvatarType} from '../../types/game';
+import type {PlayerAvatar as PlayerAvatarType, PlayerIdentity} from '../../types/game';
 
 // Try to parse JSON answer (for dual answer mode)
 function parseAnswer(answer: string): Record<string, string> | null {

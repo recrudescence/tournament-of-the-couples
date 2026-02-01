@@ -13,26 +13,13 @@ export function PlayerHeader({ player, partner }: PlayerHeaderProps) {
     gap: '0.5rem',
     padding: side === 'left' ? '0.5rem 0.75rem 0.5rem 0.5rem' : '0.5rem 0.5rem 0.5rem 0.75rem',
     borderRadius: '2rem',
-    backgroundColor: isPlayer ? 'hsl(217, 71%, 95%)' : 'white',
-    border: isPlayer ? '2px solid hsl(217, 71%, 53%)' : '2px solid hsl(0, 0%, 86%)',
+    backgroundColor: isPlayer ? 'var(--player-bubble-bg, hsl(217, 71%, 95%))' : 'var(--partner-bubble-bg, white)',
+    border: isPlayer ? '2px solid var(--theme-primary)' : '2px solid var(--partner-bubble-border, hsl(0, 0%, 86%))',
     marginRight: side === 'left' ? '-0.25rem' : 0,
     marginLeft: side === 'right' ? '-0.25rem' : 0,
     position: 'relative' as const,
     zIndex: side === 'left' ? 1 : 2,
   });
-
-  const mergeBlobStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '1.5rem',
-    height: '2.5rem',
-    background: 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,182,193,0.6) 50%, rgba(255,255,255,0.9) 100%)',
-    borderRadius: '50%',
-    zIndex: 0,
-    filter: 'blur(2px)',
-  };
 
   return (
     <div className="has-text-centered">
@@ -45,9 +32,6 @@ export function PlayerHeader({ player, partner }: PlayerHeaderProps) {
             <span className="has-text-grey-light"> (you)</span>
           </span>
         </div>
-
-        {/* Merge blob */}
-        <div style={mergeBlobStyle} />
 
         {/* Partner - right bubble */}
         <div style={bubbleStyle(false, 'right')}>
