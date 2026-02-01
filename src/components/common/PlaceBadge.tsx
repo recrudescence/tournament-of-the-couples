@@ -100,11 +100,11 @@ export function PlaceBadge({ place, score, size = 'medium' }: PlaceBadgeProps) {
           fontWeight: 700,
           fontSize: sizeStyle.fontSize,
         }}
-        animate={{
+        animate={isFirst ? {
           ...badgeFloat,
           boxShadow: badgeShadowKeyframes(config.shadowColor),
-        }}
-        transition={badgeFloatTransition}
+        } : undefined}
+        transition={isFirst ? badgeFloatTransition : undefined}
       >
         {/* Shimmer overlay for gold/silver */}
         {(isFirst || isSecond) && (

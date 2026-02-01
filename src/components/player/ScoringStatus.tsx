@@ -24,9 +24,15 @@ export function ScoringStatus({ pointsAwarded }: ScoringStatusProps) {
 
   // Default: waiting for host to score
   return (
-    <div className="box has-text-centered has-background-warning-soft">
-      <h2 className="subtitle is-4 mb-3">All answers are in!</h2>
-      <p className="has-text-grey">The host is reviewing answers and awarding points on the big screen. Look that way!</p>
+    <div
+      className="box has-text-centered"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--theme-success) 15%, var(--theme-bg))',
+        color: 'var(--theme-text-body)'
+      }}
+    >
+      <h2 className="subtitle is-4 mb-3" style={{ color: 'var(--theme-success)' }}>All answers are in!</h2>
+      <p>The host is reviewing answers and awarding points on the big screen. Look that way!</p>
     </div>
   );
 }
