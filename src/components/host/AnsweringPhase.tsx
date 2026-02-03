@@ -1,8 +1,10 @@
 import {useEffect} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
 import {type CurrentRound, type Player} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
 import {formatResponseTime} from '../../utils/formatUtils';
+import {springDefault} from '../../styles/motion';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -43,7 +45,7 @@ export function AnsweringPhase({
       </div>
 
       <h3 className="subtitle is-5 mb-3">Answer Status</h3>
-      <div className="mb-4">
+      <div className="mb-4" style={{ perspective: 800 }}>
         {players.map((player) => {
           const hasSubmitted = currentRound
             ? currentRound.status === 'complete'
@@ -62,21 +64,34 @@ export function AnsweringPhase({
           const statusParts: string[] = [];
           if (hasSubmitted) statusParts.push('✅ Submitted');
           if (!player.connected) statusParts.push('📱 Phone screen off');
-          const statusText = statusParts.length > 0 ? statusParts.join(' · ') : '⏳ Waiting...';
+          const statusText = statusParts.length > 0 ? statusParts.join(' · ') : null;
 
           return (
-            <div
-              key={player.socketId}
-              className={`box mb-2 p-3 ${statusColor}`}
-            >
-              <div className="is-flex is-align-items-center is-justify-content-space-between">
-                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                  <PlayerAvatar avatar={player.avatar} size="small" />
-                  <span className="has-text-weight-semibold">{player.name}</span>
+            <AnimatePresence mode="popLayout" key={player.socketId}>
+              <motion.div
+                key={`${player.socketId}-${hasSubmitted}`}
+                className={`box mb-2 p-3 ${statusColor}`}
+                initial={{ rotateX: -90, opacity: 0 }}
+                animate={{ rotateX: 0, opacity: 1 }}
+                transition={springDefault}
+              >
+                <div className="is-flex is-align-items-center is-justify-content-space-between">
+                  <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                    <PlayerAvatar avatar={player.avatar} size="small" />
+                    <span className="has-text-weight-semibold">{player.name}</span>
+                  </div>
+                  {statusText ? (
+                    <span>{statusText}</span>
+                  ) : (
+                    <div className="typing-indicator">
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                    </div>
+                  )}
                 </div>
-                <span>{statusText}</span>
-              </div>
-            </div>
+              </motion.div>
+            </AnimatePresence>
           );
         })}
       </div>

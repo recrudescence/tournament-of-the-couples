@@ -292,12 +292,15 @@ input[type="radio"] {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 0.25rem;
+  min-height: 1.4rem;
 }
 
 .typing-dot {
+  display: inline-block;
   width: 8px;
   height: 8px;
-  background: rgba(255, 255, 255, 0.7);
+  background: currentColor;
+  opacity: 0.5;
   border-radius: 50%;
   animation: typingBounce 1.4s ease-in-out infinite;
 }
@@ -344,5 +347,5 @@ input[type="radio"] {
 }
 
 [data-theme="halloween"] .typing-dot {
-  background: rgba(255, 102, 0, 0.7);
+  background: currentColor;
 }

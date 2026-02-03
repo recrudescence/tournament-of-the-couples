@@ -73,7 +73,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
             <div className="control">
               <textarea
                 id="questionInput"
-                className="textarea"
+                className="textarea is-medium"
                 rows={6}
                 placeholder="What's your partner's favorite movie?"
                 value={questionInput}
@@ -92,7 +92,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
               <div className="control">
                 <textarea
                   id="mcQuestionInput"
-                  className="textarea"
+                  className="textarea is-medium"
                   rows={4}
                   placeholder="What's your partner's favorite color?"
                   value={questionInput}
@@ -158,7 +158,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
               <div className="control">
                 <textarea
                   id="binaryQuestionInput"
-                  className="textarea"
+                  className="textarea is-medium"
                   rows={4}
                   placeholder="Who is more likely to...?"
                   value={questionInput}

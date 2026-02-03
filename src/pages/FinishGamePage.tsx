@@ -50,8 +50,9 @@ export function FinishGamePage() {
   // Check if anyone has scored (hide badges if all teams have 0 points)
   const hasAnyScores = sortedTeams.some(t => t.score > 0);
 
-  // Winner is the team in 1st place (ties broken by response time, so only one)
-  const winningTeam = sortedTeams[0];
+  // Top finalists: show top 2 if more than 1 team, otherwise just the winner
+  const finalists = sortedTeams.length > 1 ? sortedTeams.slice(0, 2) : sortedTeams.slice(0, 1);
+  const showTopTwo = finalists.length > 1;
 
   const getTeamPlayers = (team: Team) => {
     const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
@@ -59,13 +60,13 @@ export function FinishGamePage() {
     return { player1, player2 };
   };
 
-  // Determine if confetti should be shown (host or player on winning team)
+  // Determine if confetti should be shown (host or player on a finalist team)
   const shouldShowConfetti = useMemo(() => {
     if (playerInfo?.isHost) return true;
-    if (!playerInfo || !winningTeam) return false;
+    if (!playerInfo || finalists.length === 0) return false;
     const playerTeamId = gameState.players.find(p => p.name === playerInfo.name)?.teamId;
-    return playerTeamId === winningTeam.teamId;
-  }, [playerInfo, gameState.players, winningTeam]);
+    return finalists.some(t => t.teamId === playerTeamId);
+  }, [playerInfo, gameState.players, finalists]);
 
   // Trigger confetti for host and winning team
   useCelebrationConfetti(!!shouldShowConfetti);
@@ -79,22 +80,32 @@ export function FinishGamePage() {
           <h1 className="title is-2 has-text-centered mb-6">Game Over</h1>
 
           <div className="mb-6">
-            <h2 className="subtitle is-4 has-text-centered mb-4">🏆 Winners!</h2>
-            <div className="box has-background-primary has-text-white has-text-centered p-6">
-              <div className="is-flex is-justify-content-center mb-3">
-                {winningTeam ? (
-                  <TeamName
-                    player1={getTeamPlayers(winningTeam).player1}
-                    player2={getTeamPlayers(winningTeam).player2}
-                    size="medium"
-                  />
-                ) : (
-                  <span className="title is-3 has-text-white">???</span>
-                )}
-              </div>
-              <p className="title is-1 has-text-white has-text-weight-bold">
-                {winningTeam ? winningTeam.score : '???'} points
+            <h2 className="subtitle is-4 has-text-centered mb-4">
+              {showTopTwo ? '🏆 Top Two Finalists!' : '🏆 Winners!'}
+            </h2>
+            {showTopTwo && (
+              <p className="has-text-centered has-text-grey mb-4">
+                Time for a live tiebreaker round!
               </p>
+            )}
+            <div className={showTopTwo ? 'columns is-centered' : ''}>
+              {finalists.map((team, i) => {
+                const { player1, player2 } = getTeamPlayers(team);
+                const place = places.get(team.teamId) ?? i + 1;
+                return (
+                  <div key={team.teamId} className={showTopTwo ? 'column is-half' : ''}>
+                    <div className={`box has-text-centered p-6 ${i === 0 ? 'has-background-primary has-text-white' : 'has-background-info-light'}`}>
+                      {hasAnyScores && <PlaceBadge place={place} size="large" />}
+                      <div className="is-flex is-justify-content-center mb-3 mt-2">
+                        <TeamName player1={player1} player2={player2} size="medium" />
+                      </div>
+                      <p className={`title is-${i === 0 ? '1' : '3'} mb-0 ${i === 0 ? 'has-text-white' : ''} has-text-weight-bold`}>
+                        {team.score} points
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
