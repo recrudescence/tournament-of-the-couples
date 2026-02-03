@@ -9,9 +9,10 @@ interface TeamScoreboardProps {
   teams: Team[];
   players: Player[];
   responseTimes?: Record<string, number>;
+  onEndGame?: () => void;
 }
 
-export function TeamScoreboard({ teams, players, responseTimes = {} }: TeamScoreboardProps) {
+export function TeamScoreboard({ teams, players, responseTimes = {}, onEndGame }: TeamScoreboardProps) {
   const sortedTeams = useMemo(
     () => sortTeamsWithTiebreaker(teams, responseTimes),
     [teams, responseTimes]
@@ -60,6 +61,13 @@ export function TeamScoreboard({ teams, players, responseTimes = {} }: TeamScore
               </div>
             );
           })}
+        </div>
+      )}
+      {onEndGame && (
+        <div className="has-text-centered mt-4">
+          <button className="button is-danger is-small is-outlined" onClick={onEndGame}>
+            End Game
+          </button>
         </div>
       )}
     </div>

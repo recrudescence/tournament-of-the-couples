@@ -117,6 +117,21 @@ input[type="radio"] {
   max-width: 900px !important;
 }
 
+.container-host {
+  max-width: 1100px !important;
+}
+
+.host-sidebar-sticky {
+  position: sticky;
+  top: 1rem;
+}
+
+@media (min-width: 769px) {
+  .host-sidebar {
+    order: -1;
+  }
+}
+
 /* Modal */
 .modal-card {
   width: 70%;

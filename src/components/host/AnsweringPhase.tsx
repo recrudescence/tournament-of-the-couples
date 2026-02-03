@@ -1,6 +1,8 @@
-import { type Player, type CurrentRound } from '../../types/game';
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import { Question } from '../common/Question.tsx';
+import {useEffect} from 'react';
+import {type CurrentRound, type Player} from '../../types/game';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {useTimer} from '../../hooks/useTimer';
+import {formatResponseTime} from '../../utils/formatUtils';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -21,9 +23,24 @@ export function AnsweringPhase({
   onReopenAnswering,
   onStartScoring
 }: AnsweringPhaseProps) {
+  const { responseTime, startTimer, stopTimer } = useTimer();
+
+  useEffect(() => {
+    if (currentRound?.createdAt) {
+      startTimer(currentRound.createdAt);
+    }
+    return () => stopTimer();
+  }, [currentRound?.createdAt]);
+
   return (
     <div className="box">
-      <Question question={question} />
+      <div className="is-flex is-justify-content-space-between is-align-items-center mb-3">
+        <h2 className="subtitle is-4 mb-0">Current Question</h2>
+        <span className="tag is-info is-large is-mono" style={{ minWidth: '8rem', justifyContent: 'center' }}>⏱️ {formatResponseTime(responseTime, 2)}</span>
+      </div>
+      <div className="notification is-primary is-light mb-4">
+        <p className="is-size-5 has-text-weight-semibold">{question}</p>
+      </div>
 
       <h3 className="subtitle is-5 mb-3">Answer Status</h3>
       <div className="mb-4">

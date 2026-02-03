@@ -286,74 +286,81 @@ export function HostPage() {
     <>
       <ExitButton />
       <section className="section">
-        <div className="container container-md">
-          <div className="block">
-            <GameTitle />
-            <HostHeader
-              hostName={gameState?.host.name ?? '-'}
-              hostAvatar={gameState?.host.avatar}
-              roundNumber={roundNumber}
-              gameStatus={gameStatus}
-            />
+        <div className="container container-host">
+          <GameTitle />
+
+          <div className="columns is-desktop">
+            {/* Main content (DOM first for mobile) */}
+            <div className="column">
+              {/* Round Setup Phase */}
+              {phase === 'roundSetup' && (
+                <QuestionForm onSubmit={handleStartRound} onError={showError} />
+              )}
+
+              {/* Answering Phase */}
+              {phase === 'answering' && gameState?.currentRound && (
+                <AnsweringPhase
+                  question={gameState.currentRound.question}
+                  players={gameState.players}
+                  currentRound={gameState.currentRound}
+                  submittedCount={submittedCount}
+                  allAnswersIn={allAnswersIn}
+                  onReopenAnswering={handleReopenAnswering}
+                  onStartScoring={handleStartScoring}
+                />
+              )}
+
+              {/* Scoring Phase */}
+              {phase === 'scoring' && gameState?.currentRound && (
+                <ScoringInterface
+                  teams={gameState.teams}
+                  players={gameState.players}
+                  currentRound={gameState.currentRound}
+                  currentTeamIndex={currentTeamIndex}
+                  teamPointsAwarded={teamPointsAwarded}
+                  revealedAnswers={revealedAnswers}
+                  revealedResponseTimes={revealedResponseTimes}
+                  showFinishBtn={showFinishBtn}
+                  onBackToAnswering={handleBackToAnswering}
+                  onRevealAnswer={handleRevealAnswer}
+                  onAwardPoints={handleAwardPoints}
+                  onReopenTeamScoring={handleReopenTeamScoring}
+                  onFinishRound={handleFinishRound}
+                />
+              )}
+
+              <RoundControls
+                players={gameState?.players || []}
+                phase={phase}
+                allAnswersIn={allAnswersIn}
+                onKickPlayer={handleKickPlayer}
+                onReopenAnswering={handleReopenAnswering}
+                onStartScoring={handleStartScoring}
+                onResetGame={handleResetGame}
+              />
+
+              {error && <div className="notification is-danger is-light mt-4">{error}</div>}
+            </div>
+
+            {/* Sidebar: Scoreboard (DOM second, visually left on desktop via order) */}
+            <div className="column is-4-desktop host-sidebar">
+              <HostHeader
+                hostName={gameState?.host.name ?? '-'}
+                hostAvatar={gameState?.host.avatar}
+                roundNumber={roundNumber}
+                gameStatus={gameStatus}
+              />
+              <div className="host-sidebar-sticky">
+                <TeamScoreboard
+                  teams={gameState?.teams || []}
+                  players={gameState?.players || []}
+                  responseTimes={gameState?.teamTotalResponseTimes}
+                  onEndGame={handleEndGame}
+                />
+              </div>
+            </div>
           </div>
-
-        {/* Round Setup Phase */}
-        {phase === 'roundSetup' && (
-          <QuestionForm onSubmit={handleStartRound} onError={showError} />
-        )}
-
-        {/* Answering Phase */}
-        {phase === 'answering' && gameState?.currentRound && (
-          <AnsweringPhase
-            question={gameState.currentRound.question}
-            players={gameState.players}
-            currentRound={gameState.currentRound}
-            submittedCount={submittedCount}
-            allAnswersIn={allAnswersIn}
-            onReopenAnswering={handleReopenAnswering}
-            onStartScoring={handleStartScoring}
-          />
-        )}
-
-        {/* Scoring Phase */}
-        {phase === 'scoring' && gameState?.currentRound && (
-          <ScoringInterface
-            teams={gameState.teams}
-            players={gameState.players}
-            currentRound={gameState.currentRound}
-            currentTeamIndex={currentTeamIndex}
-            teamPointsAwarded={teamPointsAwarded}
-            revealedAnswers={revealedAnswers}
-            revealedResponseTimes={revealedResponseTimes}
-            showFinishBtn={showFinishBtn}
-            onBackToAnswering={handleBackToAnswering}
-            onRevealAnswer={handleRevealAnswer}
-            onAwardPoints={handleAwardPoints}
-            onReopenTeamScoring={handleReopenTeamScoring}
-            onFinishRound={handleFinishRound}
-          />
-        )}
-
-        {/* Scoreboard (Always Visible) */}
-        <TeamScoreboard
-          teams={gameState?.teams || []}
-          players={gameState?.players || []}
-          responseTimes={gameState?.teamTotalResponseTimes}
-        />
-
-        <RoundControls
-          players={gameState?.players || []}
-          phase={phase}
-          allAnswersIn={allAnswersIn}
-          onKickPlayer={handleKickPlayer}
-          onReopenAnswering={handleReopenAnswering}
-          onStartScoring={handleStartScoring}
-          onResetGame={handleResetGame}
-          onEndGame={handleEndGame}
-        />
-
-        {error && <div className="notification is-danger is-light mt-4">{error}</div>}
-      </div>
+        </div>
       </section>
     </>
   );

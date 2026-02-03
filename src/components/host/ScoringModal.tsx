@@ -192,6 +192,9 @@ export function ScoringModal({
                 { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
                 { points: 1, label: 'one point ⭐', className: 'is-success' },
                 { points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' },
+                ...(currentRound.answerForBoth
+                  ? [{ points: 4, label: '🏆 FOUR!!! 🏆', className: 'is-danger' }]
+                  : []),
               ].map(({ points, label, className }, index) => (
                 <motion.button
                   key={points}

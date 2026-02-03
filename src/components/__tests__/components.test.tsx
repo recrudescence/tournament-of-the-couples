@@ -239,7 +239,7 @@ describe('Component Smoke Tests', () => {
     });
 
     describe('RoundControls', () => {
-      it('renders end game button when expanded', async () => {
+      it('renders reset game button when expanded', async () => {
         render(
           <RoundControls
             players={[]}
@@ -249,14 +249,13 @@ describe('Component Smoke Tests', () => {
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
             onResetGame={vi.fn()}
-            onEndGame={vi.fn()}
           />
         );
 
         // Expand the controls
         await userEvent.click(screen.getByRole('button', { name: /Host Controls/ }));
 
-        expect(screen.getByRole('button', { name: /End Game/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Reset Game/ })).toBeInTheDocument();
       });
     });
 

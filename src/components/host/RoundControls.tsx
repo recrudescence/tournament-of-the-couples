@@ -9,7 +9,6 @@ interface RoundControlsProps {
   onReopenAnswering: () => void;
   onStartScoring: () => void;
   onResetGame: () => void;
-  onEndGame: () => void;
 }
 
 export function RoundControls({
@@ -19,8 +18,7 @@ export function RoundControls({
   onKickPlayer,
   onReopenAnswering,
   onStartScoring,
-  onResetGame,
-  onEndGame
+  onResetGame
 }: RoundControlsProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -112,13 +110,6 @@ export function RoundControls({
             Reset Game
           </button>
 
-          {/* End game button */}
-          <button
-            className="button is-danger is-small"
-            onClick={onEndGame}
-          >
-            End Game
-          </button>
         </div>
       )}
     </div>
