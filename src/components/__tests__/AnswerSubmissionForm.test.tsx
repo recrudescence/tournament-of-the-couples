@@ -369,7 +369,8 @@ describe('AnswerSubmissionForm', () => {
 
       render(<AnswerSubmissionForm {...props} />);
 
-      expect(screen.getByText('123456.79s')).toBeInTheDocument();
+      // 123456789ms = 2057m 37s (formatted for >= 60 seconds)
+      expect(screen.getByText('2057m 37s')).toBeInTheDocument();
     });
 
     it('handles special characters in question', () => {

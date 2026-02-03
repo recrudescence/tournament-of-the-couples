@@ -127,11 +127,11 @@ export function BothPlayersScoring({
                     </div>
                   }
                   back={
-                    <div className="notification is-light is-size-3 py-2 px-3 mb-0">
+                    <div className="notification is-light is-size-3 py-2 px-3 mb-0" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                       <strong>{partnerAnswerText}</strong>
                       {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
                         <span className="has-text-grey ml-2 is-size-5">
-                          (took {formatResponseTime(partnerResponseTime)} seconds)
+                          (took {formatResponseTime(partnerResponseTime)})
                         </span>
                       )}
                     </div>
@@ -166,7 +166,7 @@ export function BothPlayersScoring({
                     </div>
                   }
                   back={
-                    <div className="notification is-light is-size-3 py-2 px-3 mb-0">
+                    <div className="notification is-light is-size-3 py-2 px-3 mb-0" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                       <strong>{selfAnswerText}</strong>
                     </div>
                   }

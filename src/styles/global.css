@@ -84,6 +84,10 @@ input[type="radio"] {
 .answer-option-label {
   display: block;
   cursor: pointer;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  text-align: left;
 }
 
 /* Fixed exit button in top-left corner */

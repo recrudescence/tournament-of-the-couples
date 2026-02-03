@@ -161,9 +161,9 @@ describe('BothPlayersScoring', () => {
     expect(screen.getByText('Tacos')).toBeInTheDocument();
     // Alice's actual answer for herself
     expect(screen.getByText('Pizza')).toBeInTheDocument();
-    // All 4 reveal buttons still in DOM (FlipCard keeps both faces rendered)
+    // 2 cards revealed (buttons hidden), 2 cards unrevealed (buttons visible)
     const revealButtons = screen.getAllByRole('button', { name: 'Reveal' });
-    expect(revealButtons).toHaveLength(4);
+    expect(revealButtons).toHaveLength(2);
   });
 
   it('returns null when player1 is undefined', () => {
@@ -299,8 +299,8 @@ describe('SinglePlayerScoring', () => {
 
     expect(screen.getByText('Blue')).toBeInTheDocument();
     expect(screen.getByText('Red')).toBeInTheDocument();
-    // FlipCard keeps both faces in DOM, buttons still present but visually hidden
-    expect(screen.getAllByRole('button', { name: 'Reveal Answer' })).toHaveLength(2);
+    // When revealed, front face (with buttons) is hidden from accessibility tree
+    expect(screen.queryAllByRole('button', { name: 'Reveal Answer' })).toHaveLength(0);
   });
 
   it('shows response times when revealed', () => {
@@ -314,7 +314,7 @@ describe('SinglePlayerScoring', () => {
       />
     );
 
-    expect(screen.getByText('(took 3.00 seconds)')).toBeInTheDocument();
+    expect(screen.getByText('(took 3.00s)')).toBeInTheDocument();
   });
 
   it('shows "No answer" for players who did not answer', () => {

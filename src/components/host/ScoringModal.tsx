@@ -154,7 +154,7 @@ export function ScoringModal({
                     exit="exit"
                     transition={springBouncy}
                   >
-                    ⏱️ {formatResponseTime(totalResponseTime)}s
+                    ⏱️ {formatResponseTime(totalResponseTime)}
                   </motion.span>
                 )}
               </AnimatePresence>

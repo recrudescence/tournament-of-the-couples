@@ -43,7 +43,7 @@ export function AnswerSubmissionForm({
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
         <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
         <div className="tag is-mono is-info is-large">
-          {formatResponseTime(responseTime, 2)}s
+          {formatResponseTime(responseTime, 2)}
         </div>
       </div>
 

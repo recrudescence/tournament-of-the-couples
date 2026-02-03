@@ -3,7 +3,7 @@ import { useSocketContext } from '../context/SocketContext';
 import type { ClientToServerEvents, ServerToClientEvents } from '../types/socket-events';
 
 export function useSocket() {
-  const { socket, isConnected } = useSocketContext();
+  const { socket, isConnected, isReconnecting, reconnectCount } = useSocketContext();
 
   const emit = useCallback(
     <E extends keyof ClientToServerEvents>(
@@ -34,5 +34,5 @@ export function useSocket() {
     [socket]
   );
 
-  return { socket, isConnected, emit, on };
+  return { socket, isConnected, isReconnecting, reconnectCount, emit, on };
 }

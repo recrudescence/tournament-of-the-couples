@@ -3,12 +3,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SocketProvider, useSocketContext } from '../SocketContext';
 
 // Mock socket.io-client
+const mockIoManager = {
+  on: vi.fn(),
+  off: vi.fn(),
+};
+
 const mockSocket = {
   on: vi.fn(),
   off: vi.fn(),
   emit: vi.fn(),
   disconnect: vi.fn(),
   connected: false,
+  io: mockIoManager,
 };
 
 vi.mock('socket.io-client', () => ({
@@ -146,6 +152,8 @@ describe('SocketContext', () => {
       await waitFor(() => {
         expect(result.current).toHaveProperty('socket');
         expect(result.current).toHaveProperty('isConnected');
+        expect(result.current).toHaveProperty('isReconnecting');
+        expect(result.current).toHaveProperty('reconnectCount');
       });
     });
   });

@@ -34,11 +34,18 @@ export function AnsweringPhase({
               : currentRound.submittedInCurrentPhase.includes(player.name)
             : false;
 
-          const statusColor = !player.connected
-            ? 'has-background-grey-lighter'
-            : hasSubmitted
+          // Show green if submitted (even if disconnected), grey only if disconnected AND not submitted
+          const statusColor = hasSubmitted
             ? 'has-background-success-light'
+            : !player.connected
+            ? 'has-background-grey-lighter'
             : 'has-background-warning-light';
+
+          // Build status text showing both states when applicable
+          const statusParts: string[] = [];
+          if (hasSubmitted) statusParts.push('✅ Submitted');
+          if (!player.connected) statusParts.push('📱 Phone screen off');
+          const statusText = statusParts.length > 0 ? statusParts.join(' · ') : '⏳ Waiting...';
 
           return (
             <div
@@ -50,13 +57,7 @@ export function AnsweringPhase({
                   <PlayerAvatar avatar={player.avatar} size="small" />
                   <span className="has-text-weight-semibold">{player.name}</span>
                 </div>
-                <span>
-                  {!player.connected
-                    ? '🔌 Disconnected'
-                    : hasSubmitted
-                    ? '✅ Submitted'
-                    : '⏳ Waiting...'}
-                </span>
+                <span>{statusText}</span>
               </div>
             </div>
           );

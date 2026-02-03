@@ -61,11 +61,11 @@ export function SinglePlayerScoring({
                   </div>
                 }
                 back={
-                  <div className="notification is-light is-size-3 py-2 px-3 mb-0">
+                  <div className="notification is-light is-size-3 py-2 px-3 mb-0" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                     <p><strong>{currentRound.answers[player.name]?.text || 'No answer'}</strong></p>
                     {revealedResponseTimes[player.name] !== undefined && (
                       <span className="has-text-grey is-size-5">
-                        (took {formatResponseTime(revealedResponseTimes[player.name]!, 2)} seconds)
+                        (took {formatResponseTime(revealedResponseTimes[player.name]!, 2)})
                       </span>
                     )}
                   </div>

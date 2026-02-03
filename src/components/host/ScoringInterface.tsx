@@ -142,7 +142,7 @@ export function ScoringInterface({
                       </button>
                       {totalResponseTime < Infinity && (
                         <span className="tag is-family-secondary is-medium">
-                          ⏱️ {formatResponseTime(totalResponseTime)}s
+                          ⏱️ {formatResponseTime(totalResponseTime)}
                         </span>
                       )}
                       <span

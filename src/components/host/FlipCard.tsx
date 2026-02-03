@@ -22,14 +22,15 @@ export function FlipCard({
   back,
   minHeight = '10rem',
 }: FlipCardProps) {
+  // When revealed, back face becomes relative so content can expand the container
+  // Front face is hidden completely to avoid layout interference
   return (
-    <div style={{ perspective: 1000, minHeight }}>
+    <div style={{ perspective: 1000, minHeight: isRevealed ? undefined : minHeight }}>
       <motion.div
         style={{
           position: 'relative',
           width: '100%',
-          height: '100%',
-          minHeight,
+          minHeight: isRevealed ? undefined : minHeight,
           transformStyle: 'preserve-3d',
         }}
         variants={flipCard}
@@ -41,15 +42,15 @@ export function FlipCard({
         <div
           className="box"
           style={{
-            position: 'absolute',
+            position: isRevealed ? 'absolute' : 'relative',
             width: '100%',
-            height: '100%',
-            minHeight,
+            minHeight: isRevealed ? undefined : minHeight,
             backfaceVisibility: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             cursor: !isRevealed ? 'pointer' : undefined,
+            visibility: isRevealed ? 'hidden' : 'visible',
           }}
           onClick={!isRevealed ? onReveal : undefined}
         >
@@ -60,10 +61,10 @@ export function FlipCard({
         <div
           className="box"
           style={{
-            position: 'absolute',
+            position: isRevealed ? 'relative' : 'absolute',
             width: '100%',
-            height: '100%',
-            minHeight,
+            top: isRevealed ? undefined : 0,
+            minHeight: isRevealed ? undefined : minHeight,
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
           }}

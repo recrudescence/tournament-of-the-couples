@@ -6,7 +6,7 @@ import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {useSnowEffect} from '../hooks/useConfetti';
-import {useTheme} from '../hooks/useTheme';
+import {useTheme, type Theme} from '../hooks/useTheme';
 import {ExitButton} from '../components/common/ExitButton';
 import {PlayerAvatar} from '../components/common/PlayerAvatar';
 import {PlayerCard} from '../components/common/PlayerCard';
@@ -16,11 +16,11 @@ import {findPlayerBySocketId} from '../utils/playerUtils';
 
 export function LobbyPage() {
   const navigate = useNavigate();
-  const { emit, on } = useSocket();
+  const { isReconnecting, reconnectCount, emit, on } = useSocket();
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   // Add snow effect for holiday theme
   useSnowEffect(theme === 'holiday');
@@ -74,6 +74,19 @@ export function LobbyPage() {
       navigate('/');
     }
   }, [playerInfo, gameState, myPlayer, clearPlayerInfo, navigate]);
+
+  // Re-join lobby on socket reconnection (handles network drops)
+  useEffect(() => {
+    if (reconnectCount > 0 && playerInfo?.roomCode) {
+      console.log('Socket reconnected, re-joining lobby...');
+      emit('joinGame', {
+        roomCode: playerInfo.roomCode,
+        name: playerInfo.name,
+        isHost: playerInfo.isHost,
+        isReconnect: true,
+      });
+    }
+  }, [reconnectCount, playerInfo, emit]);
 
   const handlePair = (targetSocketId: string) => {
     emit('requestPair', { targetSocketId });
@@ -269,7 +282,7 @@ export function LobbyPage() {
                     <p>Scan the QR code or go to <i>www.feud.love</i> 💕</p>
                   </div>
                 </div>
-                <div className="box">
+                <div className="box p-5">
                   <figure className="image is-96x96">
                     <img src="/feudlove.svg" alt="Scan to join" />
                   </figure>
@@ -289,6 +302,12 @@ export function LobbyPage() {
             {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
             {teamCount !== 1 ? 's' : ''} formed
           </div>
+
+          {isReconnecting && (
+            <div className="notification is-warning has-text-centered">
+              Connection lost - reconnecting...
+            </div>
+          )}
 
           <div className="columns mb-5">
             <div className="column has-text-centered">
@@ -349,6 +368,20 @@ export function LobbyPage() {
           )}
 
           {error && <div className="notification is-danger is-light">{error}</div>}
+
+          <div className="theme-picker">
+            <span className="theme-picker-buttons is-flex-wrap-wrap is-justify-content-center">
+              {(['holiday', 'valentines', 'halloween', 'hyper', 'nick', 'default'] as Theme[]).map((t) => (
+                <button
+                  key={t}
+                  className={`theme-picker-button ${theme === t ? 'is-active' : ''}`}
+                  onClick={() => setTheme(t)}
+                >
+                  {t}
+                </button>
+              ))}
+            </span>
+          </div>
         </div>
       </section>
     </>

@@ -318,11 +318,17 @@ describe('Component Smoke Tests', () => {
           mockPlayers[1]!
         ];
 
+        // Use a round where Alice hasn't submitted yet, so only disconnected status shows
+        const roundWithNoSubmissions: CurrentRound = {
+          ...mockRound,
+          submittedInCurrentPhase: [],
+        };
+
         render(
           <AnsweringPhase
             question="Test question"
             players={playersWithDisconnected}
-            currentRound={mockRound}
+            currentRound={roundWithNoSubmissions}
             submittedCount={0}
             allAnswersIn={false}
             onReopenAnswering={vi.fn()}
@@ -330,7 +336,29 @@ describe('Component Smoke Tests', () => {
           />
         );
 
-        expect(screen.getByText('🔌 Disconnected')).toBeInTheDocument();
+        expect(screen.getByText('📱 Phone screen off')).toBeInTheDocument();
+      });
+
+      it('shows both submitted and disconnected status together', () => {
+        const playersWithDisconnected: Player[] = [
+          { ...mockPlayers[0]!, connected: false },
+          mockPlayers[1]!
+        ];
+
+        render(
+          <AnsweringPhase
+            question="Test question"
+            players={playersWithDisconnected}
+            currentRound={mockRound}
+            submittedCount={1}
+            allAnswersIn={false}
+            onReopenAnswering={vi.fn()}
+            onStartScoring={vi.fn()}
+          />
+        );
+
+        // Alice submitted then disconnected - should show both states
+        expect(screen.getByText('✅ Submitted · 📱 Phone screen off')).toBeInTheDocument();
       });
 
       it('shows answer count when not all submitted', () => {

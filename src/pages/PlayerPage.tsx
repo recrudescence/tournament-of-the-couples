@@ -45,7 +45,7 @@ function derivePlayerPhase(gameState: GameState | null, playerName: string | und
 
 export function PlayerPage() {
   const navigate = useNavigate();
-  const { isConnected, emit, on } = useSocket();
+  const { isConnected, isReconnecting, reconnectCount, emit, on } = useSocket();
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer, myTeam, myPartner } = useGameContext();
   const { requestWakeLock, isSupported: wakeLockSupported } = useWakeLock();
@@ -91,6 +91,19 @@ export function PlayerPage() {
       dispatch({ type: 'SET_PLAYER_INFO', payload: playerInfo });
     }
   }, [playerInfo, dispatch]);
+
+  // Re-join game on socket reconnection (handles network drops)
+  useEffect(() => {
+    if (reconnectCount > 0 && playerInfo?.roomCode) {
+      console.log('Socket reconnected, re-joining game...');
+      emit('joinGame', {
+        roomCode: playerInfo.roomCode,
+        name: playerInfo.name,
+        isHost: playerInfo.isHost,
+        isReconnect: true,
+      });
+    }
+  }, [reconnectCount, playerInfo, emit]);
 
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
@@ -279,6 +292,12 @@ export function PlayerPage() {
               partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}
             />
           </div>
+
+          {isReconnecting && (
+            <div className="notification is-warning has-text-centered mb-4">
+              Connection lost - reconnecting...
+            </div>
+          )}
 
           {(phase === 'scoring') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
