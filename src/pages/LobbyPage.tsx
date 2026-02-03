@@ -6,7 +6,8 @@ import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {useSnowEffect} from '../hooks/useConfetti';
-import {useTheme, type Theme} from '../hooks/useTheme';
+import {useTheme} from '../hooks/useTheme';
+import {ThemePicker} from '../components/common/ThemePicker';
 import {ExitButton} from '../components/common/ExitButton';
 import {PlayerAvatar} from '../components/common/PlayerAvatar';
 import {PlayerCard} from '../components/common/PlayerCard';
@@ -20,7 +21,7 @@ export function LobbyPage() {
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
   const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   // Add snow effect for holiday theme
   useSnowEffect(theme === 'holiday');
@@ -369,19 +370,7 @@ export function LobbyPage() {
 
           {error && <div className="notification is-danger is-light">{error}</div>}
 
-          <div className="theme-picker">
-            <span className="theme-picker-buttons is-flex-wrap-wrap is-justify-content-center">
-              {(['holiday', 'valentines', 'halloween', 'hyper', 'nick', 'default'] as Theme[]).map((t) => (
-                <button
-                  key={t}
-                  className={`theme-picker-button ${theme === t ? 'is-active' : ''}`}
-                  onClick={() => setTheme(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </span>
-          </div>
+          <ThemePicker />
         </div>
       </section>
     </>

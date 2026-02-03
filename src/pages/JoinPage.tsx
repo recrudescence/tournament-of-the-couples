@@ -5,8 +5,9 @@ import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {useSnowEffect} from '../hooks/useConfetti';
-import {Theme, useTheme} from '../hooks/useTheme';
+import {useTheme} from '../hooks/useTheme';
 import {GameTitle} from '../components/common/GameTitle';
+import {ThemePicker} from '../components/common/ThemePicker';
 import {PlayerAvatar} from '../components/common/PlayerAvatar';
 
 type JoinStep = 'menu' | 'reconnect';
@@ -34,7 +35,7 @@ export function JoinPage() {
   const { dispatch } = useGameContext();
 
   // Theme
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   // Add snow effect for holiday theme
   useSnowEffect(theme === 'holiday');
@@ -346,20 +347,7 @@ export function JoinPage() {
 
       {error && <div className="notification is-danger is-light mt-4">{error}</div>}
 
-        <div className="theme-picker">
-          {/*<div className="theme-picker-label mb-4">Themes</div>*/}
-          <span className="theme-picker-buttons is-flex-wrap-wrap is-justify-content-center ">
-            {(['holiday', 'valentines', 'halloween', 'hyper', 'nick', 'default'] as Theme[]).map((t) => (
-              <button
-                key={t}
-                className={`theme-picker-button ${theme === t ? 'is-active' : ''}`}
-                onClick={() => setTheme(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </span>
-        </div>
+        <ThemePicker />
       </div>
     </section>
   );
