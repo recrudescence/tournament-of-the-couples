@@ -118,6 +118,7 @@ export function TeamCard({
     const nameElement = (
       <span className={`has-text-weight-semibold ${textSizeClass} ${isCurrent ? 'has-text-primary' : ''}`}>
         {player.name}
+        {player.isBot && ' \u{1F916}'}
         {isCurrent && <span className="has-text-grey-light"> (you)</span>}
       </span>
     );

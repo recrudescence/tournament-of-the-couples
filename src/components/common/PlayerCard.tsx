@@ -102,6 +102,7 @@ export function PlayerCard({
         <div>
           <div className={`has-text-weight-semibold ${isCurrentPlayer ? 'has-text-primary' : ''}`}>
             {player.name}
+            {player.isBot && ' \u{1F916}'}
             {isCurrentPlayer && ' (You)'}
           </div>
           {canPair && <div className="has-text-grey is-size-7">Tap to pair</div>}

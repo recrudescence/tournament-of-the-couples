@@ -31,6 +31,8 @@ export interface ClientToServerEvents {
   backToAnswering: () => void;
   endGame: () => void;
   resetGame: () => void;
+  addBots: (data: { count: number }) => void;
+  removeBots: () => void;
 }
 
 export interface ServerToClientEvents {

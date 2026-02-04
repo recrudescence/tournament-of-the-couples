@@ -57,7 +57,7 @@ function initializeGame(roomCode) {
 }
 
 // Add a player or host
-function addPlayer(roomCode, socketId, name, isHost = false) {
+function addPlayer(roomCode, socketId, name, isHost = false, isBot = false) {
   const gameState = gameStates.get(roomCode);
   if (!gameState) {
     throw new Error('Game not initialized');
@@ -84,7 +84,8 @@ function addPlayer(roomCode, socketId, name, isHost = false) {
       partnerId: null,
       teamId: null,
       connected: true,
-      avatar: generateRandomAvatar()
+      avatar: generateRandomAvatar(),
+      isBot
     });
     log(`Player added: ${name}`);
   }

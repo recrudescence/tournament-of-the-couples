@@ -9,6 +9,16 @@ jest.mock('../roomCodeGenerator', () => ({
 jest.mock('../database', () => ({
   createGame: jest.fn(() => Promise.resolve()),
   saveRound: jest.fn(() => Promise.resolve(1)),
+  getRoundCount: jest.fn(() => Promise.resolve(0)),
+  saveAnswer: jest.fn(() => Promise.resolve(1)),
+}));
+
+jest.mock('../botManager', () => ({
+  isBot: jest.fn((socketId) => typeof socketId === 'string' && socketId.startsWith('bot-')),
+  addBots: jest.fn(() => []),
+  removeAllBots: jest.fn(),
+  scheduleBotAnswers: jest.fn(),
+  cancelBotTimers: jest.fn(),
 }));
 
 const gameState = require('../gameState');
@@ -50,6 +60,11 @@ describe('socketHandlers', () => {
       to: jest.fn(() => ({
         emit: mockRoomEmit,
       })),
+      sockets: {
+        sockets: {
+          get: jest.fn(() => null),
+        },
+      },
     };
 
     // Store reference to room emit for test assertions

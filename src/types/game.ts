@@ -45,6 +45,7 @@ export interface Player {
   teamId: string | null;
   connected: boolean;
   avatar: PlayerAvatar;
+  isBot?: boolean;
 }
 
 export interface Team {

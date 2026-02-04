@@ -2,6 +2,7 @@ const gameState = require('./gameState');
 const database = require('./database');
 const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
+const botManager = require('./botManager');
 
 // Track pending room deletions (for host disconnect grace period)
 const pendingDeletions = new Map();
@@ -161,6 +162,72 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host adds bot players (test mode)
+    socket.on('addBots', ({ count }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can add bots' });
+        return;
+      }
+
+      if (state.status !== 'lobby') {
+        socket.emit('error', { message: 'Can only add bots in lobby' });
+        return;
+      }
+
+      try {
+        botManager.addBots(roomCode, count);
+        io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
+      } catch (err) {
+        console.error('Add bots error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host removes all bot players (test mode)
+    socket.on('removeBots', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can remove bots' });
+        return;
+      }
+
+      if (state.status !== 'lobby') {
+        socket.emit('error', { message: 'Can only remove bots in lobby' });
+        return;
+      }
+
+      try {
+        botManager.removeAllBots(roomCode);
+        io.to(roomCode).emit('lobbyUpdate', gameState.getGameState(roomCode));
+      } catch (err) {
+        console.error('Remove bots error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Host kicks a player
     socket.on('kickPlayer', ({ targetSocketId }) => {
       const roomCode = socket.roomCode;
@@ -199,14 +266,17 @@ function setupSocketHandlers(io) {
 
         const updatedState = gameState.getGameState(roomCode);
 
-        // Notify the kicked player
-        io.to(targetSocketId).emit('playerKicked');
+        // Only notify real players (bots have no socket)
+        if (!botManager.isBot(targetSocketId)) {
+          // Notify the kicked player
+          io.to(targetSocketId).emit('playerKicked');
 
-        // Force disconnect the kicked player's socket
-        const targetSocket = io.sockets.sockets.get(targetSocketId);
-        if (targetSocket) {
-          targetSocket.leave(roomCode);
-          delete targetSocket.roomCode;
+          // Force disconnect the kicked player's socket
+          const targetSocket = io.sockets.sockets.get(targetSocketId);
+          if (targetSocket) {
+            targetSocket.leave(roomCode);
+            delete targetSocket.roomCode;
+          }
         }
 
         // Update all other players
@@ -364,6 +434,9 @@ function setupSocketHandlers(io) {
           questionCreatedAt: state.currentRound.createdAt,
           gameState: state
         });
+
+        // Schedule bot answers
+        botManager.scheduleBotAnswers(roomCode, io);
       } catch (err) {
         console.error('Start round error:', err);
         socket.emit('error', { message: err.message });
@@ -589,6 +662,9 @@ function setupSocketHandlers(io) {
         gameState.returnToAnswering(roomCode);
         const state = gameState.getGameState(roomCode);
         io.to(roomCode).emit('returnedToAnswering', state);
+
+        // Re-schedule bot answers
+        botManager.scheduleBotAnswers(roomCode, io);
       } catch (err) {
         console.error('Back to answering error:', err);
         socket.emit('error', { message: err.message });
@@ -604,6 +680,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
+        botManager.cancelBotTimers(roomCode);
         gameState.endGame(roomCode);
         const state = gameState.getGameState(roomCode);
         io.to(roomCode).emit('gameEnded', state);
@@ -622,6 +699,7 @@ function setupSocketHandlers(io) {
       }
 
       try {
+        botManager.cancelBotTimers(roomCode);
         gameState.resetGame(roomCode);
         const state = gameState.getGameState(roomCode);
         io.to(roomCode).emit('gameReset', state);
@@ -657,6 +735,7 @@ function setupSocketHandlers(io) {
               // Only delete if host is still disconnected
               if (currentState && currentState.host && !currentState.host.connected) {
                 console.log(`Grace period expired, deleting room ${roomCode}`);
+                botManager.cancelBotTimers(roomCode);
                 io.to(roomCode).emit('gameCancelled', { reason: 'Host disconnected' });
                 gameState.deleteRoom(roomCode);
               }

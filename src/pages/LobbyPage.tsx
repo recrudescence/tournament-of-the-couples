@@ -1,4 +1,4 @@
-import {useEffect, useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AnimatePresence} from 'framer-motion';
 import {useSocket} from '../hooks/useSocket';
@@ -109,6 +109,16 @@ export function LobbyPage() {
 
   const handleRandomizeAvatar = () => {
     emit('randomizeAvatar');
+  };
+
+  const [botCount, setBotCount] = useState(2);
+
+  const handleAddBots = () => {
+    emit('addBots', { count: botCount });
+  };
+
+  const handleRemoveBots = () => {
+    emit('removeBots');
   };
 
   if (!playerInfo || !gameState) {
@@ -307,6 +317,45 @@ export function LobbyPage() {
           {isReconnecting && (
             <div className="notification is-warning has-text-centered">
               Connection lost - reconnecting...
+            </div>
+          )}
+
+          {playerInfo.isHost && (
+            <div className="box has-background-warning-light mb-5">
+              <p className="has-text-weight-bold mb-3">{'\u{1F916}'} Test Mode</p>
+              <div className="is-flex is-align-items-center is-justify-content-center" style={{ gap: '0.5rem' }}>
+                <button
+                  className="button is-small"
+                  onClick={() => setBotCount(c => Math.max(2, c - 2))}
+                  disabled={botCount <= 2}
+                >
+                  -
+                </button>
+                <span className="has-text-weight-semibold" style={{ minWidth: '2rem', textAlign: 'center' }}>
+                  {botCount}
+                </span>
+                <button
+                  className="button is-small"
+                  onClick={() => setBotCount(c => Math.min(24, c + 2))}
+                  disabled={botCount >= 24}
+                >
+                  +
+                </button>
+                <button
+                  className="button is-small is-info ml-3"
+                  onClick={handleAddBots}
+                >
+                  Add Bots
+                </button>
+                {gameState.players.some(p => p.isBot) && (
+                  <button
+                    className="button is-small is-danger is-light ml-2"
+                    onClick={handleRemoveBots}
+                  >
+                    Remove All Bots
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
