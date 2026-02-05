@@ -466,6 +466,8 @@ describe('socketHandlers', () => {
     });
 
     it('should cancel game when host disconnects from lobby', () => {
+      jest.useFakeTimers();
+
       socket.roomCode = roomCode;
       socket.id = 'host-socket';
 
@@ -476,10 +478,20 @@ describe('socketHandlers', () => {
 
       disconnectHandler();
 
-      const state = gameState.getGameState(roomCode);
-      expect(state).toBeUndefined(); // Game should be deleted
+      // Host disconnect has a grace period - host is marked disconnected but game not deleted yet
+      let state = gameState.getGameState(roomCode);
+      expect(state).toBeDefined();
+      expect(state.host.connected).toBe(false);
+
+      // After grace period, game is deleted
+      jest.advanceTimersByTime(5000);
+
+      state = gameState.getGameState(roomCode);
+      expect(state).toBeUndefined();
       expect(io.to).toHaveBeenCalledWith(roomCode);
       expect(io.roomEmit).toHaveBeenCalledWith('gameCancelled', { reason: 'Host disconnected' });
+
+      jest.useRealTimers();
     });
 
     it('should mark player as disconnected during active game', () => {
@@ -594,7 +606,7 @@ describe('socketHandlers', () => {
       );
     });
 
-    it('should reject kick when not in lobby', () => {
+    it('should mark player as disconnected when kicked during game', () => {
       gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
       gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
       gameState.startGame(roomCode);
@@ -609,12 +621,11 @@ describe('socketHandlers', () => {
 
       kickHandler({ targetSocketId: 'socket-1' });
 
-      expect(socket.emit).toHaveBeenCalledWith(
-        'error',
-        expect.objectContaining({
-          message: 'Can only kick players in lobby',
-        })
-      );
+      // During gameplay, kicked player is marked disconnected (not removed)
+      const state = gameState.getGameState(roomCode);
+      const kickedPlayer = state.players.find(p => p.socketId === 'socket-1');
+      expect(kickedPlayer).toBeDefined();
+      expect(kickedPlayer.connected).toBe(false);
     });
 
     it('should reject kick when player not found', () => {

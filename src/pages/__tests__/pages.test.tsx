@@ -164,6 +164,9 @@ describe('Page Smoke Tests', () => {
         status: GameStatus.LOBBY,
         currentRound: null,
         teamTotalResponseTimes: {},
+        lastRoundNumber: 0,
+        importedQuestions: null,
+        questionCursor: null,
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
       mockMyPlayer = player;
@@ -205,6 +208,9 @@ describe('Page Smoke Tests', () => {
         status: GameStatus.LOBBY,
         currentRound: null,
         teamTotalResponseTimes: {},
+        lastRoundNumber: 0,
+        importedQuestions: null,
+        questionCursor: null,
       };
 
       const { container } = render(
@@ -232,6 +238,9 @@ describe('Page Smoke Tests', () => {
         status: GameStatus.PLAYING,
         currentRound: null,
         teamTotalResponseTimes: {},
+        lastRoundNumber: 0,
+        importedQuestions: null,
+        questionCursor: null,
       };
       mockPlayerInfo = { name: 'Host', isHost: true, roomCode: 'test' };
 
@@ -282,6 +291,9 @@ describe('Page Smoke Tests', () => {
         status: GameStatus.PLAYING,
         currentRound: null,
         teamTotalResponseTimes: {},
+        lastRoundNumber: 0,
+        importedQuestions: null,
+        questionCursor: null,
       };
       mockPlayerInfo = { name: 'TestPlayer', isHost: false, roomCode: 'test' };
       mockMyPlayer = player;
@@ -294,7 +306,7 @@ describe('Page Smoke Tests', () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText(/setting up the next round/i)).toBeInTheDocument();
+      expect(screen.getByText(/setting up the first round/i)).toBeInTheDocument();
     });
   });
 
@@ -334,6 +346,9 @@ describe('Page Smoke Tests', () => {
         status: GameStatus.ENDED,
         currentRound: null,
         teamTotalResponseTimes: {},
+        lastRoundNumber: 0,
+        importedQuestions: null,
+        questionCursor: null,
       };
       mockPlayerInfo = { name: 'Alice', isHost: false, roomCode: 'test' };
       mockMyPlayer = player1;

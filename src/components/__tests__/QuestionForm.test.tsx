@@ -181,7 +181,7 @@ describe('QuestionForm', () => {
       expect(screen.queryByPlaceholderText(/Option 3/i)).not.toBeInTheDocument();
     });
 
-    it('can add up to 4 options', async () => {
+    it('can add up to 6 options', async () => {
       const user = userEvent.setup();
       render(<QuestionForm onSubmit={mockOnSubmit} onError={mockOnError} />);
 
@@ -191,13 +191,11 @@ describe('QuestionForm', () => {
       expect(screen.getByPlaceholderText(/Option 1/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/Option 2/i)).toBeInTheDocument();
 
-      // Add third option
-      await user.click(screen.getByRole('button', { name: /Add Option/i }));
-      expect(screen.getByPlaceholderText(/Option 3/i)).toBeInTheDocument();
-
-      // Add fourth option
-      await user.click(screen.getByRole('button', { name: /Add Option/i }));
-      expect(screen.getByPlaceholderText(/Option 4/i)).toBeInTheDocument();
+      // Add options 3 through 6
+      for (let i = 3; i <= 6; i++) {
+        await user.click(screen.getByRole('button', { name: /Add Option/i }));
+        expect(screen.getByPlaceholderText(new RegExp(`Option ${i}`, 'i'))).toBeInTheDocument();
+      }
 
       // Add Option button should not exist when at max
       expect(screen.queryByRole('button', { name: /Add Option/i })).not.toBeInTheDocument();

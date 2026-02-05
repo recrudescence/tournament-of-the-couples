@@ -6,16 +6,24 @@ import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {ExitButton} from '../components/common/ExitButton';
 import {QuestionForm} from '../components/host/QuestionForm';
+import {QuestionReveal, type RevealStage} from '../components/host/QuestionReveal';
 import {AnsweringPhase} from '../components/host/AnsweringPhase';
 import {ScoringInterface} from '../components/host/ScoringInterface';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
 import {RoundControls} from '../components/host/RoundControls';
-import {type GameState} from '../types/game';
+import {type GameState, type ImportedChapter, type ImportedQuestion} from '../types/game';
 import {findPlayerBySocketId} from '../utils/playerUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {HostHeader} from "../components/host/HostHeader.tsx";
 
-type HostPhase = 'roundSetup' | 'answering' | 'scoring';
+type HostPhase = 'roundSetup' | 'reveal' | 'answering' | 'scoring';
+
+interface CurrentImportedQuestion {
+  question: ImportedQuestion;
+  chapter: ImportedChapter;
+  isNewChapter: boolean;
+  isLastQuestion: boolean;
+}
 
 export function HostPage() {
   const navigate = useNavigate();
@@ -34,13 +42,20 @@ export function HostPage() {
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
+  // Imported question mode state
+  const [revealStage, setRevealStage] = useState<RevealStage>('chapter_title');
+  const [currentImportedQuestion, setCurrentImportedQuestion] = useState<CurrentImportedQuestion | null>(null);
+  const [allQuestionsCompleted, setAllQuestionsCompleted] = useState(false);
+
   // Derived values
   const playerCount = gameState?.players.length ?? 0;
   const submittedCount = gameState?.currentRound?.submittedInCurrentPhase.length ?? 0;
   const allAnswersIn = phase === 'answering' && playerCount > 0 && submittedCount >= playerCount;
+  const isImportedMode = Boolean(gameState?.importedQuestions);
 
   const gameStatus = useMemo(() => {
     if (phase === 'roundSetup') return 'Setting Up';
+    if (phase === 'reveal') return 'Revealing';
     if (phase === 'scoring') return 'Scoring';
     if (allAnswersIn) return 'All Answers In';
     return 'Answering';
@@ -60,7 +75,39 @@ export function HostPage() {
       if (gameState.lastRoundNumber) {
         setRoundNumber(gameState.lastRoundNumber);
       }
-      setPhase('roundSetup');
+
+      // If imported mode with a cursor, recover reveal state
+      if (gameState.importedQuestions && gameState.questionCursor) {
+        const cursor = gameState.questionCursor;
+        const chapters = gameState.importedQuestions.chapters;
+        const chapter = chapters[cursor.chapterIndex];
+        if (chapter) {
+          const question = chapter.questions[cursor.questionIndex];
+          if (question) {
+            const isNewChapter = cursor.questionIndex === 0;
+            const isLastChapter = cursor.chapterIndex === chapters.length - 1;
+            const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
+            const isLastQuestion = isLastChapter && isLastQuestionInChapter;
+
+            setCurrentImportedQuestion({
+              question,
+              chapter: { title: chapter.title, questions: chapter.questions },
+              isNewChapter,
+              isLastQuestion
+            });
+            // On reconnect, start at variant_context (assume chapter was already seen)
+            setRevealStage(isNewChapter ? 'chapter_title' : 'variant_context');
+            setPhase('reveal');
+            setRoundNumber(gameState.lastRoundNumber + 1);
+          } else {
+            setPhase('roundSetup');
+          }
+        } else {
+          setPhase('roundSetup');
+        }
+      } else {
+        setPhase('roundSetup');
+      }
     }
   }, []); // Only run on mount
 
@@ -112,7 +159,13 @@ export function HostPage() {
         setShowFinishBtn(false);
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
-        setPhase('roundSetup');
+        // In imported mode, we'll wait for cursorAdvanced event to set phase to 'reveal'
+        // For manual mode, go to roundSetup
+        if (!state.importedQuestions) {
+          setPhase('roundSetup');
+        }
+        // Note: For imported mode, the host will click "Next Round" which triggers
+        // handleFinishRound, which we'll modify to emit advanceCursor
       }),
 
       on('returnedToAnswering', (state) => {
@@ -136,6 +189,23 @@ export function HostPage() {
 
       on('error', ({ message }) => {
         showError(message);
+      }),
+
+      // Imported question mode events
+      on('cursorAdvanced', ({ question, chapter, isNewChapter, isLastQuestion, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        setCurrentImportedQuestion({ question, chapter, isNewChapter, isLastQuestion });
+        setRevealStage(isNewChapter ? 'chapter_title' : 'variant_context');
+        setPhase('reveal');
+        setAllQuestionsCompleted(false);
+      }),
+
+      on('allQuestionsCompleted', () => {
+        setAllQuestionsCompleted(true);
+        setCurrentImportedQuestion(null);
+        setPhase('roundSetup'); // Show completion UI in roundSetup slot
       }),
     ];
 
@@ -198,6 +268,32 @@ export function HostPage() {
 
   const handleFinishRound = () => {
     emit('nextRound');
+    // In imported mode, also advance to next question
+    if (isImportedMode) {
+      emit('advanceCursor');
+    }
+  };
+
+  const handleRevealNext = () => {
+    if (!currentImportedQuestion) return;
+
+    if (revealStage === 'chapter_title') {
+      setRevealStage('variant_context');
+      emit('sendRevealUpdate', { stage: 'variant_context', chapterTitle: currentImportedQuestion.chapter.title });
+    } else if (revealStage === 'variant_context') {
+      setRevealStage('question_text');
+      emit('sendRevealUpdate', { stage: 'question_text', variant: currentImportedQuestion.question.variant });
+    } else if (revealStage === 'question_text') {
+      // Start the round with the imported question data
+      const q = currentImportedQuestion.question;
+      emit('sendRevealUpdate', { stage: 'answering' });
+      emit('startRound', {
+        question: q.question,
+        variant: q.variant,
+        options: q.options ?? undefined,
+        answerForBoth: q.answerForBoth ?? false
+      });
+    }
   };
 
   const handleReopenTeamScoring = (teamId: string, teamIndex: number) => {
@@ -292,9 +388,38 @@ export function HostPage() {
           <div className="columns is-desktop">
             {/* Main content (DOM first for mobile) */}
             <div className="column">
-              {/* Round Setup Phase */}
-              {phase === 'roundSetup' && (
+              {/* Round Setup Phase - Manual mode or all questions completed */}
+              {phase === 'roundSetup' && !allQuestionsCompleted && (
                 <QuestionForm onSubmit={handleStartRound} onError={showError} />
+              )}
+
+              {/* All Questions Completed (Imported Mode) */}
+              {phase === 'roundSetup' && allQuestionsCompleted && (
+                <div className="box has-background-success-light has-text-centered">
+                  <h2 className="title is-3 mb-4">All Questions Completed!</h2>
+                  <p className="subtitle is-5 mb-4">
+                    You've finished all imported questions.
+                  </p>
+                  <button
+                    className="button is-primary is-large"
+                    onClick={handleEndGame}
+                  >
+                    End Game
+                  </button>
+                </div>
+              )}
+
+              {/* Reveal Phase (Imported Mode) */}
+              {phase === 'reveal' && currentImportedQuestion && (
+                <QuestionReveal
+                  question={currentImportedQuestion.question}
+                  chapter={currentImportedQuestion.chapter}
+                  isNewChapter={currentImportedQuestion.isNewChapter}
+                  isLastQuestion={currentImportedQuestion.isLastQuestion}
+                  revealStage={revealStage}
+                  roundNumber={roundNumber}
+                  onNext={handleRevealNext}
+                />
               )}
 
               {/* Answering Phase */}
@@ -329,16 +454,6 @@ export function HostPage() {
                 />
               )}
 
-              <RoundControls
-                players={gameState?.players || []}
-                phase={phase}
-                allAnswersIn={allAnswersIn}
-                onKickPlayer={handleKickPlayer}
-                onReopenAnswering={handleReopenAnswering}
-                onStartScoring={handleStartScoring}
-                onResetGame={handleResetGame}
-              />
-
               {error && <div className="notification is-danger is-light mt-4">{error}</div>}
             </div>
 
@@ -356,6 +471,15 @@ export function HostPage() {
                   players={gameState?.players || []}
                   responseTimes={gameState?.teamTotalResponseTimes}
                   onEndGame={handleEndGame}
+                />
+                <RoundControls
+                  players={gameState?.players || []}
+                  phase={phase}
+                  allAnswersIn={allAnswersIn}
+                  onKickPlayer={handleKickPlayer}
+                  onReopenAnswering={handleReopenAnswering}
+                  onStartScoring={handleStartScoring}
+                  onResetGame={handleResetGame}
                 />
               </div>
             </div>

@@ -45,7 +45,10 @@ describe('GameContext', () => {
     teams: [mockTeam],
     status: GameStatus.LOBBY,
     currentRound: null,
-    teamTotalResponseTimes: {}
+    teamTotalResponseTimes: {},
+    lastRoundNumber: 0,
+    importedQuestions: null,
+    questionCursor: null
   };
 
   describe('Initial State', () => {

@@ -289,3 +289,50 @@ export const blurReveal: Variants = {
   blurred: { filter: 'blur(6px)' },
   revealed: { filter: 'blur(0px)' },
 };
+
+// ============================================================================
+// QUESTION REVEAL ANIMATIONS - For imported question mode
+// ============================================================================
+
+/** Dramatic chapter title entrance */
+export const chapterEntrance: Variants = {
+  hidden: { opacity: 0, scale: 0.6, rotateX: -30, y: 50 },
+  visible: { opacity: 1, scale: 1, rotateX: 0, y: 0 },
+  exit: { opacity: 0, scale: 0.8, y: -30 },
+};
+
+/** Question text reveal with blur */
+export const questionTextReveal: Variants = {
+  hidden: { opacity: 0, filter: 'blur(8px)', y: 20 },
+  visible: { opacity: 1, filter: 'blur(0px)', y: 0 },
+};
+
+/** Simple caption entrance from left */
+export const captionEntrance: Variants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 20 },
+};
+
+/** Option tile entrance for stagger effect */
+export const optionTileEntrance: Variants = {
+  hidden: { opacity: 0, scale: 0.7, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+};
+
+/** Binary card 3D flip entrance */
+export const binaryCardEntrance: Variants = {
+  hidden: { opacity: 0, rotateY: -90 },
+  visible: { opacity: 1, rotateY: 0 },
+};
+
+/** Pulsing animation for reveal button */
+export const revealButtonPulse = {
+  scale: [1, 1.05, 1],
+};
+
+export const revealButtonPulseTransition: Transition = {
+  duration: 1.5,
+  repeat: Infinity,
+  ease: 'easeInOut',
+};

@@ -64,6 +64,13 @@ export function PlayerPage() {
   // Track response times for ordering (player's own + partner's from answerSubmitted event)
   const [responseTimes, setResponseTimes] = useState<Record<string, number>>({});
 
+  // Reveal sync state (for imported question mode)
+  const [revealInfo, setRevealInfo] = useState<{
+    chapterTitle?: string;
+    stage: string;
+    variant?: string;
+  } | null>(null);
+
   const { error, showError } = useGameError();
   const { responseTime, startTimer, stopTimer, getFinalTime } = useTimer();
 
@@ -104,6 +111,18 @@ export function PlayerPage() {
       });
     }
   }, [reconnectCount, playerInfo, emit]);
+
+  // Initialize reveal info from gameState on mount (handles race when gameStarted
+  // includes cursor data but cursorAdvanced event was not emitted separately)
+  useEffect(() => {
+    if (gameState?.importedQuestions && gameState.questionCursor && !gameState.currentRound) {
+      const cursor = gameState.questionCursor;
+      const chapter = gameState.importedQuestions.chapters[cursor.chapterIndex];
+      if (chapter) {
+        setRevealInfo({ chapterTitle: chapter.title, stage: 'chapter_title' });
+      }
+    }
+  }, []); // Only run on mount
 
   // Request wake lock to prevent screen sleep during gameplay
   useEffect(() => {
@@ -147,7 +166,30 @@ export function PlayerPage() {
         setMyTeamPointsThisRound(null);
         setRevealedAnswers({});
         setResponseTimes({});
+        setRevealInfo(null); // Clear reveal state when round actually starts
         startTimer(questionCreatedAt);
+      }),
+
+      // Imported question mode: cursor advanced (chapter/question reveal starting)
+      on('cursorAdvanced', ({ chapter, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        setRevealInfo({ chapterTitle: chapter.title, stage: 'chapter_title' });
+      }),
+
+      // Imported question mode: reveal stage updates
+      on('revealUpdate', ({ stage, chapterTitle, variant }) => {
+        if (stage === 'answering') {
+          setRevealInfo(null); // Round is about to start
+        } else {
+          setRevealInfo(prev => ({
+            ...prev,
+            stage,
+            ...(chapterTitle && { chapterTitle }),
+            ...(variant && { variant })
+          }));
+        }
       }),
 
       on('answerSubmitted', ({ playerName, responseTime, gameState: state }) => {
@@ -305,6 +347,7 @@ export function PlayerPage() {
             <WaitingStatus
               host={gameState.host}
               isInitialRound={gameState.lastRoundNumber === 0}
+              revealInfo={revealInfo}
             />
           )}
 

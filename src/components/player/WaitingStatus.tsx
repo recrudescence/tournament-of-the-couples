@@ -1,12 +1,62 @@
+import {motion, AnimatePresence} from 'framer-motion';
 import {Host} from "../../types/game.ts";
 import {PlayerAvatar} from "../../components/common/PlayerAvatar.tsx";
+import {chapterEntrance, springBouncy, fadeIn, springDefault} from '../../styles/motion';
+
+interface RevealInfo {
+  chapterTitle?: string;
+  stage: string;
+  variant?: string;
+}
 
 interface WaitingStatusProps {
   host: Host;
   isInitialRound?: boolean;
+  revealInfo?: RevealInfo | null;
 }
 
-export function WaitingStatus({ host, isInitialRound = false }: WaitingStatusProps) {
+export function WaitingStatus({ host, isInitialRound = false, revealInfo }: WaitingStatusProps) {
+  // If we have reveal info, show the reveal state instead of standard waiting
+  if (revealInfo) {
+    return (
+      <AnimatePresence mode="wait">
+        {revealInfo.stage === 'chapter_title' && revealInfo.chapterTitle && (
+          <motion.div
+            key="chapter"
+            className="box has-text-centered has-background-primary has-text-white p-6"
+            variants={chapterEntrance}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={springBouncy}
+          >
+            <h2 className="title is-2 has-text-white mb-0">{revealInfo.chapterTitle}</h2>
+          </motion.div>
+        )}
+
+        {(revealInfo.stage === 'variant_context' || revealInfo.stage === 'question_text') && (
+          <motion.div
+            key="ready"
+            className="box has-text-centered has-background-info-light p-5"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            transition={springDefault}
+          >
+            <h2 className="title is-3 mb-3">Get ready...</h2>
+            <p className="has-text-grey is-size-5">
+              {revealInfo.variant === 'binary' && 'Choose between your partner options'}
+              {revealInfo.variant === 'multiple_choice' && 'Pick from multiple choices'}
+              {revealInfo.variant === 'open_ended' && 'Share your thoughts'}
+              {!revealInfo.variant && 'The question is coming...'}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
   if (isInitialRound) {
     return (
       <div className="box has-text-centered has-background-info-light">

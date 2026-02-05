@@ -1,4 +1,4 @@
-import type { GameState, Player, GameStatus } from './game';
+import type { GameState, Player, GameStatus, ImportedQuestion, ImportedChapter } from './game';
 
 export interface ClientToServerEvents {
   // common
@@ -33,6 +33,10 @@ export interface ClientToServerEvents {
   resetGame: () => void;
   addBots: (data: { count: number }) => void;
   removeBots: () => void;
+
+  // Question import
+  advanceCursor: () => void;
+  sendRevealUpdate: (data: { stage: string; chapterTitle?: string; variant?: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -98,4 +102,19 @@ export interface ServerToClientEvents {
 
   // error
   error: (data: { message: string }) => void;
+
+  // Question import
+  questionsImported: (data: { questionCount: number; chapterCount: number; title: string }) => void;
+  questionsCleared: () => void;
+  cursorAdvanced: (data: {
+    chapterIndex: number;
+    questionIndex: number;
+    question: ImportedQuestion;
+    chapter: ImportedChapter;
+    isNewChapter: boolean;
+    isLastQuestion: boolean;
+    gameState: GameState;
+  }) => void;
+  revealUpdate: (data: { stage: string; chapterTitle?: string; variant?: string }) => void;
+  allQuestionsCompleted: () => void;
 }

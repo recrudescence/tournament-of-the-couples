@@ -48,7 +48,9 @@ function initializeGame(roomCode) {
     teams: [],
     currentRound: null,
     lastRoundNumber: 0, // Persists across rounds for reconnection
-    teamTotalResponseTimes: {} // Cumulative response times per team (teamId -> total ms)
+    teamTotalResponseTimes: {}, // Cumulative response times per team (teamId -> total ms)
+    importedQuestions: null, // ImportedQuestionSet | null
+    questionCursor: null // { chapterIndex, questionIndex } | null
   };
 
   gameStates.set(roomCode, gameState);
@@ -317,6 +319,8 @@ function resetGame(roomCode) {
   gameState.currentRound = null;
   gameState.lastRoundNumber = 0;
   gameState.teamTotalResponseTimes = {};
+  gameState.importedQuestions = null;
+  gameState.questionCursor = null;
 
   // Reset all team scores to 0
   for (const team of gameState.teams) {
@@ -339,8 +343,8 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
   }
 
   if (variant === 'multiple_choice') {
-    if (!options || !Array.isArray(options) || options.length < 2 || options.length > 4) {
-      throw new Error('Multiple choice requires 2-4 options');
+    if (!options || !Array.isArray(options) || options.length < 2 || options.length > 6) {
+      throw new Error('Multiple choice requires 2-6 options');
     }
   }
 
@@ -585,6 +589,118 @@ function randomizePlayerAvatar(roomCode, socketId) {
   return player.avatar;
 }
 
+// Set imported questions for a game
+function setImportedQuestions(roomCode, questionSet) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  gameState.importedQuestions = questionSet;
+  gameState.questionCursor = null; // Reset cursor when new questions are imported
+  log(`Imported ${questionSet.chapters.reduce((t, c) => t + c.questions.length, 0)} questions for ${roomCode}`);
+}
+
+// Clear imported questions
+function clearImportedQuestions(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  gameState.importedQuestions = null;
+  gameState.questionCursor = null;
+  log(`Cleared imported questions for ${roomCode}`);
+}
+
+// Advance cursor to next question
+// Returns { chapterIndex, questionIndex, question, chapter, isNewChapter, isLastQuestion } or null if exhausted
+function advanceCursor(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (!gameState.importedQuestions) {
+    throw new Error('No imported questions');
+  }
+
+  const chapters = gameState.importedQuestions.chapters;
+  let cursor = gameState.questionCursor;
+  let isNewChapter = false;
+
+  if (!cursor) {
+    // Start at first question
+    cursor = { chapterIndex: 0, questionIndex: 0 };
+    isNewChapter = true;
+  } else {
+    // Move to next question
+    const currentChapter = chapters[cursor.chapterIndex];
+    if (cursor.questionIndex + 1 < currentChapter.questions.length) {
+      // Next question in same chapter
+      cursor = { chapterIndex: cursor.chapterIndex, questionIndex: cursor.questionIndex + 1 };
+    } else if (cursor.chapterIndex + 1 < chapters.length) {
+      // First question of next chapter
+      cursor = { chapterIndex: cursor.chapterIndex + 1, questionIndex: 0 };
+      isNewChapter = true;
+    } else {
+      // No more questions
+      return null;
+    }
+  }
+
+  gameState.questionCursor = cursor;
+
+  const chapter = chapters[cursor.chapterIndex];
+  const question = chapter.questions[cursor.questionIndex];
+
+  // Determine if this is the last question overall
+  const isLastChapter = cursor.chapterIndex === chapters.length - 1;
+  const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
+  const isLastQuestion = isLastChapter && isLastQuestionInChapter;
+
+  log(`Advanced to Chapter ${cursor.chapterIndex + 1}, Question ${cursor.questionIndex + 1} (${isNewChapter ? 'new chapter' : 'same chapter'})`);
+
+  return {
+    chapterIndex: cursor.chapterIndex,
+    questionIndex: cursor.questionIndex,
+    question,
+    chapter: { title: chapter.title },
+    isNewChapter,
+    isLastQuestion
+  };
+}
+
+// Get current question from cursor position
+function getCurrentQuestion(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.importedQuestions || !gameState.questionCursor) {
+    return null;
+  }
+
+  const cursor = gameState.questionCursor;
+  const chapters = gameState.importedQuestions.chapters;
+  const chapter = chapters[cursor.chapterIndex];
+  const question = chapter.questions[cursor.questionIndex];
+
+  // Determine if this is a new chapter (first question in the chapter)
+  const isNewChapter = cursor.questionIndex === 0;
+
+  // Determine if this is the last question overall
+  const isLastChapter = cursor.chapterIndex === chapters.length - 1;
+  const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
+  const isLastQuestion = isLastChapter && isLastQuestionInChapter;
+
+  return {
+    chapterIndex: cursor.chapterIndex,
+    questionIndex: cursor.questionIndex,
+    question,
+    chapter: { title: chapter.title },
+    isNewChapter,
+    isLastQuestion
+  };
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -614,5 +730,9 @@ module.exports = {
   deleteRoom,
   getRoomCodes,
   getAllGames,
-  randomizePlayerAvatar
+  randomizePlayerAvatar,
+  setImportedQuestions,
+  clearImportedQuestions,
+  advanceCursor,
+  getCurrentQuestion
 };

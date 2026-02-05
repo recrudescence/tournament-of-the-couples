@@ -822,19 +822,19 @@ describe('GameState - Round Validation', () => {
     test('throws error for multiple_choice without options', () => {
       expect(() => {
         gameState.startRound(roomCode, 'Test?', 'multiple_choice', null);
-      }).toThrow('Multiple choice requires 2-4 options');
+      }).toThrow('Multiple choice requires 2-6 options');
     });
 
     test('throws error for multiple_choice with too few options', () => {
       expect(() => {
         gameState.startRound(roomCode, 'Test?', 'multiple_choice', ['Only one']);
-      }).toThrow('Multiple choice requires 2-4 options');
+      }).toThrow('Multiple choice requires 2-6 options');
     });
 
     test('throws error for multiple_choice with too many options', () => {
       expect(() => {
-        gameState.startRound(roomCode, 'Test?', 'multiple_choice', ['A', 'B', 'C', 'D', 'E']);
-      }).toThrow('Multiple choice requires 2-4 options');
+        gameState.startRound(roomCode, 'Test?', 'multiple_choice', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+      }).toThrow('Multiple choice requires 2-6 options');
     });
 
     test('throws error for binary without options', () => {

@@ -3,7 +3,7 @@ import type {Player} from '../../types/game';
 
 interface RoundControlsProps {
   players: Player[];
-  phase: 'roundSetup' | 'answering' | 'scoring';
+  phase: 'roundSetup' | 'reveal' | 'answering' | 'scoring';
   allAnswersIn: boolean;
   onKickPlayer: (socketId: string, playerName: string) => void;
   onReopenAnswering: () => void;

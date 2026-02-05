@@ -23,8 +23,8 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
 
     if (selectedVariant === 'multiple_choice') {
       const filledOptions = mcOptions.filter(opt => opt.trim() !== '');
-      if (filledOptions.length < 2 || filledOptions.length > 4) {
-        onError('Please provide 2-4 options');
+      if (filledOptions.length < 2 || filledOptions.length > 6) {
+        onError('Please provide 2-6 options');
         return;
       }
       options = filledOptions.map(opt => opt.trim());
@@ -102,7 +102,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
               </div>
             </div>
 
-            <label className="label">Options (2-4 choices):</label>
+            <label className="label">Options (2-6 choices):</label>
             <div className="mb-3">
               {mcOptions.map((option, index) => (
                 <div key={index} className="field has-addons mb-2">
@@ -138,7 +138,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
               ))}
             </div>
 
-            {mcOptions.length < 4 && (
+            {mcOptions.length < 6 && (
               <button
                 type="button"
                 className="button is-light mb-3"

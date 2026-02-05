@@ -83,10 +83,35 @@ export interface GameState {
   currentRound: CurrentRound | null;
   lastRoundNumber: number; // Persists across rounds for reconnection
   teamTotalResponseTimes: Record<string, number>; // Cumulative response times per team (teamId -> total ms)
+  importedQuestions: ImportedQuestionSet | null;
+  questionCursor: QuestionCursor | null;
 }
 
 export interface PlayerInfo {
   name: string;
   isHost: boolean;
   roomCode: string;
+}
+
+// Question Import Types
+export interface ImportedQuestion {
+  question: string;
+  variant: RoundVariant;
+  options?: string[] | null;
+  answerForBoth?: boolean;
+}
+
+export interface ImportedChapter {
+  title: string;
+  questions: ImportedQuestion[];
+}
+
+export interface ImportedQuestionSet {
+  title: string;
+  chapters: ImportedChapter[];
+}
+
+export interface QuestionCursor {
+  chapterIndex: number;
+  questionIndex: number;
 }

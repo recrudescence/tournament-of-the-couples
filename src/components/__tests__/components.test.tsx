@@ -308,7 +308,9 @@ describe('Component Smoke Tests', () => {
         );
 
         expect(screen.getByText('✅ Submitted')).toBeInTheDocument();
-        expect(screen.getByText('⏳ Waiting...')).toBeInTheDocument();
+        // Non-submitted players show typing dots animation (no text)
+        const dots = document.querySelectorAll('.typing-dot');
+        expect(dots.length).toBeGreaterThan(0);
       });
 
       it('shows disconnected status for disconnected players', () => {

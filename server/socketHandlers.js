@@ -391,6 +391,15 @@ function setupSocketHandlers(io) {
 
       try {
         gameState.startGame(roomCode);
+
+        // If imported questions exist, advance cursor before emitting gameStarted
+        // so that the gameState already contains the cursor when clients receive it.
+        // (HostPage mounts after gameStarted; a separate cursorAdvanced would be missed.)
+        if (gameState.getGameState(roomCode).importedQuestions) {
+          const cursorData = gameState.advanceCursor(roomCode);
+          console.log(`[Import] Room ${roomCode}: game started in imported mode, first question: "${cursorData?.question?.question}"`);
+        }
+
         const state = gameState.getGameState(roomCode);
         io.to(roomCode).emit('gameStarted', state);
       } catch (err) {
@@ -707,6 +716,69 @@ function setupSocketHandlers(io) {
         console.error('Reset game error:', err);
         socket.emit('error', { message: err.message });
       }
+    });
+
+    // Host advances cursor to next question (imported mode)
+    socket.on('advanceCursor', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can advance the cursor' });
+        return;
+      }
+
+      try {
+        const cursorData = gameState.advanceCursor(roomCode);
+        if (cursorData) {
+          console.log(`[Import] Room ${roomCode}: cursor advanced to ch${cursorData.chapterIndex}:q${cursorData.questionIndex}${cursorData.isNewChapter ? ' (new chapter)' : ''}${cursorData.isLastQuestion ? ' (last question)' : ''}`);
+          io.to(roomCode).emit('cursorAdvanced', {
+            ...cursorData,
+            gameState: gameState.getGameState(roomCode)
+          });
+        } else {
+          console.log(`[Import] Room ${roomCode}: all questions completed`);
+          // No more questions
+          io.to(roomCode).emit('allQuestionsCompleted');
+        }
+      } catch (err) {
+        console.error('Advance cursor error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host sends reveal update to sync players (imported mode)
+    socket.on('sendRevealUpdate', ({ stage, chapterTitle, variant }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can send reveal updates' });
+        return;
+      }
+
+      // Broadcast to all players in the room
+      io.to(roomCode).emit('revealUpdate', { stage, chapterTitle, variant });
     });
 
     // Handle disconnection

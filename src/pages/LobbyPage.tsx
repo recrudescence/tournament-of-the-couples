@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AnimatePresence} from 'framer-motion';
 import {useSocket} from '../hooks/useSocket';
@@ -14,6 +14,12 @@ import {PlayerCard} from '../components/common/PlayerCard';
 import {TeamCard} from '../components/common/TeamCard';
 import type {Player, Team} from '../types/game';
 import {findPlayerBySocketId} from '../utils/playerUtils';
+
+interface ImportedInfo {
+  title: string;
+  questionCount: number;
+  chapterCount: number;
+}
 
 export function LobbyPage() {
   const navigate = useNavigate();
@@ -57,10 +63,32 @@ export function LobbyPage() {
       on('error', ({ message }) => {
         showError(message);
       }),
+
+      on('questionsImported', ({ title, questionCount, chapterCount }) => {
+        setImportedInfo({ title, questionCount, chapterCount });
+        setImportError(null);
+      }),
+
+      on('questionsCleared', () => {
+        setImportedInfo(null);
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
   }, [on, dispatch, showError, clearPlayerInfo, navigate]);
+
+  // Derive imported info from gameState on mount/reconnect
+  useEffect(() => {
+    if (gameState?.importedQuestions) {
+      const qs = gameState.importedQuestions;
+      const questionCount = qs.chapters.reduce((t, c) => t + c.questions.length, 0);
+      setImportedInfo({
+        title: qs.title,
+        questionCount,
+        chapterCount: qs.chapters.length
+      });
+    }
+  }, [gameState?.importedQuestions]);
 
   // Check if player has been removed from the lobby (disconnect/refresh)
   useEffect(() => {
@@ -111,7 +139,13 @@ export function LobbyPage() {
     emit('randomizeAvatar');
   };
 
-  const [botCount, setBotCount] = useState(2);
+  const [botCount] = useState(2);
+
+  // Question import state
+  const [importedInfo, setImportedInfo] = useState<ImportedInfo | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddBots = () => {
     emit('addBots', { count: botCount });
@@ -120,6 +154,52 @@ export function LobbyPage() {
   const handleRemoveBots = () => {
     emit('removeBots');
   };
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !playerInfo?.roomCode) return;
+
+    setIsUploading(true);
+    setImportError(null);
+
+    try {
+      const content = await file.text();
+
+      const response = await fetch(`/api/games/${playerInfo.roomCode}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setImportError(data.error || 'Failed to import questions');
+      }
+      // Success state is set via socket event
+    } catch (err) {
+      setImportError('Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [playerInfo?.roomCode]);
+
+  const handleClearQuestions = useCallback(async () => {
+    if (!playerInfo?.roomCode) return;
+
+    try {
+      await fetch(`/api/games/${playerInfo.roomCode}/questions`, {
+        method: 'DELETE'
+      });
+      // Success state is set via socket event
+    } catch (err) {
+      setImportError('Failed to clear questions');
+    }
+  }, [playerInfo?.roomCode]);
 
   if (!playerInfo || !gameState) {
     return (
@@ -321,26 +401,10 @@ export function LobbyPage() {
           )}
 
           {playerInfo.isHost && (
-            <div className="box has-background-warning-light mb-5">
+            <div className="columns">
+            <div className="column box has-background-warning-light mb-5">
               <p className="has-text-weight-bold mb-3">{'\u{1F916}'} Test Mode</p>
               <div className="is-flex is-align-items-center is-justify-content-center" style={{ gap: '0.5rem' }}>
-                <button
-                  className="button is-small"
-                  onClick={() => setBotCount(c => Math.max(2, c - 2))}
-                  disabled={botCount <= 2}
-                >
-                  -
-                </button>
-                <span className="has-text-weight-semibold" style={{ minWidth: '2rem', textAlign: 'center' }}>
-                  {botCount}
-                </span>
-                <button
-                  className="button is-small"
-                  onClick={() => setBotCount(c => Math.min(24, c + 2))}
-                  disabled={botCount >= 24}
-                >
-                  +
-                </button>
                 <button
                   className="button is-small is-info ml-3"
                   onClick={handleAddBots}
@@ -357,6 +421,52 @@ export function LobbyPage() {
                 )}
               </div>
             </div>
+
+            <div className="column box has-background-info-light mb-5">
+              <p className="has-text-weight-bold mb-3">{'\u{1F4CB}'} Import Questions</p>
+              {importedInfo ? (
+                <div className="has-text-centered">
+                  <p className="mb-2">
+                    <strong>{importedInfo.title}</strong>
+                  </p>
+                  <p className="mb-3 has-text-grey">
+                    {importedInfo.questionCount} questions in {importedInfo.chapterCount} chapter{importedInfo.chapterCount !== 1 ? 's' : ''}
+                  </p>
+                  <button
+                    className="button is-small is-danger is-light"
+                    onClick={handleClearQuestions}
+                  >
+                    Clear Questions
+                  </button>
+                </div>
+              ) : (
+                <div className="has-text-centered">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                    id="question-file-input"
+                  />
+                  <label
+                    htmlFor="question-file-input"
+                    className={`button is-small is-info ${isUploading ? 'is-loading' : ''}`}
+                  >
+                    Upload JSON
+                  </label>
+                  <p className="help mt-2">
+                    Import a question set to skip manual entry during gameplay
+                  </p>
+                </div>
+              )}
+              {importError && (
+                <div className="notification is-danger is-light mt-3 mb-0 p-3">
+                  {importError}
+                </div>
+              )}
+            </div>
+          </div>
           )}
 
           <div className="columns mb-5">
