@@ -286,11 +286,16 @@ export function HostPage() {
     } else if (revealStage === 'question_text') {
       // Start the round with the imported question data
       const q = currentImportedQuestion.question;
+      // Binary questions need exactly 2 options; default to Player 1/Player 2
+      // (the player page substitutes real names client-side)
+      const options = q.variant === 'binary'
+        ? (q.options ?? ['Player 1', 'Player 2'])
+        : (q.options ?? undefined);
       emit('sendRevealUpdate', { stage: 'answering' });
       emit('startRound', {
         question: q.question,
         variant: q.variant,
-        options: q.options ?? undefined,
+        options,
         answerForBoth: q.answerForBoth ?? false
       });
     }

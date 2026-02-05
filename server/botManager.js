@@ -85,10 +85,15 @@ function removeAllBots(roomCode) {
 function generateBotAnswer(round, botName, partnerName) {
   const { variant, options, answerForBoth } = round;
 
+  // For binary questions, use actual teammate names instead of placeholder options
+  const effectiveOptions = variant === 'binary'
+    ? [botName, partnerName]
+    : options;
+
   let answer;
   if (variant === 'multiple_choice' || variant === 'binary') {
     // Pick a random option
-    answer = options[Math.floor(Math.random() * options.length)];
+    answer = effectiveOptions[Math.floor(Math.random() * effectiveOptions.length)];
   } else {
     // Open-ended: pick from pool
     answer = OPEN_ENDED_ANSWERS[Math.floor(Math.random() * OPEN_ENDED_ANSWERS.length)];
@@ -98,7 +103,7 @@ function generateBotAnswer(round, botName, partnerName) {
     // JSON format: answers for both self and partner
     const partnerAnswer = variant === 'open_ended'
       ? OPEN_ENDED_ANSWERS[Math.floor(Math.random() * OPEN_ENDED_ANSWERS.length)]
-      : options[Math.floor(Math.random() * options.length)];
+      : effectiveOptions[Math.floor(Math.random() * effectiveOptions.length)];
     const answerObj = {};
     answerObj[botName] = answer;
     answerObj[partnerName] = partnerAnswer;
