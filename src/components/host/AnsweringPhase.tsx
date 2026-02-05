@@ -34,6 +34,13 @@ export function AnsweringPhase({
     return () => stopTimer();
   }, [currentRound?.createdAt]);
 
+  // Stop timer when all answers are in
+  useEffect(() => {
+    if (allAnswersIn) {
+      stopTimer();
+    }
+  }, [allAnswersIn]);
+
   return (
     <div className="box">
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-3">
