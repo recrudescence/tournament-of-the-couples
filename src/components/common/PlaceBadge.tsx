@@ -95,7 +95,6 @@ export function PlaceBadge({ place, score, size = 'medium' }: PlaceBadgeProps) {
           backgroundSize: '200% 200%',
           padding: sizeStyle.padding,
           borderRadius: '999px',
-          boxShadow: `0 4px 12px ${config.shadowColor}, inset 0 1px 2px rgba(255,255,255,0.4)`,
           color: config.textColor,
           fontWeight: 700,
           fontSize: sizeStyle.fontSize,
@@ -103,8 +102,10 @@ export function PlaceBadge({ place, score, size = 'medium' }: PlaceBadgeProps) {
         animate={isFirst ? {
           ...badgeFloat,
           boxShadow: badgeShadowKeyframes(config.shadowColor),
-        } : undefined}
-        transition={isFirst ? badgeFloatTransition : undefined}
+        } : {
+          boxShadow: `0 4px 12px ${config.shadowColor}, inset 0 1px 2px rgba(255,255,255,0.4)`,
+        }}
+        transition={isFirst ? badgeFloatTransition : { duration: 0.3 }}
       >
         {/* Shimmer overlay for gold/silver */}
         {(isFirst || isSecond) && (

@@ -98,6 +98,30 @@ export function fireScoringBurst(originX: number, originY: number, points: numbe
 }
 
 /**
+ * Fire a place-colored burst from a specific position (for podium changes)
+ */
+const placeColors: Record<number, string[]> = {
+  1: ['#FFD700', '#FFA500', '#FFEC80'],
+  2: ['#C0C0C0', '#E8E8E8', '#A0A0A0'],
+  3: ['#CD7F32', '#DAA06D', '#B87333'],
+};
+
+export function firePlaceBurst(origin: { x: number; y: number }, place: number) {
+  const colors = placeColors[place];
+  if (!colors) return;
+  confetti({
+    particleCount: place === 1 ? 60 : place === 2 ? 40 : 25,
+    startVelocity: 25,
+    spread: 70,
+    angle: 120,
+    origin,
+    colors,
+    ticks: 120,
+    gravity: 0.8,
+  });
+}
+
+/**
  * Hook for falling snow effect
  */
 export function useSnowEffect(enabled: boolean = true) {

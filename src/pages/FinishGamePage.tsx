@@ -1,14 +1,17 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {LayoutGroup, motion} from 'framer-motion';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useSocket} from '../hooks/useSocket';
 import {useGameContext} from '../context/GameContext';
-import {useCelebrationConfetti} from '../hooks/useConfetti';
+import {useCelebrationConfetti, firePlaceBurst} from '../hooks/useConfetti';
 import {ExitButton} from '../components/common/ExitButton';
 import {TeamName} from '../components/common/TeamName';
 import {PlaceBadge} from '../components/common/PlaceBadge';
 import type {Team} from '../types/game';
 import {findPlayerBySocketId} from '../utils/playerUtils';
 import {calculateAllPlaces, sortTeamsWithTiebreaker} from '../utils/rankingUtils';
+import {springGentle} from '../styles/motion';
 
 function formatTotalTime(ms: number): string {
   const seconds = ms / 1000;
@@ -23,7 +26,19 @@ function formatTotalTime(ms: number): string {
 export function FinishGamePage() {
   const navigate = useNavigate();
   const { playerInfo, clearPlayerInfo } = usePlayerInfo();
-  const { gameState } = useGameContext();
+  const { gameState, dispatch } = useGameContext();
+  const { emit, on } = useSocket();
+  const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
+  const isHost = !!playerInfo?.isHost;
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const prevPodiumRef = useRef<Record<number, string>>({});
+
+  useEffect(() => {
+    const unsub = on('scoreUpdated', ({ teamId, newScore }) => {
+      dispatch({ type: 'UPDATE_TEAM_SCORE', payload: { teamId, newScore } });
+    });
+    return unsub;
+  }, [on, dispatch]);
 
   if (!gameState) {
     return (
@@ -49,6 +64,47 @@ export function FinishGamePage() {
 
   // Check if anyone has scored (hide badges if all teams have 0 points)
   const hasAnyScores = sortedTeams.some(t => t.score > 0);
+
+  // Track podium positions and fire confetti when they change
+  const currentPodium = useMemo(() => {
+    if (!hasAnyScores) return {};
+    const podium: Record<number, string> = {};
+    for (const team of sortedTeams) {
+      const place = places.get(team.teamId);
+      if (place && place <= 3 && !podium[place]) podium[place] = team.teamId;
+    }
+    return podium;
+  }, [sortedTeams, places, hasAnyScores]);
+
+  useEffect(() => {
+    const prev = prevPodiumRef.current;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    if (Object.keys(prev).length > 0) {
+      const prevByTeam = Object.fromEntries(
+        Object.entries(prev).map(([p, id]) => [id, Number(p)])
+      );
+      for (const place of [1, 2, 3]) {
+        const teamId = currentPodium[place];
+        const prevPlace = teamId ? prevByTeam[teamId] : undefined;
+        if (teamId && prev[place] !== teamId && (!prevPlace || place < prevPlace)) {
+          timers.push(setTimeout(() => {
+            const el = rowRefs.current.get(teamId);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              firePlaceBurst(
+                { x: (rect.left + 50) / window.innerWidth, y: (rect.top + 40) / window.innerHeight },
+                place,
+              );
+            }
+          }, 400));
+        }
+      }
+    }
+
+    prevPodiumRef.current = currentPodium;
+    return () => timers.forEach(clearTimeout);
+  }, [currentPodium]);
 
   // Top finalists: show top 2 if more than 1 team, otherwise just the winner
   const finalists = sortedTeams.length > 1 ? sortedTeams.slice(0, 2) : sortedTeams.slice(0, 1);
@@ -111,47 +167,90 @@ export function FinishGamePage() {
 
           <div className="mb-6">
             <h2 className="subtitle is-4 mb-4">Final Standings</h2>
-            <div>
+            <LayoutGroup>
               {sortedTeams.map((team) => {
                 const { player1, player2 } = getTeamPlayers(team);
                 const totalTime = gameState.teamTotalResponseTimes?.[team.teamId] ?? 0;
                 const place = places.get(team.teamId) ?? 999;
                 const isWinner = place === 1 && hasAnyScores;
                 const showBadge = hasAnyScores && place <= 3;
+                const isHovered = hoveredTeamId === team.teamId;
                 return (
-                  <div
+                  <motion.div
+                    ref={(el: HTMLDivElement | null) => {
+                      if (el) rowRefs.current.set(team.teamId, el);
+                      else rowRefs.current.delete(team.teamId);
+                    }}
+                    layout
+                    layoutId={team.teamId}
                     key={team.teamId}
-                    className={`box mb-3 ${
-                      isWinner ? 'has-background-link-light winning-team-border' : ''
-                    }`}
-                    style={{ overflow: 'visible' }}
+                    className="mb-3"
+                    style={{
+                      position: 'relative',
+                      ...(isHost ? { paddingRight: 280, marginRight: -280 } : {}),
+                    }}
+                    onMouseEnter={isHost ? () => setHoveredTeamId(team.teamId) : undefined}
+                    onMouseLeave={isHost ? () => setHoveredTeamId(null) : undefined}
                   >
-                    <div className="is-flex is-justify-content-space-between is-align-items-center">
-                      <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
-                        {showBadge ? (
-                          <PlaceBadge place={place} size={isWinner ? 'large' : 'medium'} />
-                        ) : (
-                          <span className="has-text-weight-bold is-size-5" style={{ color: 'var(--theme-text-muted)' }}>
-                            #{place}
-                          </span>
-                        )}
-                        <TeamName player1={player1} player2={player2} />
-                      </div>
-                      <div className="has-text-right">
-                        <div className={`title is-4 mb-0 ${showBadge ? 'has-text-link' : 'has-text-grey'}`}>
-                          {team.score} {team.score === 1 ? 'pt' : 'pts'}
+                    <div
+                      className={`box ${isWinner ? 'winning-team-border' : ''}`}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        backgroundColor: isWinner ? '#fff' : '#f5f5f5',
+                      }}
+                    >
+                      <div className="is-flex is-justify-content-space-between is-align-items-center">
+                        <div className="is-flex is-align-items-center" style={{ gap: '0.75rem' }}>
+                          {showBadge ? (
+                            <PlaceBadge place={place} size={isWinner ? 'large' : 'medium'} />
+                          ) : (
+                            <span className="has-text-weight-bold is-size-5" style={{ color: 'var(--theme-text-muted)' }}>
+                              #{place}
+                            </span>
+                          )}
+                          <TeamName player1={player1} player2={player2} />
                         </div>
-                        {totalTime > 0 && (
-                          <div className="is-size-6 has-text-grey is-italic">
-                            {formatTotalTime(totalTime)} thinking time!
+                        <div className="has-text-right">
+                          <div className={`title is-4 mb-0 ${showBadge ? 'has-text-link' : 'has-text-grey'}`}>
+                            {team.score} {team.score === 1 ? 'pt' : 'pts'}
                           </div>
-                        )}
+                          {totalTime > 0 && (
+                            <div className="is-size-6 has-text-grey is-italic">
+                              {formatTotalTime(totalTime)} thinking time!
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                    {isHost && (
+                      <motion.div
+                        initial={false}
+                        animate={{ x: isHovered ? -30 : '-100%' }}
+                        transition={springGentle}
+                        style={{
+                          position: 'absolute',
+                          left: '75%',
+                          top: 0,
+                          bottom: 0,
+                          zIndex: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <button
+                          className="button is-medium is-rounded is-warning"
+                          style={{ whiteSpace: 'nowrap' }}
+                          onClick={() => emit('awardPoint', { teamId: team.teamId, points: 1 })}
+                        >
+                          cheeky bonus point
+                        </button>
+                      </motion.div>
+                    )}
+                  </motion.div>
                 );
               })}
-            </div>
+            </LayoutGroup>
           </div>
         </div>
       </div>
