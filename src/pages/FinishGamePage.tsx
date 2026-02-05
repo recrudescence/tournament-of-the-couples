@@ -128,10 +128,12 @@ export function FinishGamePage() {
   const responseTimes = gameState?.teamTotalResponseTimes ?? {};
   const sortedTeams = useMemo(
     () => gameState ? sortTeamsWithTiebreaker(gameState.teams, responseTimes) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [gameState?.teams, responseTimes]
   );
   const places = useMemo(
     () => gameState ? calculateAllPlaces(gameState.teams, responseTimes) : new Map<string, number>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [gameState?.teams, responseTimes]
   );
 

@@ -14,10 +14,16 @@ module.exports = [
       globals: {
         document: 'readonly',
         window: 'readonly',
+        navigator: 'readonly',
         sessionStorage: 'readonly',
         alert: 'readonly',
+        fetch: 'readonly',
         setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
         clearInterval: 'readonly',
+        console: 'readonly',
+        global: 'readonly',
         React: 'readonly',
       },
       parserOptions: {
@@ -31,6 +37,7 @@ module.exports = [
     rules: {
       ...js.configs.recommended.rules,
       ...tsPlugin.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
