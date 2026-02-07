@@ -178,7 +178,7 @@ export function LobbyPage() {
       }
       // Success state is set via socket event
     } catch (err) {
-      setImportError('Failed to upload file');
+      setImportError('Failed to upload file: ' + err);
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -197,43 +197,33 @@ export function LobbyPage() {
       });
       // Success state is set via socket event
     } catch (err) {
-      setImportError('Failed to clear questions');
+      setImportError('Failed to clear questions: ' + err);
     }
   }, [playerInfo?.roomCode]);
 
-  if (!playerInfo || !gameState) {
-    return (
-      <section className="section">
-        <div className="container container-md">
-          <h1 className="title">Lobby</h1>
-          <p>Loading...</p>
-        </div>
-      </section>
-    );
-  }
-
   // For host, create a player-like object; for players, use myPlayer from context
-  const currentPlayer = playerInfo.isHost
-    ? { ...gameState.host, isHost: true, partnerId: null, teamId: null, connected: true, name: gameState.host.name, socketId: gameState.host.socketId }
-    : myPlayer;
+  const currentPlayer = useMemo(() => {
+    if (!playerInfo || !gameState) return null;
+    return playerInfo.isHost
+      ? { ...gameState.host, isHost: true, partnerId: null, teamId: null, connected: true, name: gameState.host.name, socketId: gameState.host.socketId }
+      : myPlayer;
+  }, [playerInfo, gameState, myPlayer]);
 
   const connectedPlayers = useMemo(
-    () => gameState.players.filter((p) => p.connected),
-    [gameState.players]
+    () => gameState?.players.filter((p) => p.connected) ?? [],
+    [gameState?.players]
   );
-
-  const playerCount = connectedPlayers.length;
-  const teamCount = gameState.teams.length;
 
   // Separate unpaired players from paired ones
   const unpairedPlayers = useMemo(() => {
+    if (!gameState) return [];
     const pairedIds = new Set<string>();
     gameState.teams.forEach((team) => {
       pairedIds.add(team.player1Id);
       pairedIds.add(team.player2Id);
     });
     return connectedPlayers.filter((p) => !pairedIds.has(p.socketId));
-  }, [connectedPlayers, gameState.teams]);
+  }, [connectedPlayers, gameState]);
 
   // Sort unpaired players: current player first, then alpha descending (Z-A)
   const sortedUnpairedPlayers = useMemo(() => {
@@ -247,6 +237,7 @@ export function LobbyPage() {
 
   // Sort teams: current player's team first, then by team name
   const sortedTeams = useMemo(() => {
+    if (!gameState) return [];
     const currentPlayerSocketId = currentPlayer?.socketId;
     return [...gameState.teams].sort((a, b) => {
       const aHasCurrent = a.player1Id === currentPlayerSocketId || a.player2Id === currentPlayerSocketId;
@@ -255,47 +246,61 @@ export function LobbyPage() {
       if (bHasCurrent && !aHasCurrent) return 1;
       return 0;
     });
-  }, [gameState.teams, currentPlayer?.socketId]);
+  }, [gameState, currentPlayer?.socketId]);
 
   // Check if game can start
   const connectedNonHostPlayers = useMemo(
-    () => gameState.players.filter(
+    () => gameState?.players.filter(
       (p) => p.name !== gameState.host?.name && p.connected
-    ),
-    [gameState.players, gameState.host?.name]
+    ) ?? [],
+    [gameState]
   );
 
   const allPaired = useMemo(
     () =>
       connectedNonHostPlayers.length > 0 &&
-      connectedNonHostPlayers.length === gameState.teams.length * 2,
-    [connectedNonHostPlayers.length, gameState.teams.length]
+      connectedNonHostPlayers.length === (gameState?.teams.length ?? 0) * 2,
+    [connectedNonHostPlayers.length, gameState?.teams.length]
   );
 
   // Split players/teams for player view: separate "you" from others
   const currentPlayerUnpaired = useMemo(() => {
-    if (playerInfo.isHost) return null;
+    if (!playerInfo || playerInfo.isHost) return null;
     return sortedUnpairedPlayers.find(p => p.socketId === currentPlayer?.socketId) || null;
-  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo.isHost]);
+  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo]);
 
   const otherUnpairedPlayers = useMemo(() => {
-    if (playerInfo.isHost) return sortedUnpairedPlayers;
+    if (!playerInfo || playerInfo.isHost) return sortedUnpairedPlayers;
     return sortedUnpairedPlayers.filter(p => p.socketId !== currentPlayer?.socketId);
-  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo.isHost]);
+  }, [sortedUnpairedPlayers, currentPlayer?.socketId, playerInfo]);
 
   const currentTeam = useMemo(() => {
-    if (playerInfo.isHost) return null;
+    if (!playerInfo || playerInfo.isHost) return null;
     return sortedTeams.find(t =>
       t.player1Id === currentPlayer?.socketId || t.player2Id === currentPlayer?.socketId
     ) || null;
-  }, [sortedTeams, currentPlayer?.socketId, playerInfo.isHost]);
+  }, [sortedTeams, currentPlayer?.socketId, playerInfo]);
 
   const otherTeams = useMemo(() => {
-    if (playerInfo.isHost) return sortedTeams;
+    if (!playerInfo || playerInfo.isHost) return sortedTeams;
     return sortedTeams.filter(t =>
       t.player1Id !== currentPlayer?.socketId && t.player2Id !== currentPlayer?.socketId
     );
-  }, [sortedTeams, currentPlayer?.socketId, playerInfo.isHost]);
+  }, [sortedTeams, currentPlayer?.socketId, playerInfo]);
+
+  if (!playerInfo || !gameState) {
+    return (
+      <section className="section">
+        <div className="container container-md">
+          <h1 className="title">Lobby</h1>
+          <p>Loading...</p>
+        </div>
+      </section>
+    );
+  }
+
+  const playerCount = connectedPlayers.length;
+  const teamCount = gameState.teams.length;
 
   const renderTeamCard = (team: Team, index: number, size: 'normal' | 'large' = 'normal') => {
     const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
@@ -389,85 +394,16 @@ export function LobbyPage() {
             </div>
           )}
 
-          <div className="notification is-info is-light has-text-centered">
-            {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
-            {teamCount !== 1 ? 's' : ''} formed
-          </div>
-
           {isReconnecting && (
             <div className="notification is-warning has-text-centered">
               Connection lost - reconnecting...
             </div>
           )}
 
-          {playerInfo.isHost && (
-            <div className="columns">
-            <div className="column box has-background-warning-light mb-5">
-              <p className="has-text-weight-bold mb-3">{'\u{1F916}'} Test Mode</p>
-              <div className="is-flex is-align-items-center is-justify-content-center" style={{ gap: '0.5rem' }}>
-                <button
-                  className="button is-small is-info ml-3"
-                  onClick={handleAddBots}
-                >
-                  Add Bots
-                </button>
-                {gameState.players.some(p => p.isBot) && (
-                  <button
-                    className="button is-small is-danger is-light ml-2"
-                    onClick={handleRemoveBots}
-                  >
-                    Remove All Bots
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="column box has-background-info-light mb-5">
-              <p className="has-text-weight-bold mb-3">{'\u{1F4CB}'} Import Questions</p>
-              {importedInfo ? (
-                <div className="has-text-centered">
-                  <p className="mb-2">
-                    <strong>{importedInfo.title}</strong>
-                  </p>
-                  <p className="mb-3 has-text-grey">
-                    {importedInfo.questionCount} questions in {importedInfo.chapterCount} chapter{importedInfo.chapterCount !== 1 ? 's' : ''}
-                  </p>
-                  <button
-                    className="button is-small is-danger is-light"
-                    onClick={handleClearQuestions}
-                  >
-                    Clear Questions
-                  </button>
-                </div>
-              ) : (
-                <div className="has-text-centered">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                    id="question-file-input"
-                  />
-                  <label
-                    htmlFor="question-file-input"
-                    className={`button is-small is-info ${isUploading ? 'is-loading' : ''}`}
-                  >
-                    Upload JSON
-                  </label>
-                  <p className="help mt-2">
-                    Import a question set to skip manual entry during gameplay
-                  </p>
-                </div>
-              )}
-              {importError && (
-                <div className="notification is-danger is-light mt-3 mb-0 p-3">
-                  {importError}
-                </div>
-              )}
-            </div>
+          <div className="notification is-info is-light has-text-centered">
+            {playerCount} player{playerCount !== 1 ? 's' : ''} connected, {teamCount} team
+            {teamCount !== 1 ? 's' : ''} formed
           </div>
-          )}
 
           <div className="columns mb-5">
             <div className="column has-text-centered">
@@ -510,13 +446,14 @@ export function LobbyPage() {
             </div>
           </div>
 
-          {playerInfo.isHost && playerCount > 0 && (
+          {playerInfo.isHost && (
             <div className="box has-background-primary-light">
               <p className={`notification ${allPaired ? 'is-success' : 'is-warning'} is-light has-text-centered mt-0`}>
                 {allPaired
                     ? 'Ready to start!'
                     : 'All connected players must be paired before starting the game.'}
               </p>
+
               <button
                 className="button is-primary is-fullwidth is-large mb-3"
                 onClick={handleStartGame}
@@ -524,6 +461,58 @@ export function LobbyPage() {
               >
                 Start Game
               </button>
+
+              <div className="is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap mb-3" style={{ gap: '1rem' }}>
+                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                  <span className="has-text-weight-bold">{'\u{1F916}'} Bots:</span>
+                  <button className="button is-small is-info" onClick={handleAddBots}>
+                    Add
+                  </button>
+                  {gameState.players.some(p => p.isBot) && (
+                    <button className="button is-small is-danger is-light" onClick={handleRemoveBots}>
+                      Remove All
+                    </button>
+                  )}
+                </div>
+
+                <span className="has-text-grey-light">|</span>
+
+                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                  <span className="has-text-weight-bold">{'\u{1F4CB}'} Questions:</span>
+                  {importedInfo ? (
+                    <>
+                      <span className="has-text-grey is-size-7">
+                        {importedInfo.title} ({importedInfo.questionCount}q / {importedInfo.chapterCount}ch)
+                      </span>
+                      <button className="button is-small is-danger is-light" onClick={handleClearQuestions}>
+                        Clear
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        onChange={handleFileUpload}
+                        style={{ display: 'none' }}
+                        id="question-file-input"
+                      />
+                      <label
+                        htmlFor="question-file-input"
+                        className={`button is-small is-info ${isUploading ? 'is-loading' : ''}`}
+                      >
+                        Upload JSON
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+              {importError && (
+                <div className="notification is-danger is-light mb-3 p-3 has-text-centered">
+                  {importError}
+                </div>
+              )}
             </div>
           )}
 
