@@ -281,13 +281,8 @@ export function HostPage() {
       setRevealStage('variant_context');
       emit('sendRevealUpdate', { stage: 'variant_context', chapterTitle: currentImportedQuestion.chapter.title });
     } else if (revealStage === 'variant_context') {
-      setRevealStage('question_text');
-      emit('sendRevealUpdate', { stage: 'question_text', variant: currentImportedQuestion.question.variant });
-    } else if (revealStage === 'question_text') {
-      // Start the round with the imported question data
+      // Start the round directly - question revealed when answering begins
       const q = currentImportedQuestion.question;
-      // Binary questions need exactly 2 options; default to Player 1/Player 2
-      // (the player page substitutes real names client-side)
       const options = q.variant === 'binary'
         ? (q.options ?? ['Player 1', 'Player 2'])
         : (q.options ?? undefined);
@@ -431,6 +426,8 @@ export function HostPage() {
               {phase === 'answering' && gameState?.currentRound && (
                 <AnsweringPhase
                   question={gameState.currentRound.question}
+                  variant={gameState.currentRound.variant}
+                  options={gameState.currentRound.options}
                   players={gameState.players}
                   currentRound={gameState.currentRound}
                   submittedCount={submittedCount}

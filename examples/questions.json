@@ -1,48 +1,48 @@
 {
-  "title": "Question Type Examples",
+  "title": "lil sample game with all the question types",
   "chapters": [
     {
-      "title": "Here be Open Ended Questions",
+      "title": "the open ended questions chapter!",
       "questions": [
         {
-          "question": "What is your favorite movie?",
+          "question": "what is your favorite movie?",
           "variant": "open_ended",
           "answerForBoth": false
         },
         {
-          "question": "What would you both order at a restaurant?",
+          "question": "what would you each order for dessert???",
           "variant": "open_ended",
           "answerForBoth": true
         }
       ]
     },
     {
-      "title": "These som Multiple Choice Questions",
+      "title": "the Multiple Choice Questions chapter",
       "questions": [
         {
-          "question": "What's the best comfort food?",
+          "question": "what's the best comfort food?",
           "variant": "multiple_choice",
           "options": ["Pizza", "Ice Cream", "Pasta", "Tacos"],
           "answerForBoth": false
         },
         {
-          "question": "Where would you both want to go on vacation?",
+          "question": "where would you both want to go on vacation?",
           "variant": "multiple_choice",
-          "options": ["Beach Resort", "Mountain Cabin", "European City", "Theme Park", "Cruise", "Safari"],
+          "options": ["beach resort", "mountain cabin", "foreign city", "theme park", "cruise", "safari"],
           "answerForBoth": true
         }
       ]
     },
     {
-      "title": "These are some Binary Questions",
+      "title": "question style: binary chapter",
       "questions": [
         {
-          "question": "Who is more likely to be late?",
+          "question": "who is more likely to be late?",
           "variant": "binary",
           "answerForBoth": false
         },
         {
-          "question": "Who do you both think is funnier?",
+          "question": "who's the funnier one?",
           "variant": "binary",
           "answerForBoth": true
         }

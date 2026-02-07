@@ -34,7 +34,7 @@ export function WaitingStatus({ host, isInitialRound = false, revealInfo }: Wait
           </motion.div>
         )}
 
-        {(revealInfo.stage === 'variant_context' || revealInfo.stage === 'question_text') && (
+        {revealInfo.stage === 'variant_context' && (
           <motion.div
             key="ready"
             className="box has-text-centered has-background-info-light p-5"

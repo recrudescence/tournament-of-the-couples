@@ -182,6 +182,9 @@ export function PlayerPage() {
       on('revealUpdate', ({ stage, chapterTitle, variant }) => {
         if (stage === 'answering') {
           setRevealInfo(null); // Round is about to start
+        } else if (stage === 'question_text') {
+          // Skip question_text stage - players see question for first time when answering opens
+          return;
         } else {
           setRevealInfo(prev => ({
             ...prev,

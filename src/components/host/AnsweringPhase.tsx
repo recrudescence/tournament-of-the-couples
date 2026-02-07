@@ -1,6 +1,6 @@
 import {useEffect} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
-import {type CurrentRound, type Player} from '../../types/game';
+import {type CurrentRound, type Player, type RoundVariant} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
 import {formatResponseTime} from '../../utils/formatUtils';
@@ -8,6 +8,8 @@ import {springDefault} from '../../styles/motion';
 
 interface AnsweringPhaseProps {
   question: string;
+  variant?: RoundVariant;
+  options?: string[];
   players: Player[];
   currentRound: CurrentRound | null;
   submittedCount: number;
@@ -18,6 +20,8 @@ interface AnsweringPhaseProps {
 
 export function AnsweringPhase({
   question,
+  variant,
+  options,
   players,
   currentRound,
   submittedCount,
@@ -50,6 +54,18 @@ export function AnsweringPhase({
       <div className="notification is-primary is-light mb-4">
         <p className="is-size-5 has-text-weight-semibold">{question}</p>
       </div>
+
+      {variant === 'multiple_choice' && options && options.length > 0 && (
+        <div className="columns is-multiline is-centered mb-4">
+          {options.map((option, index) => (
+            <div key={index} className="column is-half-tablet is-one-third-desktop">
+              <div className="box has-background-light has-text-centered py-3">
+                <span className="is-size-6">{option}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h3 className="subtitle is-5 mb-3">Answer Status</h3>
       <div className="mb-4" style={{ perspective: 800 }}>
