@@ -29,9 +29,9 @@ export function RoundControls({
     const player = players.find(p => p.socketId === selectedPlayerId);
     if (!player) return;
     const confirmed = await confirm({
-      message: `Are you sure you want to kick ${player.name}? They will be disconnected from the game.`,
+      message: `are you sure you want to kick ${player.name}? they'll be disconnected from the game.`,
       variant: 'danger',
-      confirmText: 'Kick',
+      confirmText: 'kick',
     });
     if (confirmed) {
       onKickPlayer(selectedPlayerId, player.name);
@@ -42,9 +42,9 @@ export function RoundControls({
   const handleStartScoring = async () => {
     if (!allAnswersIn) {
       const confirmed = await confirm({
-        message: 'Not all players have answered yet. Are you sure you want to begin scoring?',
+        message: 'doesn\'t look like all players have answered yet. begin scoring anyway?',
         variant: 'warning',
-        confirmText: 'Begin Scoring',
+        confirmText: 'begin scoring',
       });
       if (confirmed) {
         onStartScoring();

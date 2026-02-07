@@ -129,9 +129,9 @@ export function LobbyPage() {
 
   const handleKick = async (targetSocketId: string, playerName: string) => {
     const confirmed = await confirm({
-      message: `Are you sure you want to kick ${playerName}?`,
+      message: `are you sure you want to kick ${playerName}?`,
       variant: 'danger',
-      confirmText: 'Kick',
+      confirmText: 'kick',
     });
     if (confirmed) {
       emit('kickPlayer', { targetSocketId });

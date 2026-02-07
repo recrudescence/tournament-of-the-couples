@@ -356,10 +356,10 @@ export function HostPage() {
 
   const handleEndGame = async () => {
     const confirmed = await confirm({
-      title: 'End Game',
-      message: 'This will show the final scores and cannot be undone.',
+      title: 'finished?',
+      message: 'this will show the final scores and cannot be undone!',
       variant: 'warning',
-      confirmText: 'End Game',
+      confirmText: 'drumroll please...',
     });
     if (confirmed) {
       emit('endGame');
@@ -368,10 +368,10 @@ export function HostPage() {
 
   const handleResetGame = async () => {
     const confirmed = await confirm({
-      title: 'Reset Game',
-      message: 'This will return everyone to the lobby with scores reset to 0.',
+      title: 'start over',
+      message: 'this will return everyone to the lobby with scores reset!',
       variant: 'danger',
-      confirmText: 'Reset Game',
+      confirmText: 'reset game',
     });
     if (confirmed) {
       emit('resetGame');

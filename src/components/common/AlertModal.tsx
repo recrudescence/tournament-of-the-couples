@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import {useCallback, useEffect, useState} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
 import {
+  buttonHover,
+  buttonTap,
   modalBackdrop,
+  nervousHover,
   slideInUp,
   springDefault,
   springStiff,
-  buttonHover,
-  buttonTap,
-  nervousHover,
 } from '../../styles/motion';
 
 type AlertVariant = 'info' | 'warning' | 'danger';
@@ -32,8 +32,8 @@ const variantStyles: Record<AlertVariant, { icon: string; buttonClass: string }>
 export function AlertModal({
   title,
   message,
-  confirmText = 'OK',
-  cancelText = 'Cancel',
+  confirmText = 'ok',
+  cancelText = 'cancel',
   variant = 'info',
   isConfirm,
   onConfirm,
@@ -95,7 +95,7 @@ export function AlertModal({
             <header className="modal-card-head">
               <p className="modal-card-title">
                 <span className="mr-2">{icon}</span>
-                {title || (variant === 'danger' ? 'Confirm' : 'Notice')}
+                {title || (variant === 'danger' ? 'Confirm' : '!!')}
               </p>
             </header>
 
