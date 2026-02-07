@@ -35,6 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **PlayerCard**: Unpaired player display with avatar, click-to-pair interaction, and host kick functionality. Players can tap their own avatar to randomize it.
   - **TeamCard**: Paired team display showing two player mini-cards side-by-side with avatars, break-up/kick actions. Avatar tap-to-randomize supported.
   - **PlaceBadge**: Animated 1st/2nd/3rd place badges with gold/silver/bronze styling. Features floating, shimmer, and vibrate effects. Used in TeamScoreboard, PlayerHeader, and FinishGamePage.
+  - **AlertModal**: Animated modal for confirmations and alerts. Replaces native `window.confirm()`. Supports info/warning/danger variants with customizable buttons. Uses promise-based API via `useAlert()` hook.
 
 - `/src/components/host/` - Host-specific components (used by HostPage)
   - **HostHeader**: Round number, game status, host info display
@@ -61,6 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `/src/hooks/useTimer.ts` - Response time tracking for player answers
 - `/src/hooks/useWakeLock.ts` - Prevent mobile screen sleep during gameplay
 - `/src/hooks/usePrevious.ts` - Track previous value of a variable (used for avatar change detection)
+- `/src/context/AlertContext.tsx` - `useAlert()` hook for promise-based alert/confirm dialogs
 
 **Page Components:**
 - All major pages (HostPage, PlayerPage, LobbyPage) are kept under 400 lines
@@ -142,6 +144,7 @@ import { slideInLeft, springDefault, staggerDelay, buttonHover, buttonTap } from
 **Animated Components:**
 - `TeamCard` - 3D flip entrance, card hover effects
 - `ScoringModal` - 3D modal entrance/exit with AnimatePresence
+- `AlertModal` - Animated confirmation/alert dialogs with variant styling
 - `FlipCard` - Reusable 3D card flip for answer reveals
 - `PlaceBadge` - Animated gold/silver/bronze badges with float, shimmer, and vibrate effects
 - `SinglePlayerScoring` / `BothPlayersScoring` - Staggered slide-in animations

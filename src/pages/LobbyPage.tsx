@@ -7,6 +7,7 @@ import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {useSnowEffect} from '../hooks/useConfetti';
 import {useTheme} from '../hooks/useTheme';
+import {useAlert} from '../context/AlertContext';
 import {ThemePicker} from '../components/common/ThemePicker';
 import {ExitButton} from '../components/common/ExitButton';
 import {PlayerAvatar} from '../components/common/PlayerAvatar';
@@ -28,6 +29,7 @@ export function LobbyPage() {
   const { gameState, dispatch, myPlayer } = useGameContext();
   const { error, showError } = useGameError();
   const { theme } = useTheme();
+  const { confirm } = useAlert();
 
   // Add snow effect for holiday theme
   useSnowEffect(theme === 'holiday');
@@ -125,8 +127,13 @@ export function LobbyPage() {
     emit('unpair');
   };
 
-  const handleKick = (targetSocketId: string, playerName: string) => {
-    if (window.confirm(`Are you sure you want to kick ${playerName}?`)) {
+  const handleKick = async (targetSocketId: string, playerName: string) => {
+    const confirmed = await confirm({
+      message: `Are you sure you want to kick ${playerName}?`,
+      variant: 'danger',
+      confirmText: 'Kick',
+    });
+    if (confirmed) {
       emit('kickPlayer', { targetSocketId });
     }
   };

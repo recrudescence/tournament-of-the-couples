@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import type {Player} from '../../types/game';
+import {useAlert} from '../../context/AlertContext';
 
 interface RoundControlsProps {
   players: Player[];
@@ -22,18 +23,30 @@ export function RoundControls({
 }: RoundControlsProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const { confirm } = useAlert();
 
-  const handleKick = () => {
+  const handleKick = async () => {
     const player = players.find(p => p.socketId === selectedPlayerId);
-    if (player && window.confirm(`Are you sure you want to kick ${player.name}? They will be disconnected from the game.`)) {
+    if (!player) return;
+    const confirmed = await confirm({
+      message: `Are you sure you want to kick ${player.name}? They will be disconnected from the game.`,
+      variant: 'danger',
+      confirmText: 'Kick',
+    });
+    if (confirmed) {
       onKickPlayer(selectedPlayerId, player.name);
       setSelectedPlayerId('');
     }
   };
 
-  const handleStartScoring = () => {
+  const handleStartScoring = async () => {
     if (!allAnswersIn) {
-      if (window.confirm('Not all players have answered yet. Are you sure you want to begin scoring?')) {
+      const confirmed = await confirm({
+        message: 'Not all players have answered yet. Are you sure you want to begin scoring?',
+        variant: 'warning',
+        confirmText: 'Begin Scoring',
+      });
+      if (confirmed) {
         onStartScoring();
       }
     } else {

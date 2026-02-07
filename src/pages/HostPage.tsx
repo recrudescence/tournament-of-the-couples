@@ -4,6 +4,7 @@ import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
+import {useAlert} from '../context/AlertContext';
 import {ExitButton} from '../components/common/ExitButton';
 import {QuestionForm} from '../components/host/QuestionForm';
 import {QuestionReveal, type RevealStage} from '../components/host/QuestionReveal';
@@ -31,6 +32,7 @@ export function HostPage() {
   const { playerInfo } = usePlayerInfo();
   const { gameState, dispatch } = useGameContext();
   const { error, showError } = useGameError();
+  const { confirm } = useAlert();
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [roundNumber, setRoundNumber] = useState(1);
@@ -351,14 +353,26 @@ export function HostPage() {
     setShowFinishBtn(false);
   };
 
-  const handleEndGame = () => {
-    if (window.confirm('Are you sure you want to end the game? This will show the final scores and cannot be undone.')) {
+  const handleEndGame = async () => {
+    const confirmed = await confirm({
+      title: 'End Game',
+      message: 'This will show the final scores and cannot be undone.',
+      variant: 'warning',
+      confirmText: 'End Game',
+    });
+    if (confirmed) {
       emit('endGame');
     }
   };
 
-  const handleResetGame = () => {
-    if (window.confirm('Are you sure you want to reset the game? This will return everyone to the lobby with scores reset to 0.')) {
+  const handleResetGame = async () => {
+    const confirmed = await confirm({
+      title: 'Reset Game',
+      message: 'This will return everyone to the lobby with scores reset to 0.',
+      variant: 'danger',
+      confirmText: 'Reset Game',
+    });
+    if (confirmed) {
       emit('resetGame');
     }
   };
