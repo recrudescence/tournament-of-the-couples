@@ -26,7 +26,7 @@ export function TeamCard({
   player2,
   currentPlayerName,
   isHost,
-  isViewerTeam,
+  isViewerTeam: _isViewerTeam,
   canUnpair,
   index,
   size = 'normal',

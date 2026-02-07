@@ -81,6 +81,13 @@ vi.mock('../../hooks/useWakeLock', () => ({
   }),
 }));
 
+vi.mock('../../context/AlertContext', () => ({
+  useAlert: () => ({
+    alert: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
 describe('Page Smoke Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();

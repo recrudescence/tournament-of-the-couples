@@ -122,6 +122,7 @@ export function PlayerPage() {
         setRevealInfo({ chapterTitle: chapter.title, stage: 'chapter_title' });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Request wake lock to prevent screen sleep during gameplay

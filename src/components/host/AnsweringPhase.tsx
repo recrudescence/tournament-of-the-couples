@@ -36,14 +36,14 @@ export function AnsweringPhase({
       startTimer(currentRound.createdAt);
     }
     return () => stopTimer();
-  }, [currentRound?.createdAt]);
+  }, [currentRound?.createdAt, startTimer, stopTimer]);
 
   // Stop timer when all answers are in
   useEffect(() => {
     if (allAnswersIn) {
       stopTimer();
     }
-  }, [allAnswersIn]);
+  }, [allAnswersIn, stopTimer]);
 
   return (
     <div className="box">

@@ -1,20 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Disabled for this file: mocking browser APIs (navigator.wakeLock) requires any casts
+
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useWakeLock } from '../useWakeLock';
 
 // Mock WakeLockSentinel
+type EventHandler = () => void;
+
 class MockWakeLockSentinel {
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, EventHandler[]> = new Map();
   released = false;
 
-  addEventListener(event: string, handler: Function) {
+  addEventListener(event: string, handler: EventHandler) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
     this.listeners.get(event)!.push(handler);
   }
 
-  removeEventListener(event: string, handler: Function) {
+  removeEventListener(event: string, handler: EventHandler) {
     const handlers = this.listeners.get(event);
     if (handlers) {
       const index = handlers.indexOf(handler);

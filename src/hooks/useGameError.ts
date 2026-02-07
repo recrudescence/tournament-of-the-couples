@@ -4,7 +4,7 @@ const DEFAULT_ERROR_DURATION_MS = 5000;
 
 export function useGameError() {
   const [error, setError] = useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showError = useCallback((message: string, duration = DEFAULT_ERROR_DURATION_MS) => {
     // Clear any existing timeout

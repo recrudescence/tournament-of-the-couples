@@ -16,14 +16,19 @@ describe('useSocket', () => {
     mockOff = vi.fn();
 
     mockSocket = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       emit: mockEmit as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       on: mockOn as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       off: mockOff as any,
     };
 
     vi.spyOn(SocketContext, 'useSocketContext').mockReturnValue({
       socket: mockSocket as Socket,
       isConnected: true,
+      isReconnecting: false,
+      reconnectCount: 0,
     });
   });
 
@@ -48,6 +53,8 @@ describe('useSocket', () => {
     vi.spyOn(SocketContext, 'useSocketContext').mockReturnValue({
       socket: null,
       isConnected: false,
+      isReconnecting: false,
+      reconnectCount: 0,
     });
 
     const { result } = renderHook(() => useSocket());
@@ -93,6 +100,8 @@ describe('useSocket', () => {
     vi.spyOn(SocketContext, 'useSocketContext').mockReturnValue({
       socket: null,
       isConnected: false,
+      isReconnecting: false,
+      reconnectCount: 0,
     });
 
     const { result } = renderHook(() => useSocket());

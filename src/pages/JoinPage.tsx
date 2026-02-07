@@ -84,6 +84,7 @@ export function JoinPage() {
     if (isConnected && step === 'menu' && !creatingNew && !joiningExisting) {
       fetchGames();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, step, creatingNew, joiningExisting]);
 
   // Socket event handlers

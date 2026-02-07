@@ -13,6 +13,14 @@ import { AnsweringPhase } from '../host/AnsweringPhase';
 import type { Player, Team, CurrentRound } from '../../types/game';
 import { RoundStatus, RoundVariant } from '../../types/game';
 
+// Mock AlertContext for RoundControls
+vi.mock('../../context/AlertContext', () => ({
+  useAlert: () => ({
+    alert: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
 const mockAvatar = { color: '#ff0000', emoji: '😀' };
 
 describe('Component Smoke Tests', () => {
@@ -34,6 +42,7 @@ describe('Component Smoke Tests', () => {
             isCurrentPlayer={false}
             canPair={false}
             isHost={false}
+            index={0}
             onPair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -49,6 +58,7 @@ describe('Component Smoke Tests', () => {
             isCurrentPlayer={true}
             canPair={false}
             isHost={false}
+            index={0}
             onPair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -64,6 +74,7 @@ describe('Component Smoke Tests', () => {
             isCurrentPlayer={false}
             canPair={true}
             isHost={false}
+            index={0}
             onPair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -79,6 +90,7 @@ describe('Component Smoke Tests', () => {
             isCurrentPlayer={false}
             canPair={false}
             isHost={true}
+            index={0}
             onPair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -116,6 +128,7 @@ describe('Component Smoke Tests', () => {
             isHost={false}
             isViewerTeam={false}
             canUnpair={false}
+            index={0}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -134,6 +147,7 @@ describe('Component Smoke Tests', () => {
             isHost={false}
             isViewerTeam={false}
             canUnpair={true}
+            index={0}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -151,6 +165,7 @@ describe('Component Smoke Tests', () => {
             isHost={true}
             isViewerTeam={false}
             canUnpair={false}
+            index={0}
             onUnpair={vi.fn()}
             onKick={vi.fn()}
           />
@@ -169,6 +184,7 @@ describe('Component Smoke Tests', () => {
           <PlayerHeader
             player={{ name: 'Alice', avatar: null }}
             partner={{ name: 'Bob', avatar: null }}
+            shouldHighlightYou={false}
           />
         );
 
@@ -181,6 +197,7 @@ describe('Component Smoke Tests', () => {
           <PlayerHeader
             player={{ name: 'Alice', avatar: mockAvatar }}
             partner={{ name: 'Bob', avatar: { color: '#0000ff', emoji: '🎉' } }}
+            shouldHighlightYou={false}
           />
         );
 

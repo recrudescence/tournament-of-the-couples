@@ -111,6 +111,7 @@ export function HostPage() {
         setPhase('roundSetup');
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Socket event handlers
@@ -441,7 +442,7 @@ export function HostPage() {
                 <AnsweringPhase
                   question={gameState.currentRound.question}
                   variant={gameState.currentRound.variant}
-                  options={gameState.currentRound.options}
+                  options={gameState.currentRound.options ?? undefined}
                   players={gameState.players}
                   currentRound={gameState.currentRound}
                   submittedCount={submittedCount}

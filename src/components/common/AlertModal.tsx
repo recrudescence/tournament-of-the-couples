@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   modalBackdrop,
@@ -42,6 +42,16 @@ export function AlertModal({
   const [isExiting, setIsExiting] = useState(false);
   const { icon, buttonClass } = variantStyles[variant];
 
+  const handleCancel = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(onCancel, 200);
+  }, [onCancel]);
+
+  const handleConfirm = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(onConfirm, 200);
+  }, [onConfirm]);
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -51,17 +61,7 @@ export function AlertModal({
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
-
-  const handleConfirm = () => {
-    setIsExiting(true);
-    setTimeout(onConfirm, 200);
-  };
-
-  const handleCancel = () => {
-    setIsExiting(true);
-    setTimeout(onCancel, 200);
-  };
+  }, [handleCancel]);
 
   const handleExitComplete = () => {
     // Animation cleanup handled by parent

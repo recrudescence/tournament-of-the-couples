@@ -78,6 +78,13 @@ vi.mock('../../hooks/useTimer', () => ({
   }),
 }));
 
+vi.mock('../../context/AlertContext', () => ({
+  useAlert: () => ({
+    alert: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
 // Spy on playerUtils
 vi.spyOn(playerUtils, 'findPlayerBySocketId').mockImplementation((players, socketId) => {
   return players.find(p => p.socketId === socketId);
