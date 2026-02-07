@@ -83,6 +83,11 @@ export function ScoringInterface({
     setSelectedTeamId(null);
   }, []);
 
+  const handleReopenScoring = useCallback((teamId: string, originalIndex: number) => {
+    onReopenTeamScoring(teamId, originalIndex);
+    setSelectedTeamId(teamId);
+  }, [onReopenTeamScoring]);
+
   const handleAwardPoints = useCallback((teamId: string, originalIndex: number, points: number) => {
     // Close modal first
     setSelectedTeamId(null);
@@ -135,7 +140,7 @@ export function ScoringInterface({
                     <>
                       <button
                         className="button is-light is-small"
-                        onClick={() => onReopenTeamScoring(team.teamId, originalIndex)}
+                        onClick={() => handleReopenScoring(team.teamId, originalIndex)}
                         title="Re-score"
                       >
                         ↪️

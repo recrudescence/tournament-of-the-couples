@@ -337,3 +337,18 @@ export const revealButtonPulseTransition: Transition = {
   ease: 'easeInOut',
 };
 
+// ============================================================================
+// SCORE ANIMATIONS - For score displays that pulse on update
+// ============================================================================
+
+/** Score pulse animation - single pulse when score changes */
+export const scorePulse = {
+  scale: [1, 1.25, 1],
+  color: ['inherit', 'var(--theme-success)', 'inherit'],
+};
+
+export const scorePulseTransition: Transition = {
+  duration: 0.4,
+  ease: 'easeOut',
+};
+

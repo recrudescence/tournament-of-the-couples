@@ -4,9 +4,10 @@ import type {PlayerIdentity} from '../../types/game';
 interface PlayerHeaderProps {
   player: PlayerIdentity;
   partner: PlayerIdentity;
+  shouldHighlightYou: boolean;
 }
 
-export function PlayerHeader({ player, partner }: PlayerHeaderProps) {
+export function PlayerHeader({ player, partner, shouldHighlightYou }: PlayerHeaderProps) {
   const bubbleStyle = (isPlayer: boolean, side: 'left' | 'right'): React.CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',
@@ -25,7 +26,7 @@ export function PlayerHeader({ player, partner }: PlayerHeaderProps) {
     <div className="has-text-centered">
       <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
         {/* Player (you) - left bubble */}
-        <div style={bubbleStyle(true, 'left')}>
+        <div style={bubbleStyle(shouldHighlightYou, 'left')}>
           {player.avatar && <PlayerAvatar avatar={player.avatar} size="medium" />}
           <span className="has-text-weight-semibold is-size-7 has-text-primary">
             {player.name}

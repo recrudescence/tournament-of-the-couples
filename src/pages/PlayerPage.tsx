@@ -223,7 +223,12 @@ export function PlayerPage() {
 
         // Check if this is my team (use myPlayer from closure - ok since we just need teamId match)
         if (myPlayer?.teamId === teamId) {
-          setMyTeamPointsThisRound(pointsAwarded);
+          // Negative pointsAwarded means host is re-scoring - reset to waiting state
+          if (pointsAwarded < 0) {
+            setMyTeamPointsThisRound(null);
+          } else {
+            setMyTeamPointsThisRound(pointsAwarded);
+          }
         }
       }),
 
@@ -330,6 +335,7 @@ export function PlayerPage() {
           <div className="block">
             <GameTitle host={{ name: gameState?.host.name ?? '-', avatar: gameState?.host.avatar ?? null }} compact />
             <PlayerHeader
+              shouldHighlightYou={false}
               player={{ name: playerInfo.name, avatar: myPlayer?.avatar ?? null }}
               partner={{ name: myPartner?.name ?? '-', avatar: myPartner?.avatar ?? null }}
             />
@@ -340,9 +346,6 @@ export function PlayerPage() {
               Connection lost - reconnecting...
             </div>
           )}
-
-          {(phase === 'scoring') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
-
           {phase === 'waiting' && gameState?.host && (
             <WaitingStatus
               host={gameState.host}
@@ -386,6 +389,8 @@ export function PlayerPage() {
               totalPlayersCount={gameState?.players.filter(p => p.name !== gameState?.host?.name).length ?? 0}
             />
           )}
+
+          {(phase === 'scoring') && <ScoringStatus pointsAwarded={myTeamPointsThisRound} />}
 
           <TeamScoreboard
             teams={gameState?.teams || []}

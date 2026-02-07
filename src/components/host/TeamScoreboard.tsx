@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
-import { type Team, type Player } from '../../types/game';
-import { findPlayerBySocketId } from '../../utils/playerUtils';
-import { sortTeamsWithTiebreaker, calculateAllPlaces } from '../../utils/rankingUtils';
-import { TeamName } from '../common/TeamName';
-import { PlaceBadge } from '../common/PlaceBadge';
+import {useMemo} from 'react';
+import {type Player, type Team} from '../../types/game';
+import {findPlayerBySocketId} from '../../utils/playerUtils';
+import {calculateAllPlaces, sortTeamsWithTiebreaker} from '../../utils/rankingUtils';
+import {TeamName} from '../common/TeamName';
+import {PlaceBadge} from '../common/PlaceBadge';
+import {ScoreDisplay} from '../common/ScoreDisplay';
 
 interface TeamScoreboardProps {
   teams: Team[];
@@ -54,9 +55,7 @@ export function TeamScoreboard({ teams, players, responseTimes = {}, onEndGame }
                     )}
                     <TeamName player1={player1} player2={player2} />
                   </div>
-                  <span className={`tag is-medium ${showBadge ? 'is-light' : 'is-info'}`}>
-                    {team.score} pts
-                  </span>
+                  <ScoreDisplay score={team.score} size="medium" highlighted={showBadge} className='mr-3' />
                 </div>
               </div>
             );

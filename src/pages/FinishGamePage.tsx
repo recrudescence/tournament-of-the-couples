@@ -8,6 +8,7 @@ import { usePodiumConfetti } from '../hooks/usePodiumConfetti';
 import { ExitButton } from '../components/common/ExitButton';
 import { TeamName } from '../components/common/TeamName';
 import { PlaceBadge } from '../components/common/PlaceBadge';
+import { ScoreDisplay } from '../components/common/ScoreDisplay';
 import type { Player, Team } from '../types/game';
 import { findPlayerBySocketId } from '../utils/playerUtils';
 import { calculateAllPlaces, sortTeamsWithTiebreaker } from '../utils/rankingUtils';
@@ -77,9 +78,12 @@ function StandingsRow({
             <TeamName player1={player1} player2={player2} />
           </div>
           <div className="has-text-right">
-            <div className={`title is-4 mb-0 ${showBadge ? 'has-text-link' : 'has-text-grey'}`}>
-              {team.score} {team.score === 1 ? 'pt' : 'pts'}
-            </div>
+            <ScoreDisplay
+              score={team.score}
+              size="large"
+              suffix={team.score === 1 ? 'pt' : 'pts'}
+              highlighted={showBadge}
+            />
             {totalTime > 0 && (
               <div className="is-size-6 has-text-grey is-italic">
                 {formatTotalTime(totalTime)} thinking time!
@@ -205,9 +209,13 @@ export function FinishGamePage() {
                       <div className="is-flex is-justify-content-center mb-3 mt-2">
                         <TeamName player1={player1} player2={player2} size="medium" />
                       </div>
-                      <p className={`title is-${i === 0 ? '1' : '3'} mb-0 ${i === 0 ? 'has-text-white' : ''} has-text-weight-bold`}>
-                        {team.score} points
-                      </p>
+                      <ScoreDisplay
+                        score={team.score}
+                        size="xlarge"
+                        color={i === 0 ? 'white' : 'auto'}
+                        highlighted
+                        className={i === 0 ? 'title is-1' : 'title is-3'}
+                      />
                     </div>
                   </div>
                 );
