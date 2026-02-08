@@ -10,9 +10,10 @@ import {QuestionForm} from '../components/host/QuestionForm';
 import {QuestionReveal, type RevealStage} from '../components/host/QuestionReveal';
 import {AnsweringPhase} from '../components/host/AnsweringPhase';
 import {ScoringInterface} from '../components/host/ScoringInterface';
+import {PoolScoringInterface} from '../components/host/PoolScoringInterface';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
 import {RoundControls} from '../components/host/RoundControls';
-import {type GameState, type ImportedChapter, type ImportedQuestion} from '../types/game';
+import {type GameState, type ImportedChapter, type ImportedQuestion, type Player, RoundVariant} from '../types/game';
 import {findPlayerBySocketId} from '../utils/playerUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {HostHeader} from "../components/host/HostHeader.tsx";
@@ -48,6 +49,10 @@ export function HostPage() {
   const [revealStage, setRevealStage] = useState<RevealStage>('chapter_title');
   const [currentImportedQuestion, setCurrentImportedQuestion] = useState<CurrentImportedQuestion | null>(null);
   const [allQuestionsCompleted, setAllQuestionsCompleted] = useState(false);
+
+  // Pool selection state
+  const [revealedPickers, setRevealedPickers] = useState<Record<string, Player[]>>({});
+  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; correctPickers: Player[] }>>({});
 
   // Derived values
   const playerCount = gameState?.players.length ?? 0;
@@ -129,6 +134,8 @@ export function HostPage() {
           }
         }
         setRevealedAnswers(new Set());
+        setRevealedPickers({});
+        setRevealedAuthors({});
         setPhase('answering');
       }),
 
@@ -136,6 +143,31 @@ export function HostPage() {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
+      }),
+
+      // Pool selection events
+      on('poolReady', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+      }),
+
+      on('pickSubmitted', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+      }),
+
+      on('allPicksIn', () => {
+        // Scoring will start when scoringStarted is received
+      }),
+
+      on('pickersRevealed', ({ answerText, pickers }) => {
+        setRevealedPickers(prev => ({ ...prev, [answerText]: pickers }));
+      }),
+
+      on('authorRevealed', ({ answerText, author, correctPickers }) => {
+        setRevealedAuthors(prev => ({ ...prev, [answerText]: { author, correctPickers } }));
       }),
 
       // allAnswersIn is now derived from gameState, no handler needed
@@ -215,7 +247,7 @@ export function HostPage() {
     return () => unsubscribers.forEach((unsub) => unsub());
   }, [on, dispatch, showError, navigate]);
 
-  const handleStartRound = (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => {
+  const handleStartRound = (question: string, variant: RoundVariant, options?: string[], answerForBoth?: boolean) => {
     emit('startRound', {
       question,
       variant,
@@ -248,6 +280,14 @@ export function HostPage() {
 
   const handleRevealAnswer = (playerName: string) => {
     emit('revealAnswer', { playerName });
+  };
+
+  const handleRevealPickers = (answerText: string) => {
+    emit('revealPickers', { answerText });
+  };
+
+  const handleRevealAuthor = (answerText: string) => {
+    emit('revealAuthor', { answerText });
   };
 
   const handleAwardPoints = (teamId: string, teamIndex: number, points: number) => {
@@ -454,21 +494,32 @@ export function HostPage() {
 
               {/* Scoring Phase */}
               {phase === 'scoring' && gameState?.currentRound && (
-                <ScoringInterface
-                  teams={gameState.teams}
-                  players={gameState.players}
-                  currentRound={gameState.currentRound}
-                  currentTeamIndex={currentTeamIndex}
-                  teamPointsAwarded={teamPointsAwarded}
-                  revealedAnswers={revealedAnswers}
-                  revealedResponseTimes={revealedResponseTimes}
-                  showFinishBtn={showFinishBtn}
-                  onBackToAnswering={handleBackToAnswering}
-                  onRevealAnswer={handleRevealAnswer}
-                  onAwardPoints={handleAwardPoints}
-                  onReopenTeamScoring={handleReopenTeamScoring}
-                  onFinishRound={handleFinishRound}
-                />
+                gameState.currentRound.variant === RoundVariant.POOL_SELECTION ? (
+                  <PoolScoringInterface
+                    currentRound={gameState.currentRound}
+                    onRevealPickers={handleRevealPickers}
+                    onRevealAuthor={handleRevealAuthor}
+                    onFinishRound={handleFinishRound}
+                    revealedPickers={revealedPickers}
+                    revealedAuthors={revealedAuthors}
+                  />
+                ) : (
+                  <ScoringInterface
+                    teams={gameState.teams}
+                    players={gameState.players}
+                    currentRound={gameState.currentRound}
+                    currentTeamIndex={currentTeamIndex}
+                    teamPointsAwarded={teamPointsAwarded}
+                    revealedAnswers={revealedAnswers}
+                    revealedResponseTimes={revealedResponseTimes}
+                    showFinishBtn={showFinishBtn}
+                    onBackToAnswering={handleBackToAnswering}
+                    onRevealAnswer={handleRevealAnswer}
+                    onAwardPoints={handleAwardPoints}
+                    onReopenTeamScoring={handleReopenTeamScoring}
+                    onFinishRound={handleFinishRound}
+                  />
+                )
               )}
 
               {error && <div className="notification is-danger is-light mt-4">{error}</div>}

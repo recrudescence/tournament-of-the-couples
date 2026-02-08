@@ -12,12 +12,13 @@ import {WaitingStatus} from '../components/player/WaitingStatus';
 import {AnswerSubmissionForm} from '../components/player/AnswerSubmissionForm';
 import {SubmittedStatus} from '../components/player/SubmittedStatus';
 import {ScoringStatus} from '../components/player/ScoringStatus';
+import {ResponsePool} from '../components/player/ResponsePool';
 import {transformBinaryOptions} from '../utils/playerUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
-import type {GameState} from '../types/game';
+import {GameState, RoundVariant} from '../types/game';
 
-type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'scoring' | 'ended';
+type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'selecting' | 'picked' | 'scoring' | 'ended';
 
 function derivePlayerPhase(gameState: GameState | null, playerName: string | undefined): PlayerPhase {
   if (!gameState) return 'waiting';
@@ -36,6 +37,21 @@ function derivePlayerPhase(gameState: GameState | null, playerName: string | und
     // Check if all non-host players have submitted
     const nonHostPlayers = gameState.players.filter(p => p.name !== gameState.host.name);
     const allAnswersIn = gameState.currentRound.submittedInCurrentPhase.length >= nonHostPlayers.length;
+
+    // Pool selection specific phases
+    if (gameState.currentRound.variant === RoundVariant.POOL_SELECTION) {
+      const hasPicked = playerName
+        ? (gameState.currentRound.picksSubmitted || []).includes(playerName)
+        : false;
+
+      // Use server status for reliable phase detection (survives reconnection)
+      if (gameState.currentRound.status === 'selecting') {
+        return hasPicked ? 'picked' : 'selecting';
+      }
+
+      // Still in answering phase
+      return 'submitted';
+    }
 
     return allAnswersIn ? 'scoring' : 'submitted';
   }
@@ -64,6 +80,9 @@ export function PlayerPage() {
   // Track response times for ordering (player's own + partner's from answerSubmitted event)
   const [responseTimes, setResponseTimes] = useState<Record<string, number>>({});
 
+  // Pool selection state (local state as fallback, prefer gameState.currentRound.answerPool)
+  const [localAnswerPool, setLocalAnswerPool] = useState<string[]>([]);
+
   // Reveal sync state (for imported question mode)
   const [revealInfo, setRevealInfo] = useState<{
     chapterTitle?: string;
@@ -90,6 +109,9 @@ export function PlayerPage() {
     if (!currentRound?.options) return null;
     return transformBinaryOptions(currentRound.options, variant, gameState?.players ?? [], myTeam);
   }, [currentRound?.options, variant, gameState?.players, myTeam]);
+
+  // Pool selection: prefer server-stored pool (survives refresh) over local state
+  const answerPool = currentRound?.answerPool ?? localAnswerPool;
 
 
   // Sync sessionStorage playerInfo to GameContext on mount (handles page refresh)
@@ -140,6 +162,7 @@ export function PlayerPage() {
   }, [phase, currentRound?.createdAt, startTimer]);
 
   // Pre-fill answer from previous submission when returning to answering phase
+  // Only runs when phase changes to 'answering' (not when other players submit)
   useEffect(() => {
     if (phase === 'answering' && playerInfo?.name && currentRound?.answers) {
       const previousAnswer = currentRound.answers[playerInfo.name];
@@ -147,7 +170,8 @@ export function PlayerPage() {
         setAnswer(previousAnswer.text);
       }
     }
-  }, [phase, playerInfo?.name, currentRound?.answers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, playerInfo?.name, currentRound?.roundNumber]);
 
   // Socket event handlers - simplified to just update gameState
   useEffect(() => {
@@ -167,6 +191,7 @@ export function PlayerPage() {
         setMyTeamPointsThisRound(null);
         setRevealedAnswers({});
         setResponseTimes({});
+        setLocalAnswerPool([]); // Reset pool for new round
         setRevealInfo(null); // Clear reveal state when round actually starts
         startTimer(questionCreatedAt);
       }),
@@ -206,6 +231,24 @@ export function PlayerPage() {
 
       on('allAnswersIn', () => {
         setMyTeamPointsThisRound(null);
+      }),
+
+      // Pool selection events
+      on('poolReady', ({ answers, gameState: state }) => {
+        setLocalAnswerPool(answers);
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+      }),
+
+      on('pickSubmitted', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+      }),
+
+      on('allPicksIn', () => {
+        // Phase will transition to scoring via gameState update
       }),
 
       on('scoringStarted', (state) => {
@@ -300,7 +343,8 @@ export function PlayerPage() {
       });
     } else {
       // Single mode
-      finalAnswer = variant === 'open_ended' ? answer : selectedOption;
+      const usesTextInput = variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION;
+      finalAnswer = usesTextInput ? answer : selectedOption;
       if (!finalAnswer.trim()) {
         showError('Please provide an answer');
         return;
@@ -315,6 +359,10 @@ export function PlayerPage() {
       answer: finalAnswer,
       responseTime: finalResponseTime
     });
+  };
+
+  const handlePick = (pickedAnswer: string) => {
+    emit('submitPick', { pickedAnswer });
   };
 
   if (!playerInfo || !isConnected) {
@@ -378,7 +426,29 @@ export function PlayerPage() {
             />
           )}
 
-          {(phase === 'submitted' || phase === 'scoring') && (
+          {/* Pool selection: waiting for others to submit before pool is ready */}
+          {phase === 'submitted' && currentRound?.variant === RoundVariant.POOL_SELECTION && (
+            <div className="box has-text-centered">
+              <h3 className="title is-5 mb-3">Answer Submitted!</h3>
+              <p className="subtitle is-6 has-text-grey mb-4">
+                Waiting for other players to submit their answers...
+              </p>
+              <progress className="progress is-info" max="100" />
+            </div>
+          )}
+
+          {(phase === 'selecting' || phase === 'picked') && answerPool.length > 0 && (
+            <ResponsePool
+              answers={answerPool}
+              myAnswer={submittedAnswer}
+              partnerName={myPartner?.name ?? ''}
+              partnerAvatar={myPartner?.avatar ?? null}
+              hasPicked={phase === 'picked'}
+              onPick={handlePick}
+            />
+          )}
+
+          {(phase === 'submitted' || phase === 'scoring') && currentRound?.variant !== RoundVariant.POOL_SELECTION && (
             <SubmittedStatus
               questionText={currentRound?.question ?? ''}
               submittedAnswer={submittedAnswer}

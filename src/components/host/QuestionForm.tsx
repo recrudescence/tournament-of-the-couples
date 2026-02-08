@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import {useState} from 'react';
+import {RoundVariant} from '../../types/game';
 
 interface QuestionFormProps {
-  onSubmit: (question: string, variant: 'open_ended' | 'multiple_choice' | 'binary', options?: string[], answerForBoth?: boolean) => void;
+  onSubmit: (question: string, variant: RoundVariant, options?: string[], answerForBoth?: boolean) => void;
   onError: (message: string) => void;
 }
 
 export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
   const [questionInput, setQuestionInput] = useState('');
-  const [selectedVariant, setSelectedVariant] = useState<'open_ended' | 'multiple_choice' | 'binary'>('open_ended');
+  const [selectedVariant, setSelectedVariant] = useState<RoundVariant>(RoundVariant.OPEN_ENDED);
   const [mcOptions, setMcOptions] = useState<string[]>(['', '']);
   const [answerForBoth, setAnswerForBoth] = useState(false);
 
@@ -21,14 +22,14 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
 
     let options: string[] | undefined = undefined;
 
-    if (selectedVariant === 'multiple_choice') {
+    if (selectedVariant === RoundVariant.MULTIPLE_CHOICE) {
       const filledOptions = mcOptions.filter(opt => opt.trim() !== '');
       if (filledOptions.length < 2 || filledOptions.length > 6) {
         onError('Please provide 2-6 options');
         return;
       }
       options = filledOptions.map(opt => opt.trim());
-    } else if (selectedVariant === 'binary') {
+    } else if (selectedVariant === RoundVariant.BINARY) {
       options = ['Player 1', 'Player 2'];
     }
 
@@ -47,19 +48,24 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
       {/* Variant Tabs */}
       <div className="tabs is-centered is-boxed mb-4">
         <ul>
-          <li className={selectedVariant === 'open_ended' ? 'is-active' : ''}>
-            <a onClick={() => setSelectedVariant('open_ended')}>
+          <li className={selectedVariant === RoundVariant.OPEN_ENDED ? 'is-active' : ''}>
+            <a onClick={() => setSelectedVariant(RoundVariant.OPEN_ENDED)}>
               Open Ended
             </a>
           </li>
-          <li className={selectedVariant === 'multiple_choice' ? 'is-active' : ''}>
-            <a onClick={() => setSelectedVariant('multiple_choice')}>
+          <li className={selectedVariant === RoundVariant.MULTIPLE_CHOICE ? 'is-active' : ''}>
+            <a onClick={() => setSelectedVariant(RoundVariant.MULTIPLE_CHOICE)}>
               Multiple Choice
             </a>
           </li>
-          <li className={selectedVariant === 'binary' ? 'is-active' : ''}>
-            <a onClick={() => setSelectedVariant('binary')}>
+          <li className={selectedVariant === RoundVariant.BINARY ? 'is-active' : ''}>
+            <a onClick={() => setSelectedVariant(RoundVariant.BINARY)}>
               Binary
+            </a>
+          </li>
+          <li className={selectedVariant === RoundVariant.POOL_SELECTION ? 'is-active' : ''}>
+            <a onClick={() => setSelectedVariant(RoundVariant.POOL_SELECTION)}>
+              Pool Selection
             </a>
           </li>
         </ul>
@@ -67,7 +73,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
 
       <form onSubmit={handleSubmit}>
         {/* Open Ended Form */}
-        {selectedVariant === 'open_ended' && (
+        {selectedVariant === RoundVariant.OPEN_ENDED && (
           <div className="field">
             <label className="label" htmlFor="questionInput">Enter Question:</label>
             <div className="control">
@@ -85,7 +91,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
         )}
 
         {/* Multiple Choice Form */}
-        {selectedVariant === 'multiple_choice' && (
+        {selectedVariant === RoundVariant.MULTIPLE_CHOICE && (
           <>
             <div className="field">
               <label className="label" htmlFor="mcQuestionInput">Enter Question:</label>
@@ -151,7 +157,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
         )}
 
         {/* Binary Form */}
-        {selectedVariant === 'binary' && (
+        {selectedVariant === RoundVariant.BINARY && (
           <>
             <div className="field">
               <label className="label" htmlFor="binaryQuestionInput">Enter Question:</label>
@@ -179,21 +185,52 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
           </>
         )}
 
+        {/* Pool Selection Form */}
+        {selectedVariant === RoundVariant.POOL_SELECTION && (
+          <>
+            <div className="field">
+              <label className="label" htmlFor="poolQuestionInput">Enter Question:</label>
+              <div className="control">
+                <textarea
+                  id="poolQuestionInput"
+                  className="textarea is-medium"
+                  rows={6}
+                  placeholder="What's your partner's dream vacation?"
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="notification is-info is-light">
+              <p className="has-text-weight-semibold mb-2">How it works:</p>
+              <ol className="ml-4">
+                <li>Everyone submits an answer</li>
+                <li>All answers are shuffled into a pool</li>
+                <li>Players guess which answer their partner wrote</li>
+                <li>Correct guesses automatically earn 1 point</li>
+              </ol>
+            </div>
+          </>
+        )}
+
         {/* Answer for Both checkbox */}
-        <div className="field mb-4">
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={answerForBoth}
-              onChange={(e) => setAnswerForBoth(e.target.checked)}
-              className="mr-2"
-            />
-            Players answer for both parties
-          </label>
-          <p className="help">
-            Each player will answer the question for themselves AND their partner
-          </p>
-        </div>
+        {selectedVariant !== RoundVariant.POOL_SELECTION && (
+          <div className="field mb-4">
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={answerForBoth}
+                onChange={(e) => setAnswerForBoth(e.target.checked)}
+                className="mr-2"
+              />
+              Players answer for both parties
+            </label>
+            <p className="help">
+              Each player will answer the question for themselves AND their partner
+            </p>
+          </div>
+        )}
 
         <button type="submit" className="button is-primary is-fullwidth is-large">
           Start Round

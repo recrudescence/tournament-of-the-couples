@@ -352,3 +352,25 @@ export const scorePulseTransition: Transition = {
   ease: 'easeOut',
 };
 
+// ============================================================================
+// POOL SELECTION ANIMATIONS - For response pool answer selection
+// ============================================================================
+
+/** Pool bubble selection animation */
+export const poolBubbleSelect: Variants = {
+  unselected: { scale: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+  selected: { scale: 1.08, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' },
+};
+
+/** Correct guess celebration */
+export const correctGuess: Variants = {
+  hidden: { scale: 0, rotate: -180 },
+  visible: { scale: 1, rotate: 0 },
+};
+
+export const correctGuessTransition: Transition = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 20,
+};
+

@@ -1,5 +1,6 @@
 const gameState = require('./gameState');
 const database = require('./database');
+const {RoundVariant} = require("../src/types/game");
 
 // Logging helper - silent in test environment
 const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
@@ -199,11 +200,82 @@ function cancelBotTimers(roomCode) {
   }
 }
 
+// Schedule bot picks for pool selection mode
+function scheduleBotPicks(roomCode, io) {
+  const state = gameState.getGameState(roomCode);
+  if (!state || !state.currentRound) return;
+  if (state.currentRound.variant !== RoundVariant.POOL_SELECTION) return;
+
+  // Get existing timers or create new set
+  let timers = botTimers.get(roomCode);
+  if (!timers) {
+    timers = new Set();
+    botTimers.set(roomCode, timers);
+  }
+
+  const botPlayers = state.players.filter(p => isBot(p.socketId) && p.connected);
+  const answerPool = Object.values(state.currentRound.answers).map(a => a.text);
+
+  for (const bot of botPlayers) {
+    // Random delay 1-4 seconds
+    const delay = 1000 + Math.random() * 3000;
+
+    const timerId = setTimeout(() => {
+      timers.delete(timerId);
+
+      try {
+        const currentState = gameState.getGameState(roomCode);
+        if (!currentState || !currentState.currentRound) {
+          return;
+        }
+
+        // Already picked
+        if (currentState.currentRound.picksSubmitted?.includes(bot.name)) {
+          return;
+        }
+
+        // Get own answer to exclude
+        const ownAnswer = currentState.currentRound.answers[bot.name]?.text;
+
+        // Pick a random answer that isn't their own
+        const availableAnswers = answerPool.filter(a => a !== ownAnswer);
+        if (availableAnswers.length === 0) return;
+
+        const pickedAnswer = availableAnswers[Math.floor(Math.random() * availableAnswers.length)];
+
+        gameState.submitPick(roomCode, bot.socketId, pickedAnswer);
+
+        const updatedState = gameState.getGameState(roomCode);
+
+        // Broadcast pick submitted
+        io.to(roomCode).emit('pickSubmitted', {
+          playerName: bot.name,
+          picksSubmitted: updatedState.currentRound.picksSubmitted,
+          gameState: updatedState
+        });
+
+        // Check if all picks are in
+        if (gameState.areAllPicksIn(roomCode)) {
+          gameState.completeRound(roomCode);
+          io.to(roomCode).emit('allPicksIn');
+        }
+      } catch (err) {
+        console.error(`Bot pick error (${bot.name}):`, err);
+      }
+    }, delay);
+
+    timers.add(timerId);
+  }
+
+  log(`Scheduled ${botPlayers.length} bot picks for room ${roomCode}`);
+}
+
 module.exports = {
   isBot,
   addBots,
   removeAllBots,
   scheduleBotAnswers,
+  scheduleBotPicks,
   cancelBotTimers,
   generateBotAnswer,
 };

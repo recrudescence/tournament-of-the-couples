@@ -7,6 +7,7 @@ export enum GameStatus {
 
 export enum RoundStatus {
   ANSWERING = 'answering',
+  SELECTING = 'selecting', // Pool selection: all answers in, players picking from pool
   COMPLETE = 'complete',
 }
 
@@ -20,6 +21,7 @@ export enum RoundVariant {
   OPEN_ENDED = 'open_ended',
   MULTIPLE_CHOICE = 'multiple_choice',
   BINARY = 'binary',
+  POOL_SELECTION = 'pool_selection',
 }
 
 export interface Host {
@@ -71,6 +73,10 @@ export interface CurrentRound {
   answers: Record<string, Answer>; // When answerForBoth, text is JSON: { [playerName]: answer }
   submittedInCurrentPhase: string[];
   createdAt: number; // Server timestamp for response time calculation (survives reconnection)
+  // Pool selection specific (undefined for other variants)
+  picks?: Record<string, string>; // playerName -> picked answer text
+  picksSubmitted?: string[]; // player names who submitted picks
+  answerPool?: string[]; // shuffled answer texts (set when all answers are in)
 }
 
 export interface GameState {

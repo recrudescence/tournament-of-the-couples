@@ -349,3 +349,132 @@ input[type="radio"] {
 [data-theme="halloween"] .typing-dot {
   background: currentColor;
 }
+
+/* ============================================================================
+   RESPONSE POOL - Pool selection mode answer bubbles
+   ============================================================================ */
+
+.response-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.response-bubble {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: hsl(217, 71%, 95%);
+  border: 2px solid hsl(217, 71%, 80%);
+  border-radius: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: hsl(217, 71%, 30%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.response-bubble:hover:not(:disabled) {
+  background: hsl(217, 71%, 90%);
+  border-color: hsl(217, 71%, 53%);
+}
+
+.response-bubble.is-selected {
+  background: hsl(217, 71%, 53%);
+  border-color: hsl(217, 71%, 40%);
+  color: white;
+  transform: scale(1.05);
+}
+
+.response-bubble.is-own {
+  background: hsl(0, 0%, 95%);
+  border-color: hsl(0, 0%, 80%);
+  color: hsl(0, 0%, 50%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.response-bubble:disabled {
+  cursor: default;
+}
+
+/* Halloween theme overrides */
+[data-theme="halloween"] .response-bubble {
+  background: #2A2A4E;
+  border-color: #8B00FF;
+  color: #E8E8E8;
+}
+
+[data-theme="halloween"] .response-bubble:hover:not(:disabled) {
+  background: #3A3A6E;
+  border-color: #9B20FF;
+}
+
+[data-theme="halloween"] .response-bubble.is-selected {
+  background: #8B00FF;
+  border-color: #6B00CC;
+  color: white;
+}
+
+[data-theme="halloween"] .response-bubble.is-own {
+  background: #1A1A2E;
+  border-color: #333;
+  color: #666;
+}
+
+/* ============================================================================
+   POOL SCORING - Host scoring interface for pool selection mode
+   ============================================================================ */
+
+.pool-answer-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid hsl(0, 0%, 80%);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.pool-answer-dot:hover {
+  border-color: hsl(217, 71%, 53%);
+}
+
+.pool-answer-dot.is-active {
+  border-color: hsl(217, 71%, 53%);
+  background: hsl(217, 71%, 53%);
+  transform: scale(1.2);
+}
+
+.pool-answer-dot.is-revealed {
+  background: hsl(141, 53%, 53%);
+  border-color: hsl(141, 53%, 43%);
+}
+
+.pool-answer-dot.is-active.is-revealed {
+  background: hsl(141, 53%, 53%);
+  border-color: hsl(141, 53%, 33%);
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+/* Halloween theme overrides */
+[data-theme="halloween"] .pool-answer-dot {
+  border-color: #666;
+  background: #1A1A2E;
+}
+
+[data-theme="halloween"] .pool-answer-dot.is-active {
+  border-color: #8B00FF;
+  background: #8B00FF;
+}
+
+[data-theme="halloween"] .pool-answer-dot.is-revealed {
+  background: #FF6600;
+  border-color: #CC5500;
+}

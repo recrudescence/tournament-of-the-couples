@@ -23,3 +23,27 @@ Tournament of the Couples is a real-time multiplayer party game where pairs of p
 - If host reopens the answering phase, timers reset for all players
 - Response times influence the order teams are scored (fastest first)
 - This adds a speed element to the game while maintaining the core matching mechanic
+
+## Round Variants
+
+**Open Ended** (default)
+- Players type freeform text answers
+- Host manually scores based on how well answers match
+
+**Multiple Choice**
+- Host defines 2-6 options
+- Players select one option
+- Host manually scores based on matching selections
+
+**Binary**
+- Two options auto-filled with team member names ("Player 1", "Player 2")
+- Players choose one partner's name
+- Host manually scores based on matching selections
+
+**Pool Selection**
+- Players submit freeform text answers
+- Once all answers are in, answers are shuffled into an anonymous pool
+- Each player tries to guess which answer their partner wrote
+- Correct guesses automatically award 1 point
+- Host reveals pickers and authors for each answer during scoring
+- Phase flow: `answering → [all answers in] → selecting → [all picks in] → scoring → next round`

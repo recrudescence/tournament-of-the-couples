@@ -3,6 +3,7 @@ const database = require('./database');
 const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 const botManager = require('./botManager');
+const {RoundVariant} = require("../src/types/game");
 
 // Track pending room deletions (for host disconnect grace period)
 const pendingDeletions = new Map();
@@ -490,11 +491,117 @@ function setupSocketHandlers(io) {
 
         // Check if round is complete
         if (gameState.isRoundComplete(roomCode)) {
-          gameState.completeRound(roomCode);
-          io.to(roomCode).emit('allAnswersIn');
+          // For pool_selection, emit poolReady instead of allAnswersIn
+          if (state.currentRound.variant === RoundVariant.POOL_SELECTION) {
+            // Transition to selecting phase
+            gameState.startSelecting(roomCode);
+            const answerPool = gameState.getAnswerPool(roomCode);
+            io.to(roomCode).emit('poolReady', {
+              answers: answerPool,
+              gameState: gameState.getGameState(roomCode)
+            });
+            // Schedule bot picks
+            botManager.scheduleBotPicks(roomCode, io);
+          } else {
+            gameState.completeRound(roomCode);
+            io.to(roomCode).emit('allAnswersIn');
+          }
         }
       } catch (err) {
         console.error('Submit answer error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Player submits a pick (pool selection mode)
+    socket.on('submitPick', async ({ pickedAnswer }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.submitPick(roomCode, socket.id, pickedAnswer);
+        const state = gameState.getGameState(roomCode);
+        const player = state.players.find(p => p.socketId === socket.id);
+
+        // Notify all clients
+        io.to(roomCode).emit('pickSubmitted', {
+          playerName: player.name,
+          picksSubmitted: state.currentRound.picksSubmitted,
+          gameState: state
+        });
+
+        // Check if all picks are in
+        if (gameState.areAllPicksIn(roomCode)) {
+          gameState.completeRound(roomCode);
+          io.to(roomCode).emit('allPicksIn');
+        }
+      } catch (err) {
+        console.error('Submit pick error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host reveals pickers for an answer (pool selection mode)
+    socket.on('revealPickers', ({ answerText }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        const pickers = gameState.getPickersForAnswer(roomCode, answerText);
+        io.to(roomCode).emit('pickersRevealed', { answerText, pickers });
+      } catch (err) {
+        console.error('Reveal pickers error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host reveals author of an answer (pool selection mode)
+    socket.on('revealAuthor', ({ answerText }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        const author = gameState.getAuthorOfAnswer(roomCode, answerText);
+        if (!author) {
+          socket.emit('error', { message: 'Author not found' });
+          return;
+        }
+
+        const { correctPickers, teamId } = gameState.checkCorrectPick(roomCode, answerText);
+
+        // Auto-award point for correct guesses
+        if (teamId) {
+          gameState.updateTeamScore(roomCode, teamId, 1);
+        }
+
+        io.to(roomCode).emit('authorRevealed', {
+          answerText,
+          author,
+          correctPickers,
+          teamId
+        });
+
+        // If point was awarded, also emit scoreUpdated
+        if (teamId) {
+          const state = gameState.getGameState(roomCode);
+          const team = state.teams.find(t => t.teamId === teamId);
+          io.to(roomCode).emit('scoreUpdated', {
+            teamId,
+            newScore: team.score,
+            pointsAwarded: 1
+          });
+        }
+      } catch (err) {
+        console.error('Reveal author error:', err);
         socket.emit('error', { message: err.message });
       }
     });

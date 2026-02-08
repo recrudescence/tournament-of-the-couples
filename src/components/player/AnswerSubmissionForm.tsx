@@ -1,5 +1,5 @@
 import {PlayerAvatar} from '../common/PlayerAvatar';
-import type {PlayerIdentity} from '../../types/game';
+import {PlayerIdentity, RoundVariant} from '../../types/game';
 import {formatResponseTime} from '../../utils/formatUtils';
 
 interface AnswerSubmissionFormProps {
@@ -61,7 +61,7 @@ export function AnswerSubmissionForm({
                 {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
                 You would say:
               </h3>
-              {variant === 'open_ended' ? (
+              {(variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
                 <div className="field">
                   <div className="control">
                     <textarea
@@ -104,7 +104,7 @@ export function AnswerSubmissionForm({
                 {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
                 {partner.name} would say:
               </h3>
-              {variant === 'open_ended' ? (
+              {(variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
                 <div className="field">
                   <div className="control">
                     <textarea
@@ -143,7 +143,7 @@ export function AnswerSubmissionForm({
           </div>
         ) : (
           // Single answer mode
-          variant === 'open_ended' ? (
+          (variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
             <div className="field">
               <label className="label" htmlFor="answerInput">Your Answer:</label>
               <div className="control">

@@ -1,4 +1,5 @@
 const roomCodeGenerator = require('./roomCodeGenerator');
+const {RoundVariant} = require("../src/types/game");
 
 // Logging helper - silent in test environment
 const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
@@ -338,7 +339,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
   }
 
   // Validation
-  if (!['open_ended', 'multiple_choice', 'binary'].includes(variant)) {
+  if (!['open_ended', 'multiple_choice', 'binary', 'pool_selection'].includes(variant)) {
     throw new Error('Invalid variant type');
   }
 
@@ -356,6 +357,10 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
 
   if (variant === 'open_ended' && options !== null) {
     throw new Error('Open ended should not have options');
+  }
+
+  if (variant === RoundVariant.POOL_SELECTION && options !== null) {
+    throw new Error('Pool selection should not have options');
   }
 
   // Use provided roundNumber (from database count) or fallback to in-memory calculation
@@ -376,7 +381,9 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     status: 'answering',
     answers: {},
     submittedInCurrentPhase: [], // Track who has submitted in THIS answering session
-    createdAt: Date.now() // Timestamp for response time calculation (survives reconnection)
+    createdAt: Date.now(), // Timestamp for response time calculation (survives reconnection)
+    // Pool selection specific fields
+    ...(variant === RoundVariant.POOL_SELECTION && { picks: {}, picksSubmitted: [] })
   };
 
   log(`Round ${roundNumber} started: ${question} (${variant})`);
@@ -451,6 +458,21 @@ function completeRound(roomCode) {
   gameState.currentRound.status = 'complete';
   gameState.status = 'scoring';
   log(`Round ${gameState.currentRound.roundNumber} complete`);
+}
+
+// Transition to selecting phase (pool selection only)
+function startSelecting(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) {
+    throw new Error('No active round');
+  }
+
+  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) {
+    throw new Error('Not a pool selection round');
+  }
+
+  gameState.currentRound.status = 'selecting';
+  log(`Round ${gameState.currentRound.roundNumber} moved to selecting phase`);
 }
 
 // Update team score
@@ -701,6 +723,150 @@ function getCurrentQuestion(roomCode) {
   };
 }
 
+// ============================================================================
+// POOL SELECTION FUNCTIONS
+// ============================================================================
+
+// Submit a pick for pool selection
+function submitPick(roomCode, socketId, pickedAnswer) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) {
+    throw new Error('No active round');
+  }
+
+  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) {
+    throw new Error('Not a pool selection round');
+  }
+
+  if (gameState.currentRound.status !== 'selecting') {
+    throw new Error('Round not in selecting phase');
+  }
+
+  const player = gameState.players.find(p => p.socketId === socketId);
+  if (!player) {
+    throw new Error('Player not found');
+  }
+
+  // Validate player has submitted their answer
+  if (!gameState.currentRound.submittedInCurrentPhase.includes(player.name)) {
+    throw new Error('Must submit answer before picking');
+  }
+
+  // Validate answer exists in pool
+  const answerPool = Object.values(gameState.currentRound.answers).map(a => a.text);
+  if (!answerPool.includes(pickedAnswer)) {
+    throw new Error('Invalid pick: answer not in pool');
+  }
+
+  // Cannot pick own answer
+  const ownAnswer = gameState.currentRound.answers[player.name]?.text;
+  if (pickedAnswer === ownAnswer) {
+    throw new Error('Cannot pick your own answer');
+  }
+
+  // Store pick
+  gameState.currentRound.picks[player.name] = pickedAnswer;
+  if (!gameState.currentRound.picksSubmitted.includes(player.name)) {
+    gameState.currentRound.picksSubmitted.push(player.name);
+  }
+
+  log(`Pick submitted by ${player.name}: "${pickedAnswer}"`);
+}
+
+// Check if all connected players have submitted picks
+function areAllPicksIn(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return false;
+  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) return false;
+
+  const connectedPlayers = gameState.players.filter(p => p.connected);
+  const picksCount = connectedPlayers.filter(p =>
+    gameState.currentRound.picksSubmitted.includes(p.name)
+  ).length;
+
+  return picksCount === connectedPlayers.length;
+}
+
+// Get shuffled answer pool (just the text, no attribution)
+// If pool already exists in currentRound, return it (for reconnection consistency)
+// Otherwise generate, store, and return a new shuffled pool
+function getAnswerPool(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return [];
+
+  // Return existing pool if already generated (ensures consistency on reconnect)
+  if (gameState.currentRound.answerPool) {
+    return gameState.currentRound.answerPool;
+  }
+
+  const answers = Object.values(gameState.currentRound.answers).map(a => a.text);
+
+  // Fisher-Yates shuffle
+  for (let i = answers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [answers[i], answers[j]] = [answers[j], answers[i]];
+  }
+
+  // Store the shuffled pool for reconnection consistency
+  gameState.currentRound.answerPool = answers;
+
+  return answers;
+}
+
+// Get players who picked a specific answer
+function getPickersForAnswer(roomCode, answerText) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return [];
+
+  const pickers = [];
+  for (const [playerName, pickedAnswer] of Object.entries(gameState.currentRound.picks || {})) {
+    if (pickedAnswer === answerText) {
+      const player = gameState.players.find(p => p.name === playerName);
+      if (player) pickers.push(player);
+    }
+  }
+  return pickers;
+}
+
+// Get the player who wrote a specific answer
+function getAuthorOfAnswer(roomCode, answerText) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return null;
+
+  for (const [playerName, answer] of Object.entries(gameState.currentRound.answers || {})) {
+    if (answer.text === answerText) {
+      return gameState.players.find(p => p.name === playerName) || null;
+    }
+  }
+  return null;
+}
+
+// Check if a player correctly picked their partner's answer
+function checkCorrectPick(roomCode, answerText) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return { correctPickers: [], teamId: null };
+
+  const author = getAuthorOfAnswer(roomCode, answerText);
+  if (!author) return { correctPickers: [], teamId: null };
+
+  const correctPickers = [];
+
+  // Find author's partner
+  const partner = gameState.players.find(p => p.socketId === author.partnerId);
+  if (partner) {
+    // Check if partner picked this answer
+    const partnerPick = gameState.currentRound.picks[partner.name];
+    if (partnerPick === answerText) {
+      correctPickers.push(partner);
+    }
+  }
+
+  return {
+    correctPickers,
+    teamId: correctPickers.length > 0 ? author.teamId : null
+  };
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -734,5 +900,13 @@ module.exports = {
   setImportedQuestions,
   clearImportedQuestions,
   advanceCursor,
-  getCurrentQuestion
+  getCurrentQuestion,
+  // Pool selection
+  startSelecting,
+  submitPick,
+  areAllPicksIn,
+  getAnswerPool,
+  getPickersForAnswer,
+  getAuthorOfAnswer,
+  checkCorrectPick
 };

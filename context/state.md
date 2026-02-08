@@ -57,8 +57,8 @@ Understanding the in-memory game state structure is critical for working with th
     roundNumber: 1,
     roundId: null,                    // Database ID (set after persistence)
     question: "What's your partner's favorite color?",
-    variant: "open_ended" | "multiple_choice" | "binary",
-    options: ["Option 1", "Option 2"] | null,  // Array of choices for MC/binary, null for open_ended
+    variant: "open_ended" | "multiple_choice" | "binary" | "pool_selection",
+    options: ["Option 1", "Option 2"] | null,  // Array of choices for MC/binary, null for open_ended/pool_selection
     status: "answering" | "complete",
     answers: {                        // Map of PLAYER NAME → answer object (stable across reconnections)
       "Alice": {
@@ -70,9 +70,16 @@ Understanding the in-memory game state structure is critical for working with th
         responseTime: 5180
       }
     },
-    submittedInCurrentPhase: []       // Array of player names who submitted in THIS answering session
+    submittedInCurrentPhase: [],      // Array of player names who submitted in THIS answering session
                                       // Cleared when returning to answering from scoring
                                       // Used to determine round completion
+
+    // Pool selection specific (only present when variant === "pool_selection")
+    picks: {                          // Map of PLAYER NAME → picked answer text
+      "Alice": "Red",                 // Alice picked the answer "Red" as her guess
+      "Bob": "Blue"
+    },
+    picksSubmitted: ["Alice", "Bob"]  // Array of player names who submitted picks
   }
 }
 ```
