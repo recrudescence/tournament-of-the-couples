@@ -1,9 +1,17 @@
-import { motion } from 'framer-motion';
-import type { CurrentRound, Player } from '../../types/game';
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import { formatResponseTime } from '../../utils/formatUtils';
-import { FlipCard } from './FlipCard';
-import { slideInUp, slideInLeft, slideInRight, springDefault, staggerDelay, buttonHover, buttonTap } from '../../styles/motion';
+import {motion} from 'framer-motion';
+import type {CurrentRound, Player} from '../../types/game';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {formatResponseTime} from '../../utils/formatUtils';
+import {FlipCard} from './FlipCard';
+import {
+  buttonHover,
+  buttonTap,
+  slideInLeft,
+  slideInRight,
+  slideInUp,
+  springDefault,
+  staggerDelay
+} from '../../styles/motion';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -108,7 +116,7 @@ export function BothPlayersScoring({
                 animate="visible"
                 transition={{ ...springDefault, delay: baseDelay + 0.1 }}
               >
-                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem', minHeight: '4em' }}>
                   <PlayerAvatar avatar={partner.avatar} size="small" />
                   <span className="is-size-5 has-text-grey">{partner.name} said that {subject.name} would write...</span>
                 </div>
@@ -147,7 +155,7 @@ export function BothPlayersScoring({
                 animate="visible"
                 transition={{ ...springDefault, delay: baseDelay + 0.15 }}
               >
-                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem' }}>
+                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem', minHeight: '4em' }}>
                   <PlayerAvatar avatar={subject.avatar} size="small" />
                   <span className="is-size-5 has-text-grey">{subject.name} actually said...</span>
                 </div>

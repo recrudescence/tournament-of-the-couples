@@ -1,0 +1,141 @@
+{
+  "title": "tournament of couples - 2025's questions",
+  "chapters": [
+    {
+      "title": "CHAPTER 1: BINARY",
+      "questions": [
+        { "question": "who's messier?", "variant": "binary", "answerForBoth": false },
+        { "question": "who has better gossip?", "variant": "binary", "answerForBoth": false },
+        { "question": "aliens or ghosts?", "variant": "binary", "answerForBoth": true },
+        { "question": "who has the bigger temper?", "variant": "binary", "answerForBoth": false },
+        { "question": "who does more chores?", "variant": "binary", "answerForBoth": false },
+        { "question": "who is the better cook?", "variant": "binary", "answerForBoth": false },
+        { "question": "which of you is more likely to drop $500 on concert tickets?", "variant": "binary", "answerForBoth": false },
+        { "question": "who initiated the relationship?", "variant": "binary", "answerForBoth": false },
+        { "question": "who would die first in a zombie apocalypse?", "variant": "binary", "answerForBoth": false },
+        { "question": "which of you is most likely to find yourself on a yacht?", "variant": "binary", "answerForBoth": false },
+        { "question": "how I met your mother settler or reacher?", "variant": "binary", "answerForBoth": true }
+      ]
+    },
+    {
+      "title": "CHAPTER 2: MULTIPLE CHOICE",
+      "questions": [
+        {
+          "question": "what pasta shape are they?",
+          "variant": "multiple_choice",
+          "options": ["ravioli", "penne", "bowtie", "shell", "spaghetti"],
+          "answerForBoth": true
+        },
+        {
+          "question": "astrological sign?",
+          "variant": "multiple_choice",
+          "options": ["baby", "mommy", "daddy"],
+          "answerForBoth": true
+        },
+        {
+          "question": "is your partner a spoon, knife, or fork?",
+          "variant": "multiple_choice",
+          "options": ["spoon", "knife", "fork"],
+          "answerForBoth": true
+        },
+        {
+          "question": "which avatar the last airbender element are they?",
+          "variant": "multiple_choice",
+          "options": ["air", "water", "earth", "fire"],
+          "answerForBoth": true
+        },
+        {
+          "question": "what are they complimented on the most?",
+          "variant": "multiple_choice",
+          "options": ["humor", "style", "intelligence", "talent"],
+          "answerForBoth": true
+        },
+        {
+          "question": "hunger games: how would they die?",
+          "variant": "multiple_choice",
+          "options": [
+            "picked off immediately",
+            "hand to hand combat",
+            "fell from a tree",
+            "starvation",
+            "dysentery"
+          ],
+          "answerForBoth": true
+        },
+        {
+          "question": "what stereotype most applies to you when you go through breakups?",
+          "variant": "multiple_choice",
+          "options": [
+            "the one who immediately rebounds",
+            "the classic wallow: ice cream, music, despair",
+            "the drown out the noise: partying, drugs, exercise, travel, etc.",
+            "the meditator: therapy, reading self help books",
+            "the everything is normal: forcing life to go on"
+          ],
+          "answerForBoth": true
+        },
+        {
+          "question": "youre dropped into medieval times: what is the cause of your fate?",
+          "variant": "multiple_choice",
+          "options": [
+            "you stole some bread",
+            "witch",
+            "imprisoned for starting and failing to incite a revolution",
+            "executed for hooking up with a nobleperson as a peasant"
+          ],
+          "answerForBoth": true
+        }
+      ]
+    },
+    {
+      "title": "CHAPTER 3: OPEN ENDED",
+      "questions": [
+        {
+          "question": "how long have you been together (months)?",
+          "variant": "open_ended",
+          "answerForBoth": false
+        },
+        {
+          "question": "dramatic hair change, what did they do?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "what is the name of their favorite sibling (if no sibling put a cousin)?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "when you met, what is one notable thing you bonded over?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "what are their parents names?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "name their favorite extracurricular they did in school?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "pet peeves about each other?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "what would they do if they were forced into a talent show?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "what is your greatest weakness as a couple?",
+          "variant": "open_ended",
+          "answerForBoth": false
+        }
+      ]
+    }
+  ]
+}

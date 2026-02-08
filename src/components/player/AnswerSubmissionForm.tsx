@@ -80,7 +80,7 @@ export function AnswerSubmissionForm({
                     {options?.map((option, index) => (
                       <label
                         key={index}
-                        className={`button is-fullwidth mb-2 answer-option-label ${dualAnswers.self === option ? 'is-primary' : 'is-light'}`}
+                        className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${dualAnswers.self === option ? 'is-primary' : 'is-light'}`}
                       >
                         <input
                           type="radio"
@@ -123,7 +123,7 @@ export function AnswerSubmissionForm({
                     {options?.map((option, index) => (
                       <label
                         key={index}
-                        className={`button is-fullwidth mb-2 answer-option-label ${dualAnswers.partner === option ? 'is-primary' : 'is-light'}`}
+                        className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${dualAnswers.partner === option ? 'is-primary' : 'is-light'}`}
                       >
                         <input
                           type="radio"
@@ -164,7 +164,7 @@ export function AnswerSubmissionForm({
                 {options?.map((option, index) => (
                   <label
                     key={index}
-                    className={`button is-fullwidth mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
+                    className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
                   >
                     <input
                       type="radio"

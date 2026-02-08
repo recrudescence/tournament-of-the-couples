@@ -1,0 +1,52 @@
+{
+  "title": "lil sample game with all the question types",
+  "chapters": [
+    {
+      "title": "the open ended questions chapter!",
+      "questions": [
+        {
+          "question": "what is your favorite movie?",
+          "variant": "open_ended",
+          "answerForBoth": false
+        },
+        {
+          "question": "what would you each order for dessert???",
+          "variant": "open_ended",
+          "answerForBoth": true
+        }
+      ]
+    },
+    {
+      "title": "the Multiple Choice Questions chapter",
+      "questions": [
+        {
+          "question": "what's the best comfort food?",
+          "variant": "multiple_choice",
+          "options": ["Pizza", "Ice Cream", "Pasta", "Tacos"],
+          "answerForBoth": false
+        },
+        {
+          "question": "where would you both want to go on vacation?",
+          "variant": "multiple_choice",
+          "options": ["beach resort", "mountain cabin", "foreign city", "theme park", "cruise", "safari"],
+          "answerForBoth": true
+        }
+      ]
+    },
+    {
+      "title": "question style: binary chapter",
+      "questions": [
+        {
+          "question": "who is more likely to be late?",
+          "variant": "binary",
+          "answerForBoth": false
+        },
+        {
+          "question": "who's the funnier one?",
+          "variant": "binary",
+          "answerForBoth": true
+        }
+      ]
+    }
+  ]
+}
