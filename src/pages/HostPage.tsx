@@ -42,7 +42,6 @@ export function HostPage() {
   const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
 
   // UI-only state
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
   // Imported question mode state
@@ -261,7 +260,6 @@ export function HostPage() {
   };
 
   const handleStartScoring = () => {
-    setCurrentTeamIndex(0);
     setRevealedAnswers(new Set());
     setTeamPointsAwarded({});
     setRevealedResponseTimes({});
@@ -294,21 +292,18 @@ export function HostPage() {
     emit('revealAuthor', { answerText });
   };
 
-  const handleAwardPoints = (teamId: string, teamIndex: number, points: number) => {
+  const handleAwardPoints = (teamId: string, _teamIndex: number, points: number) => {
     if (points > 0) {
       emit('awardPoint', { teamId, points });
     } else {
       emit('skipPoint', { teamId });
     }
     setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: points }));
-    moveToNextTeam(teamIndex);
-  };
 
-  const moveToNextTeam = (currentIndex: number) => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < (gameState?.teams.length || 0)) {
-      setCurrentTeamIndex(nextIndex);
-    } else {
+    // Show finish button when all teams have been scored
+    // State update is async, so count current + 1 (unless re-scoring same team)
+    const scoredCount = Object.keys(teamPointsAwarded).length + (teamId in teamPointsAwarded ? 0 : 1);
+    if (scoredCount >= (gameState?.teams.length || 0)) {
       setShowFinishBtn(true);
     }
   };
@@ -343,7 +338,7 @@ export function HostPage() {
     }
   };
 
-  const handleReopenTeamScoring = (teamId: string, teamIndex: number) => {
+  const handleReopenTeamScoring = (teamId: string) => {
     // If team was awarded points, remove them
     const pointsAwarded = teamPointsAwarded[teamId] ?? 0;
     if (pointsAwarded > 0) {
@@ -377,7 +372,6 @@ export function HostPage() {
         if (player2) newRevealedAnswers.delete(player2.name);
       }
       setRevealedAnswers(newRevealedAnswers);
-      setCurrentTeamIndex(teamIndex);
 
       // Clear response times for these players (keyed by composite or simple name)
       setRevealedResponseTimes((prev) => {
@@ -515,7 +509,6 @@ export function HostPage() {
                     teams={gameState.teams}
                     players={gameState.players}
                     currentRound={gameState.currentRound}
-                    currentTeamIndex={currentTeamIndex}
                     teamPointsAwarded={teamPointsAwarded}
                     revealedAnswers={revealedAnswers}
                     revealedResponseTimes={revealedResponseTimes}

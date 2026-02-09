@@ -11,7 +11,6 @@ interface ScoringInterfaceProps {
   teams: Team[];
   players: Player[];
   currentRound: CurrentRound | null;
-  currentTeamIndex: number;
   teamPointsAwarded: Record<string, number>;
   revealedAnswers: Set<string>;
   revealedResponseTimes: Record<string, number>;
