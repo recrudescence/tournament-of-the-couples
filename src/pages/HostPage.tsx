@@ -51,7 +51,7 @@ export function HostPage() {
 
   // Pool selection state
   const [revealedPickers, setRevealedPickers] = useState<Record<string, Player[]>>({});
-  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; correctPickers: Player[] }>>({});
+  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; authors: Player[]; correctPickers: Player[] }>>({});
 
   // Derived values
   const playerCount = gameState?.players.length ?? 0;
@@ -169,8 +169,8 @@ export function HostPage() {
         setRevealedPickers(prev => ({ ...prev, [answerText]: pickers }));
       }),
 
-      on('authorRevealed', ({ answerText, author, correctPickers }) => {
-        setRevealedAuthors(prev => ({ ...prev, [answerText]: { author, correctPickers } }));
+      on('authorRevealed', ({ answerText, author, authors, correctPickers }) => {
+        setRevealedAuthors(prev => ({ ...prev, [answerText]: { author, authors: authors || [author], correctPickers } }));
       }),
 
       // allAnswersIn is now derived from gameState, no handler needed

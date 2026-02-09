@@ -3,6 +3,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {type CurrentRound, type Player, RoundVariant} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
+import {useCountdown} from '../../hooks/useCountdown';
 import {formatResponseTime} from '../../utils/formatUtils';
 import {bubbleEntrance, springDefault, staggerDelay} from '../../styles/motion';
 
@@ -37,27 +38,64 @@ export function AnsweringPhase({
   const isPoolSelection = variant === RoundVariant.POOL_SELECTION;
   const isSelectingPhase = isPoolSelection && allAnswersIn && !allPicksIn;
   const canStartScoring = isPoolSelection ? allPicksIn : allAnswersIn;
+
+  // Count-up timer for regular rounds
   const { responseTime, startTimer, stopTimer } = useTimer();
+
+  // Countdown timer for pool selection rounds (30 seconds)
+  const {
+    remaining: countdownRemaining,
+    isExpired: countdownExpired,
+    start: startCountdown,
+    stop: stopCountdown,
+    reset: resetCountdown
+  } = useCountdown();
 
   useEffect(() => {
     if (currentRound?.createdAt) {
-      startTimer(currentRound.createdAt);
+      if (isPoolSelection) {
+        // Reset then start to handle round changes
+        resetCountdown();
+        // Use setTimeout to ensure reset completes before start
+        const timeoutId = setTimeout(() => {
+          startCountdown(currentRound.createdAt);
+        }, 0);
+        return () => {
+          clearTimeout(timeoutId);
+          stopCountdown();
+        };
+      } else {
+        startTimer(currentRound.createdAt);
+        return () => stopTimer();
+      }
     }
-    return () => stopTimer();
-  }, [currentRound?.createdAt, startTimer, stopTimer]);
+  }, [currentRound?.createdAt, currentRound?.roundNumber, isPoolSelection, startTimer, stopTimer, startCountdown, stopCountdown, resetCountdown]);
 
-  // Stop timer when all answers are in
+  // Stop timer/countdown when all answers are in
   useEffect(() => {
     if (allAnswersIn) {
       stopTimer();
+      stopCountdown();
     }
-  }, [allAnswersIn, stopTimer]);
+  }, [allAnswersIn, stopTimer, stopCountdown]);
+
+  // Determine timer display
+  const showTimer = isPoolSelection ? (!allAnswersIn && !countdownExpired) : true;
+  const timerValue = isPoolSelection ? countdownRemaining : responseTime;
+  const isUrgent = isPoolSelection && countdownRemaining <= 10000;
+  const isWarning = isPoolSelection && countdownRemaining <= 20000 && countdownRemaining > 10000;
+  const timerColor = isUrgent ? 'is-danger' : isWarning ? 'is-warning' : 'is-info';
+  const timerClass = isUrgent ? 'countdown-urgent' : isWarning ? 'countdown-warning' : '';
 
   return (
     <div className="box">
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-3">
         <h2 className="subtitle is-4 mb-0">Current Question</h2>
-        <span className="tag is-info is-large is-mono" style={{ minWidth: '8rem', justifyContent: 'center' }}>⏱️ {formatResponseTime(responseTime, 2)}</span>
+        {showTimer && (
+          <span className={`tag ${timerColor} is-large is-mono ${timerClass}`} style={{ minWidth: '6rem', justifyContent: 'center' }}>
+            {formatResponseTime(timerValue, isPoolSelection ? 0 : 2)}
+          </span>
+        )}
       </div>
       <div className="notification is-primary is-light mb-4">
         <p className="is-size-5 has-text-weight-semibold">{question}</p>
@@ -81,20 +119,24 @@ export function AnsweringPhase({
           <h3 className="subtitle is-5 mb-3">Answer Pool</h3>
           <div className="response-pool mb-4">
             <AnimatePresence>
-              {currentRound.answerPool.map((answer, index) => (
-                <motion.span key={answer}>
-                  <motion.span
-                    variants={bubbleEntrance}
-                    initial="hidden"
-                    animate="visible"
-                    transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                    className="response-bubble"
-                    style={{ cursor: 'default' }}
-                  >
-                    {answer}
+              {currentRound.answerPool.map((answer, index) => {
+                const isEmpty = !answer || answer.trim() === '';
+                const displayText = isEmpty ? '(no response)' : answer;
+                return (
+                  <motion.span key={index}>
+                    <motion.span
+                      variants={bubbleEntrance}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
+                      className={`response-bubble ${isEmpty ? 'is-empty' : ''}`}
+                      style={{ cursor: 'default' }}
+                    >
+                      {displayText}
+                    </motion.span>
                   </motion.span>
-                </motion.span>
-              ))}
+                );
+              })}
             </AnimatePresence>
           </div>
         </>

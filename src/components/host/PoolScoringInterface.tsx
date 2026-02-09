@@ -13,7 +13,7 @@ interface PoolScoringInterfaceProps {
   onRevealAuthor: (answerText: string) => void;
   onFinishRound: () => void;
   revealedPickers: Record<string, Player[]>;
-  revealedAuthors: Record<string, { author: Player; correctPickers: Player[] }>;
+  revealedAuthors: Record<string, { author: Player; authors: Player[]; correctPickers: Player[] }>;
 }
 
 export function PoolScoringInterface({
@@ -42,6 +42,7 @@ export function PoolScoringInterface({
       authorRevealed: text in revealedAuthors,
       pickers,
       author: authorData?.author || null,
+      authors: authorData?.authors || [],
       correctPickers: authorData?.correctPickers || [],
     };
   });
@@ -81,28 +82,32 @@ export function PoolScoringInterface({
       {/* Answer Pool */}
       <div className="response-pool mb-5" style={{ minHeight: '120px' }}>
         <AnimatePresence>
-          {answers.map((answer, index) => (
-            <motion.span key={answer.text}>
-              <motion.button
-                variants={bubbleEntrance}
-                initial="hidden"
-                animate="visible"
-                transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                className={`response-bubble ${answer.authorRevealed ? 'is-scored' : ''}`}
-                onClick={() => handleBubbleClick(answer.text)}
-                whileHover={{ scale: 1.05, y: -3 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                {answer.text}
-                <span className={`tag is-small ml-2 ${answer.authorRevealed ? 'is-success' : 'is-info'}`} style={{
-                  borderRadius: '999px',
-                  minWidth: '1.5rem',
-                }}>
-                  {answer.pickCount}
-                </span>
-              </motion.button>
-            </motion.span>
-          ))}
+          {answers.map((answer, index) => {
+            const isEmpty = !answer.text || answer.text.trim() === '';
+            const displayText = isEmpty ? '(no response)' : answer.text;
+            return (
+              <motion.span key={index}>
+                <motion.button
+                  variants={bubbleEntrance}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
+                  className={`response-bubble ${answer.authorRevealed ? 'is-scored' : ''} ${isEmpty ? 'is-empty' : ''}`}
+                  onClick={() => handleBubbleClick(answer.text)}
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {displayText}
+                  <span className={`tag is-small ml-2 ${answer.authorRevealed ? 'is-success' : 'is-info'}`} style={{
+                    borderRadius: '999px',
+                    minWidth: '1.5rem',
+                  }}>
+                    {answer.pickCount}
+                  </span>
+                </motion.button>
+              </motion.span>
+            );
+          })}
         </AnimatePresence>
       </div>
 
@@ -155,9 +160,11 @@ export function PoolScoringInterface({
                 </div>
 
                 {/* Answer box with picker stickers */}
-                <div className="mb-5" style={{ position: 'relative', paddingBottom: selectedAnswerData.pickersRevealed && selectedAnswerData.pickers.length > 0 ? '2rem' : 0 }}>
+                <div className="mb-5" style={{ position: 'relative', minHeight: '8rem' }}>
                   <div className="box has-background-white-ter has-text-centered py-5" style={{ position: 'relative' }}>
-                    <h3 className="title is-4 mb-0">"{selectedAnswerData.text}"</h3>
+                    <h3 className={`title is-4 mb-0 ${(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? 'has-text-grey-light' : ''}`} style={(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? { fontStyle: 'italic' } : undefined}>
+                      "{(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? '(no response)' : selectedAnswerData.text}"
+                    </h3>
 
                     {/* Picker stickers - positioned at bottom right of box */}
                     {selectedAnswerData.pickersRevealed && selectedAnswerData.pickers.length > 0 && (
@@ -261,41 +268,51 @@ export function PoolScoringInterface({
                       transition={springBouncy}
                       className="has-text-centered"
                     >
-                      <div className="title is-4 mt-3 is-flex is-align-items-center is-justify-content-center" style={{ gap: '0.75rem' }}>
+                      <div className="title is-4 mt-3 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap" style={{ gap: '0.75rem' }}>
                         Written by:
-                        <PlayerAvatar avatar={selectedAnswerData.author?.avatar ?? null} size="large" />
-                        {selectedAnswerData.author?.name}
+                        {selectedAnswerData.authors.map((author, idx) => (
+                          <span key={author.socketId} className="is-flex is-align-items-center" style={{ gap: '0.25rem' }}>
+                            <PlayerAvatar avatar={author.avatar} size="large" />
+                            {author.name}
+                            {idx < selectedAnswerData.authors.length - 1 && <span>&</span>}
+                          </span>
+                        ))}
                       </div>
                     </motion.div>
                   )}
                 </div>
               </div>
 
-              {/* Floating +1 point badge */}
+              {/* Floating +1 point badge(s) - one per correct picker */}
               <AnimatePresence>
-                {selectedAnswerData.authorRevealed && selectedAnswerData.correctPickers.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, rotateX: -90, y: -20 }}
-                    animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                    exit={{ opacity: 0, rotateX: 90, y: -20 }}
-                    transition={{ ...springBouncy, delay: 0.3 }}
-                    className="notification is-success is-flex is-align-items-center is-justify-content-center"
-                    style={{
-                      gap: '0.5rem',
-                      marginTop: '1rem',
-                      transformOrigin: 'top center',
-                      perspective: 800,
-                    }}
-                  >
-                    <strong>+1 point</strong> for
-                    <TeamName
-                      player1={selectedAnswerData.correctPickers[0]}
-                      player2={selectedAnswerData.author ?? undefined}
-                      size="small"
-                    />
-                    !
-                  </motion.div>
-                )}
+                {selectedAnswerData.authorRevealed && selectedAnswerData.correctPickers.map((picker, idx) => {
+                  // Find the author that this picker is partnered with
+                  const partnerAuthor = selectedAnswerData.authors.find(a => a.partnerId === picker.socketId);
+                  return (
+                    <motion.div
+                      key={picker.socketId}
+                      initial={{ opacity: 0, rotateX: -90, y: -20 }}
+                      animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                      exit={{ opacity: 0, rotateX: 90, y: -20 }}
+                      transition={{ ...springBouncy, delay: 0.3 + idx * 0.15 }}
+                      className="notification is-success is-flex is-align-items-center is-justify-content-center"
+                      style={{
+                        gap: '0.5rem',
+                        marginTop: idx === 0 ? '1rem' : '0.5rem',
+                        transformOrigin: 'top center',
+                        perspective: 800,
+                      }}
+                    >
+                      <strong>+1 point</strong> for
+                      <TeamName
+                        player1={picker}
+                        player2={partnerAuthor}
+                        size="small"
+                      />
+                      !
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </motion.div>
             <button

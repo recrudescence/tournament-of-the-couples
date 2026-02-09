@@ -19,18 +19,19 @@ export function ResponsePool({
   hasPicked,
   onPick,
 }: ResponsePoolProps) {
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  // Track selection by index to handle duplicate answer texts
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const handleSelectAnswer = (answer: string) => {
+  const handleSelectAnswer = (index: number, answer: string) => {
     if (hasPicked) return;
     if (answer === myAnswer) return; // Can't pick own answer
 
-    setSelectedAnswer(answer);
+    setSelectedIndex(index);
   };
 
   const handleConfirm = () => {
-    if (selectedAnswer) {
-      onPick(selectedAnswer);
+    if (selectedIndex !== null) {
+      onPick(answers[selectedIndex]);
     }
   };
 
@@ -62,28 +63,31 @@ export function ResponsePool({
       <div className="response-pool">
         <AnimatePresence>
           {answers.map((answer, index) => {
+            const isEmpty = !answer || answer.trim() === '';
+            const displayText = isEmpty ? '(no response)' : answer;
             const isOwnAnswer = answer === myAnswer;
-            const isSelected = answer === selectedAnswer;
+            const isDisabled = isOwnAnswer || isEmpty;
+            const isSelected = index === selectedIndex;
 
             return (
               <motion.span
+                key={index}
                 animate={bubbleFloat(index)}
                 transition={bubbleFloatTransition(index)}
               >
               <motion.button
-                key={answer}
                 variants={bubbleEntrance}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
                 transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                className={`response-bubble ${isOwnAnswer ? 'is-own' : ''} ${isSelected ? 'is-selected' : ''}`}
-                onClick={() => handleSelectAnswer(answer)}
-                disabled={isOwnAnswer}
-                whileHover={!isOwnAnswer ? { scale: 1.03, y: -2 } : undefined}
-                whileTap={!isOwnAnswer ? { scale: 0.97 } : undefined}
+                className={`response-bubble ${isOwnAnswer ? 'is-own' : ''} ${isEmpty ? 'is-empty' : ''} ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => !isDisabled && handleSelectAnswer(index, answer)}
+                disabled={isDisabled}
+                whileHover={!isDisabled ? { scale: 1.03, y: -2 } : undefined}
+                whileTap={!isDisabled ? { scale: 0.97 } : undefined}
               >
-                  {answer}
+                  {displayText}
                 {isOwnAnswer && (
                   <span className="tag is-small is-light ml-2">yours</span>
                 )}
@@ -96,7 +100,7 @@ export function ResponsePool({
 
       {/* Confirmation */}
       <AnimatePresence>
-        {selectedAnswer && (
+        {selectedIndex !== null && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

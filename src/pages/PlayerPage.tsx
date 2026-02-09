@@ -103,8 +103,11 @@ export function PlayerPage() {
 
   // Auto-submit handler for countdown expiry (pool selection)
   const handleCountdownExpire = useCallback(() => {
-    // Will be filled in after we have access to answer state
-  }, []);
+    if (autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    const currentAnswer = answerRef.current.trim();
+    emit('submitAnswer', { answer: currentAnswer, responseTime: 30000 });
+  }, [emit]);
 
   // Countdown for pool selection rounds (30 seconds)
   const {
@@ -189,23 +192,6 @@ export function PlayerPage() {
     }
   }, [phase, currentRound?.createdAt, currentRound?.variant, startTimer, startCountdown]);
 
-  // Auto-submit when countdown expires for pool selection
-  useEffect(() => {
-    if (
-      countdownExpired &&
-      phase === 'answering' &&
-      currentRound?.variant === RoundVariant.POOL_SELECTION &&
-      !hasSubmitted &&
-      !autoSubmittedRef.current
-    ) {
-      autoSubmittedRef.current = true;
-      const currentAnswer = answerRef.current.trim();
-      if (currentAnswer) {
-        emit('submitAnswer', { answer: currentAnswer, responseTime: 30000 });
-      }
-      // If no answer provided, user just misses the round (can't submit empty)
-    }
-  }, [countdownExpired, phase, currentRound?.variant, hasSubmitted, emit]);
 
   // Pre-fill answer from previous submission when returning to answering phase
   // Only runs when phase changes to 'answering' (not when other players submit)

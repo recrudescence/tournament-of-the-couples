@@ -13,6 +13,12 @@ export function useCountdown({ duration = POOL_SELECTION_DURATION, onExpire }: U
   const startTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
   const expiredRef = useRef(false);
+  const onExpireRef = useRef(onExpire);
+
+  // Keep callback ref updated
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
     if (isRunning && startTimeRef.current !== null) {
@@ -24,7 +30,7 @@ export function useCountdown({ duration = POOL_SELECTION_DURATION, onExpire }: U
         if (newRemaining === 0 && !expiredRef.current) {
           expiredRef.current = true;
           setIsRunning(false);
-          onExpire?.();
+          onExpireRef.current?.();
         }
       }, 100); // Update every 100ms
 
@@ -34,7 +40,7 @@ export function useCountdown({ duration = POOL_SELECTION_DURATION, onExpire }: U
         }
       };
     }
-  }, [isRunning, duration, onExpire]);
+  }, [isRunning, duration]);
 
   /**
    * Start the countdown. If serverTimestamp is provided, calculates
@@ -51,7 +57,7 @@ export function useCountdown({ duration = POOL_SELECTION_DURATION, onExpire }: U
       // If already expired, trigger callback immediately
       if (newRemaining === 0) {
         expiredRef.current = true;
-        onExpire?.();
+        onExpireRef.current?.();
         return;
       }
     } else {
@@ -59,7 +65,7 @@ export function useCountdown({ duration = POOL_SELECTION_DURATION, onExpire }: U
       setRemaining(duration);
     }
     setIsRunning(true);
-  }, [duration, onExpire]);
+  }, [duration]);
 
   const stop = useCallback(() => {
     setIsRunning(false);

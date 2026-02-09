@@ -8,6 +8,10 @@ const botManager = require('./botManager');
 const pendingDeletions = new Map();
 const HOST_DISCONNECT_GRACE_PERIOD = 5000; // 5 seconds
 
+// Track pool selection answer timeouts (30 second limit)
+const poolSelectionTimeouts = new Map();
+const POOL_SELECTION_DURATION = 30000; // 30 seconds
+
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
 
@@ -446,6 +450,59 @@ function setupSocketHandlers(io) {
 
         // Schedule bot answers
         botManager.scheduleBotAnswers(roomCode, io);
+
+        // For pool selection, schedule auto-submit timeout
+        if (variant === 'pool_selection') {
+          // Clear any existing timeout for this room
+          if (poolSelectionTimeouts.has(roomCode)) {
+            clearTimeout(poolSelectionTimeouts.get(roomCode));
+          }
+
+          const timeout = setTimeout(async () => {
+            poolSelectionTimeouts.delete(roomCode);
+
+            const currentState = gameState.getGameState(roomCode);
+            if (!currentState || !currentState.currentRound) return;
+            if (currentState.currentRound.status !== 'active') return; // Already moved on
+
+            // Get players who haven't submitted
+            const nonHostPlayers = currentState.players.filter(p => p.socketId !== currentState.host.socketId);
+            const submittedNames = currentState.currentRound.submittedInCurrentPhase;
+
+            for (const player of nonHostPlayers) {
+              if (!submittedNames.includes(player.name)) {
+                // Auto-submit empty answer with max response time
+                try {
+                  gameState.submitAnswer(roomCode, player.socketId, '', POOL_SELECTION_DURATION);
+                  const updatedState = gameState.getGameState(roomCode);
+
+                  io.to(roomCode).emit('answerSubmitted', {
+                    playerName: player.name,
+                    answer: '',
+                    responseTime: POOL_SELECTION_DURATION,
+                    submittedInCurrentPhase: updatedState.currentRound.submittedInCurrentPhase,
+                    gameState: updatedState
+                  });
+                } catch (e) {
+                  console.error('Auto-submit error for', player.name, e.message);
+                }
+              }
+            }
+
+            // Check if round is now complete and transition to selecting
+            if (gameState.isRoundComplete(roomCode)) {
+              gameState.startSelecting(roomCode);
+              const answerPool = gameState.getAnswerPool(roomCode);
+              io.to(roomCode).emit('poolReady', {
+                answers: answerPool,
+                gameState: gameState.getGameState(roomCode)
+              });
+              botManager.scheduleBotPicks(roomCode, io);
+            }
+          }, POOL_SELECTION_DURATION);
+
+          poolSelectionTimeouts.set(roomCode, timeout);
+        }
       } catch (err) {
         console.error('Start round error:', err);
         socket.emit('error', { message: err.message });
@@ -492,6 +549,11 @@ function setupSocketHandlers(io) {
         if (gameState.isRoundComplete(roomCode)) {
           // For pool_selection, emit poolReady instead of allAnswersIn
           if (state.currentRound.variant === 'pool_selection') {
+            // Clear auto-submit timeout since all answers are in
+            if (poolSelectionTimeouts.has(roomCode)) {
+              clearTimeout(poolSelectionTimeouts.get(roomCode));
+              poolSelectionTimeouts.delete(roomCode);
+            }
             // Transition to selecting phase
             gameState.startSelecting(roomCode);
             const answerPool = gameState.getAnswerPool(roomCode);
@@ -569,35 +631,40 @@ function setupSocketHandlers(io) {
       }
 
       try {
-        const author = gameState.getAuthorOfAnswer(roomCode, answerText);
-        if (!author) {
+        // Get ALL authors who wrote this answer (handles duplicates)
+        const authors = gameState.getAuthorsOfAnswer(roomCode, answerText);
+        if (authors.length === 0) {
           socket.emit('error', { message: 'Author not found' });
           return;
         }
 
-        const { correctPickers, teamId } = gameState.checkCorrectPick(roomCode, answerText);
+        const { correctPickers, teamIds } = gameState.checkCorrectPick(roomCode, answerText);
 
-        // Auto-award point for correct guesses
-        if (teamId) {
+        // Auto-award point to ALL teams with correct guesses
+        for (const teamId of teamIds) {
           gameState.updateTeamScore(roomCode, teamId, 1);
         }
 
+        // Emit authorRevealed with all authors
         io.to(roomCode).emit('authorRevealed', {
           answerText,
-          author,
+          author: authors[0], // Primary author for backwards compatibility
+          authors, // All authors who wrote this answer
           correctPickers,
-          teamId
+          teamIds
         });
 
-        // If point was awarded, also emit scoreUpdated
-        if (teamId) {
-          const state = gameState.getGameState(roomCode);
+        // Emit scoreUpdated for each team that got points
+        const state = gameState.getGameState(roomCode);
+        for (const teamId of teamIds) {
           const team = state.teams.find(t => t.teamId === teamId);
-          io.to(roomCode).emit('scoreUpdated', {
-            teamId,
-            newScore: team.score,
-            pointsAwarded: 1
-          });
+          if (team) {
+            io.to(roomCode).emit('scoreUpdated', {
+              teamId,
+              newScore: team.score,
+              pointsAwarded: 1
+            });
+          }
         }
       } catch (err) {
         console.error('Reveal author error:', err);
@@ -815,6 +882,11 @@ function setupSocketHandlers(io) {
 
       try {
         botManager.cancelBotTimers(roomCode);
+        // Clear pool selection timeout if any
+        if (poolSelectionTimeouts.has(roomCode)) {
+          clearTimeout(poolSelectionTimeouts.get(roomCode));
+          poolSelectionTimeouts.delete(roomCode);
+        }
         gameState.resetGame(roomCode);
         const state = gameState.getGameState(roomCode);
         io.to(roomCode).emit('gameReset', state);
@@ -914,6 +986,10 @@ function setupSocketHandlers(io) {
               if (currentState && currentState.host && !currentState.host.connected) {
                 console.log(`Grace period expired, deleting room ${roomCode}`);
                 botManager.cancelBotTimers(roomCode);
+                if (poolSelectionTimeouts.has(roomCode)) {
+                  clearTimeout(poolSelectionTimeouts.get(roomCode));
+                  poolSelectionTimeouts.delete(roomCode);
+                }
                 io.to(roomCode).emit('gameCancelled', { reason: 'Host disconnected' });
                 gameState.deleteRoom(roomCode);
               }

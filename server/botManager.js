@@ -37,10 +37,12 @@ function getNextBotName(roomCode) {
   if (state.host) usedNames.add(state.host.name);
   state.players.forEach(p => usedNames.add(p.name));
 
-  for (const name of BOT_NAMES) {
-    if (!usedNames.has(name)) return name;
-  }
-  return null;
+  // Get available names and pick one randomly
+  const availableNames = BOT_NAMES.filter(name => !usedNames.has(name));
+  if (availableNames.length === 0) return null;
+
+  const randomIndex = Math.floor(Math.random() * availableNames.length);
+  return availableNames[randomIndex];
 }
 
 function addBots(roomCode, count) {
@@ -249,8 +251,8 @@ function scheduleBotPicks(roomCode, io) {
         // Get own answer to exclude
         const ownAnswer = currentState.currentRound.answers[bot.name]?.text;
 
-        // Pick a random answer that isn't their own
-        const availableAnswers = answerPool.filter(a => a !== ownAnswer);
+        // Pick a random answer that isn't their own and isn't empty
+        const availableAnswers = answerPool.filter(a => a !== ownAnswer && a && a.trim() !== '');
         if (availableAnswers.length === 0) return;
 
         const pickedAnswer = availableAnswers[Math.floor(Math.random() * availableAnswers.length)];

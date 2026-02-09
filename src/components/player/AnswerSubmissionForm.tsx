@@ -45,15 +45,17 @@ export function AnswerSubmissionForm({
 }: AnswerSubmissionFormProps) {
   const isCountdownMode = countdown !== undefined;
   const timerValue = isCountdownMode ? countdown : responseTime;
-  const isLowTime = isCountdownMode && countdown < 10000; // < 10 seconds
-  const timerColor = isExpired ? 'is-danger' : isLowTime ? 'is-warning' : 'is-info';
+  const isUrgent = isCountdownMode && countdown <= 10000; // <= 10 seconds
+  const isWarning = isCountdownMode && countdown <= 20000 && countdown > 10000; // 10-20 seconds
+  const timerColor = isExpired ? 'is-danger' : isUrgent ? 'is-danger' : isWarning ? 'is-warning' : 'is-info';
+  const timerClass = isUrgent && !isExpired ? 'countdown-urgent' : isWarning ? 'countdown-warning' : '';
 
   return (
     <div className="box">
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
         <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
-        <div className={`tag is-mono ${timerColor} is-large`}>
-          {formatResponseTime(timerValue, isCountdownMode ? 1 : 2)}
+        <div className={`tag is-mono ${timerColor} is-large ${timerClass}`}>
+          {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
         </div>
       </div>
 

@@ -399,8 +399,9 @@ function submitAnswer(roomCode, socketId, answerText, responseTime = -1) {
     throw new Error('Round not accepting answers');
   }
 
-  // Validate answer is not empty
-  if (!answerText || answerText.trim() === '') {
+  // Validate answer is not empty (except for pool_selection which allows auto-submit of empty)
+  const isPoolSelection = gameState.currentRound.variant === 'pool_selection';
+  if (!isPoolSelection && (!answerText || answerText.trim() === '')) {
     throw new Error('Answer cannot be empty');
   }
 
@@ -827,42 +828,58 @@ function getPickersForAnswer(roomCode, answerText) {
   return pickers;
 }
 
-// Get the player who wrote a specific answer
-function getAuthorOfAnswer(roomCode, answerText) {
+// Get ALL players who wrote a specific answer text (handles duplicates)
+function getAuthorsOfAnswer(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
-  if (!gameState || !gameState.currentRound) return null;
+  if (!gameState || !gameState.currentRound) return [];
 
+  const authors = [];
   for (const [playerName, answer] of Object.entries(gameState.currentRound.answers || {})) {
     if (answer.text === answerText) {
-      return gameState.players.find(p => p.name === playerName) || null;
+      const player = gameState.players.find(p => p.name === playerName);
+      if (player) authors.push(player);
     }
   }
-  return null;
+  return authors;
 }
 
-// Check if a player correctly picked their partner's answer
+// Get the first player who wrote a specific answer (for backwards compatibility)
+function getAuthorOfAnswer(roomCode, answerText) {
+  const authors = getAuthorsOfAnswer(roomCode, answerText);
+  return authors.length > 0 ? authors[0] : null;
+}
+
+// Check if players correctly picked their partner's answer
+// Returns all correct pickers and their team IDs (handles duplicate answers)
 function checkCorrectPick(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
-  if (!gameState || !gameState.currentRound) return { correctPickers: [], teamId: null };
+  if (!gameState || !gameState.currentRound) return { correctPickers: [], teamIds: [] };
 
-  const author = getAuthorOfAnswer(roomCode, answerText);
-  if (!author) return { correctPickers: [], teamId: null };
+  const authors = getAuthorsOfAnswer(roomCode, answerText);
+  if (authors.length === 0) return { correctPickers: [], teamIds: [] };
 
   const correctPickers = [];
+  const teamIds = [];
 
-  // Find author's partner
-  const partner = gameState.players.find(p => p.socketId === author.partnerId);
-  if (partner) {
-    // Check if partner picked this answer
-    const partnerPick = gameState.currentRound.picks[partner.name];
-    if (partnerPick === answerText) {
-      correctPickers.push(partner);
+  // For each author, check if their partner picked this answer text
+  for (const author of authors) {
+    const partner = gameState.players.find(p => p.socketId === author.partnerId);
+    if (partner) {
+      const partnerPick = gameState.currentRound.picks[partner.name];
+      if (partnerPick === answerText) {
+        correctPickers.push(partner);
+        if (author.teamId && !teamIds.includes(author.teamId)) {
+          teamIds.push(author.teamId);
+        }
+      }
     }
   }
 
   return {
     correctPickers,
-    teamId: correctPickers.length > 0 ? author.teamId : null
+    teamIds,
+    // Keep teamId for backwards compatibility (first team)
+    teamId: teamIds.length > 0 ? teamIds[0] : null
   };
 }
 
@@ -906,6 +923,7 @@ module.exports = {
   areAllPicksIn,
   getAnswerPool,
   getPickersForAnswer,
+  getAuthorsOfAnswer,
   getAuthorOfAnswer,
   checkCorrectPick
 };
