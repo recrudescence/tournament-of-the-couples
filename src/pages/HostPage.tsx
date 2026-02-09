@@ -401,7 +401,7 @@ export function HostPage() {
   const handleEndGame = async () => {
     const confirmed = await confirm({
       title: 'finished?',
-      message: 'this will show the final scores and cannot be undone!',
+      message: 'end the game - show the final scores?',
       variant: 'warning',
       confirmText: 'drumroll please...',
     });
@@ -413,7 +413,7 @@ export function HostPage() {
   const handleResetGame = async () => {
     const confirmed = await confirm({
       title: 'start over',
-      message: 'this will return everyone to the lobby with scores reset!',
+      message: 'return everyone to the lobby with scores reset?',
       variant: 'danger',
       confirmText: 'reset game',
     });
@@ -502,6 +502,7 @@ export function HostPage() {
               {phase === 'scoring' && gameState?.currentRound && (
                 gameState.currentRound.variant === RoundVariant.POOL_SELECTION ? (
                   <PoolScoringInterface
+                    question={gameState.currentRound.question}
                     currentRound={gameState.currentRound}
                     onRevealPickers={handleRevealPickers}
                     onRevealAuthor={handleRevealAuthor}

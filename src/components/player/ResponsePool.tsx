@@ -1,6 +1,5 @@
 import {useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
-import {PlayerAvatar} from '../common/PlayerAvatar';
 import {bubbleEntrance, bubbleFloat, bubbleFloatTransition, springDefault, staggerDelay,} from '../../styles/motion';
 import type {PlayerAvatar as PlayerAvatarType} from '../../types/game';
 
@@ -17,7 +16,6 @@ export function ResponsePool({
   answers,
   myAnswer,
   partnerName,
-  partnerAvatar,
   hasPicked,
   onPick,
 }: ResponsePoolProps) {
@@ -106,19 +104,12 @@ export function ResponsePool({
             transition={springDefault}
             className="confirmation-panel mt-5"
           >
-            <div className="box has-background-info-light">
-              <div className="is-flex is-align-items-center is-justify-content-center mb-3">
-                <PlayerAvatar avatar={partnerAvatar} size="small" />
-                <span className="ml-2 has-text-weight-semibold">{partnerName} wrote:</span>
-              </div>
-              <p className="has-text-centered is-size-5 mb-4">"{selectedAnswer}"</p>
-              <button
-                className="button is-success is-medium is-fullwidth"
-                onClick={handleConfirm}
-              >
-                Confirm Pick
-              </button>
-            </div>
+            <button
+              className="button is-primary is-medium is-fullwidth"
+              onClick={handleConfirm}
+            >
+              Confirm Pick
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

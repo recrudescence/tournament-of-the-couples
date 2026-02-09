@@ -400,6 +400,18 @@ input[type="radio"] {
   cursor: default;
 }
 
+.response-bubble.is-scored {
+  background: hsl(141, 53%, 90%);
+  border-color: hsl(141, 53%, 53%);
+  color: hsl(141, 53%, 25%);
+  opacity: 0.7;
+}
+
+.response-bubble.is-scored:hover {
+  background: hsl(141, 53%, 85%);
+  opacity: 0.85;
+}
+
 /* Halloween theme overrides */
 [data-theme="halloween"] .response-bubble {
   background: #2A2A4E;
@@ -422,6 +434,13 @@ input[type="radio"] {
   background: #1A1A2E;
   border-color: #333;
   color: #666;
+}
+
+[data-theme="halloween"] .response-bubble.is-scored {
+  background: #1A3A2E;
+  border-color: #2ECC71;
+  color: #2ECC71;
+  opacity: 0.7;
 }
 
 /* ============================================================================

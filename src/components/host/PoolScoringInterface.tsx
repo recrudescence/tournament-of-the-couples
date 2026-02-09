@@ -1,27 +1,13 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import {
-  slideInUp,
-  springDefault,
-  staggerDelay,
-  buttonHover,
-  buttonTap,
-} from '../../styles/motion';
-import type { Player, CurrentRound } from '../../types/game';
-
-interface PoolAnswer {
-  text: string;
-  pickCount: number;
-  pickersRevealed: boolean;
-  authorRevealed: boolean;
-  pickers: Player[];
-  author: Player | null;
-  correctPickers: Player[];
-  pointAwarded: boolean;
-}
+import {useState} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
+import confetti from 'canvas-confetti';
+import {PlayerAvatar} from '../common/PlayerAvatar';
+import {TeamName} from '../common/TeamName';
+import {bubbleEntrance, buttonHover, buttonTap, springBouncy, springDefault, staggerDelay,} from '../../styles/motion';
+import type {CurrentRound, Player} from '../../types/game';
 
 interface PoolScoringInterfaceProps {
+  question: string;
   currentRound: CurrentRound;
   onRevealPickers: (answerText: string) => void;
   onRevealAuthor: (answerText: string) => void;
@@ -31,6 +17,7 @@ interface PoolScoringInterfaceProps {
 }
 
 export function PoolScoringInterface({
+  question,
   currentRound,
   onRevealPickers,
   onRevealAuthor,
@@ -38,220 +25,287 @@ export function PoolScoringInterface({
   revealedPickers,
   revealedAuthors,
 }: PoolScoringInterfaceProps) {
-  const [currentAnswerIndex, setCurrentAnswerIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  // Build answer data sorted by pick count
-  const answers: PoolAnswer[] = Object.entries(currentRound.answers || {})
-    .map(([, answer]) => {
-      const text = answer.text;
-      const picks = currentRound.picks || {};
-      const pickCount = Object.values(picks).filter(p => p === text).length;
-      const pickers = revealedPickers[text] || [];
-      const authorData = revealedAuthors[text];
+  // Build answer data
+  const answers = Object.entries(currentRound.answers || {}).map(([, answer]) => {
+    const text = answer.text;
+    const picks = currentRound.picks || {};
+    const pickCount = Object.values(picks).filter(p => p === text).length;
+    const pickers = revealedPickers[text] || [];
+    const authorData = revealedAuthors[text];
 
-      return {
-        text,
-        pickCount,
-        pickersRevealed: text in revealedPickers,
-        authorRevealed: text in revealedAuthors,
-        pickers,
-        author: authorData?.author || null,
-        correctPickers: authorData?.correctPickers || [],
-        pointAwarded: (authorData?.correctPickers?.length || 0) > 0,
-      };
-    })
-    .sort((a, b) => b.pickCount - a.pickCount);
+    return {
+      text,
+      pickCount,
+      pickersRevealed: text in revealedPickers,
+      authorRevealed: text in revealedAuthors,
+      pickers,
+      author: authorData?.author || null,
+      correctPickers: authorData?.correctPickers || [],
+    };
+  });
 
-  const currentAnswer = answers[currentAnswerIndex];
+  const selectedAnswerData = answers.find(a => a.text === selectedAnswer);
   const allRevealed = answers.every(a => a.authorRevealed);
+  const revealedCount = answers.filter(a => a.authorRevealed).length;
 
-  const handleNext = () => {
-    if (currentAnswerIndex < answers.length - 1) {
-      setCurrentAnswerIndex(prev => prev + 1);
-    }
+  const handleBubbleClick = (text: string) => {
+    setSelectedAnswer(text);
   };
 
-  const handlePrevious = () => {
-    if (currentAnswerIndex > 0) {
-      setCurrentAnswerIndex(prev => prev - 1);
-    }
+  const closeModal = () => {
+    setSelectedAnswer(null);
   };
-
-  if (!currentAnswer) {
-    return (
-      <div className="box has-text-centered">
-        <p>No answers to score</p>
-        <button className="button is-primary mt-4" onClick={onFinishRound}>
-          Finish Round
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div className="pool-scoring">
-      {/* Progress indicator */}
+    <div className="pool-scoring box">
+      {/* Question */}
+      <div className="notification is-primary is-light mb-4">
+        <p className="is-size-5 has-text-weight-semibold has-text-centered">{question}</p>
+      </div>
+
+      {/* Progress */}
       <div className="mb-4">
         <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
-          <span className="has-text-grey">
-            Answer {currentAnswerIndex + 1} of {answers.length}
-          </span>
-          <span className="has-text-grey">
-            {answers.filter(a => a.authorRevealed).length} revealed
-          </span>
+          <span className="has-text-grey">Tap an answer to reveal</span>
+          <span className="has-text-grey">{revealedCount} / {answers.length} revealed</span>
         </div>
         <progress
           className="progress is-primary is-small"
-          value={answers.filter(a => a.authorRevealed).length}
+          value={revealedCount}
           max={answers.length}
         />
       </div>
 
-      {/* Current answer card */}
-      <AnimatePresence mode="wait">
+      {/* Answer Pool */}
+      <div className="response-pool mb-5" style={{ minHeight: '120px' }}>
+        <AnimatePresence>
+          {answers.map((answer, index) => (
+            <motion.span key={answer.text}>
+              <motion.button
+                variants={bubbleEntrance}
+                initial="hidden"
+                animate="visible"
+                transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
+                className={`response-bubble ${answer.authorRevealed ? 'is-scored' : ''}`}
+                onClick={() => handleBubbleClick(answer.text)}
+                whileHover={{ scale: 1.05, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {answer.text}
+                <span className={`tag is-small ml-2 ${answer.authorRevealed ? 'is-success' : 'is-info'}`} style={{
+                  borderRadius: '999px',
+                  minWidth: '1.5rem',
+                }}>
+                  {answer.pickCount}
+                </span>
+              </motion.button>
+            </motion.span>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Finish Round Button */}
+      {allRevealed && (
         <motion.div
-          key={currentAnswer.text}
-          variants={slideInUp}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          transition={springDefault}
-          className="box"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="has-text-centered"
         >
-          <div className="has-text-centered mb-4">
-            <h3 className="title is-4 mb-2">"{currentAnswer.text}"</h3>
-            <div className="tags is-centered">
-              <span className="tag is-info is-medium">
-                {currentAnswer.pickCount} pick{currentAnswer.pickCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
+          <motion.button
+            className="button is-success is-large"
+            onClick={onFinishRound}
+            whileHover={buttonHover}
+            whileTap={buttonTap}
+          >
+            Finish Round
+          </motion.button>
+        </motion.div>
+      )}
 
-          {/* Pickers section */}
-          <div className="mb-4">
-            <h4 className="subtitle is-6 mb-2">Who picked this answer?</h4>
-            {!currentAnswer.pickersRevealed ? (
-              <motion.button
-                className="button is-info is-fullwidth"
-                onClick={() => onRevealPickers(currentAnswer.text)}
-                whileHover={buttonHover}
-                whileTap={buttonTap}
-              >
-                Reveal Pickers
-              </motion.button>
-            ) : (
-              <div className="is-flex is-flex-wrap-wrap gap-2">
-                {currentAnswer.pickers.length > 0 ? (
-                  currentAnswer.pickers.map((picker, idx) => (
-                    <motion.div
-                      key={picker.socketId}
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ ...springDefault, delay: staggerDelay(idx) }}
-                      className="is-flex is-align-items-center"
+      {/* Answer Modal */}
+      <AnimatePresence>
+        {selectedAnswer && selectedAnswerData && (
+          <motion.div
+            className="modal is-active"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="modal-background"
+              onClick={closeModal}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              transition={springBouncy}
+              style={{ maxWidth: '500px' }}
+            >
+              <div className="box">
+                {/* Question */}
+                <div className="notification is-primary is-light mb-4">
+                  <p className="is-size-5 has-text-weight-semibold has-text-centered">{question}</p>
+                </div>
+
+                {/* Answer box with picker stickers */}
+                <div className="mb-5" style={{ position: 'relative', paddingBottom: selectedAnswerData.pickersRevealed && selectedAnswerData.pickers.length > 0 ? '2rem' : 0 }}>
+                  <div className="box has-background-white-ter has-text-centered py-5" style={{ position: 'relative' }}>
+                    <h3 className="title is-4 mb-0">"{selectedAnswerData.text}"</h3>
+
+                    {/* Picker stickers - positioned at bottom right of box */}
+                    {selectedAnswerData.pickersRevealed && selectedAnswerData.pickers.length > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '-1.5rem',
+                          right: '0.5rem',
+                          display: 'flex',
+                          perspective: 800,
+                        }}
+                      >
+                        {selectedAnswerData.pickers.map((picker, idx) => {
+                          const rotation = (idx % 2 === 0 ? -1 : 1) * (5 + idx * 3);
+                          const isCorrect = selectedAnswerData.authorRevealed &&
+                            selectedAnswerData.correctPickers.some(cp => cp.socketId === picker.socketId);
+                          return (
+                            <motion.div
+                              key={`${picker.socketId}-${isCorrect}`}
+                              initial={{ opacity: 0, scale: 0, y: -30, rotate: rotation * 2 }}
+                              animate={{
+                                opacity: 1,
+                                scale: isCorrect ? 1.1 : 1,
+                                y: 0,
+                                rotate: rotation,
+                              }}
+                              transition={{
+                                ...springBouncy,
+                                delay: idx * 0.08,
+                              }}
+                              style={{
+                                marginLeft: idx > 0 ? '-0.75rem' : 0,
+                                zIndex: isCorrect ? 10 : selectedAnswerData.pickers.length - idx,
+                                borderRadius: '50%',
+                                boxShadow: isCorrect ? '0 0 0 3px hsl(141, 53%, 53%), 0 0 12px hsl(141, 53%, 53%)' : undefined,
+                              }}
+                              title={picker.name + (isCorrect ? ' ✓' : '')}
+                              onAnimationComplete={() => {
+                                if (isCorrect) {
+                                  // Fire confetti from this element's position
+                                  const el = document.querySelector(`[data-picker-id="${picker.socketId}"]`);
+                                  if (el) {
+                                    const rect = el.getBoundingClientRect();
+                                    const x = (rect.left + rect.width / 2) / window.innerWidth;
+                                    const y = (rect.top + rect.height / 2) / window.innerHeight;
+                                    confetti({
+                                      particleCount: 40,
+                                      startVelocity: 20,
+                                      spread: 360,
+                                      origin: { x, y },
+                                      colors: ['#48c774', '#3ec46d', '#00d1b2', '#FFD700'],
+                                      ticks: 80,
+                                      gravity: 0.8,
+                                      scalar: 0.9,
+                                    });
+                                  }
+                                }
+                              }}
+                              data-picker-id={picker.socketId}
+                            >
+                              <PlayerAvatar avatar={picker.avatar} size="medium" />
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reveal pickers button or "no pickers" message */}
+                  {selectedAnswerData.pickCount === 0 ? (
+                    <p className="has-text-grey has-text-centered mt-3">No one picked this answer</p>
+                  ) : !selectedAnswerData.pickersRevealed && (
+                    <motion.button
+                      className="button is-info is-fullwidth is-medium mt-3"
+                      onClick={() => onRevealPickers(selectedAnswerData.text)}
+                      whileHover={buttonHover}
+                      whileTap={buttonTap}
                     >
-                      <PlayerAvatar avatar={picker.avatar} size="small" />
-                      <span className="ml-1">{picker.name}</span>
+                      <span className="icon"><i className="fas fa-users" /></span>
+                      <span>Reveal Pickers ({selectedAnswerData.pickCount})</span>
+                    </motion.button>
+                  )}
+                </div>
+
+                {/* Author Section */}
+                <div className="mb-4" style={{ perspective: 800 }}>
+                  {!selectedAnswerData.authorRevealed ? (
+                    <motion.button
+                      className="button is-warning is-fullwidth is-medium"
+                      onClick={() => onRevealAuthor(selectedAnswerData.text)}
+                      whileHover={ buttonHover }
+                      whileTap={buttonTap}
+                    >
+                      <span className="icon"><i className="fas fa-user-secret" /></span>
+                      <span>Reveal Author</span>
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, rotateY: -90 }}
+                      animate={{ opacity: 1, rotateY: 0 }}
+                      transition={springBouncy}
+                      className="has-text-centered"
+                    >
+                      <div className="title is-4 mt-3 is-flex is-align-items-center is-justify-content-center" style={{ gap: '0.75rem' }}>
+                        Written by:
+                        <PlayerAvatar avatar={selectedAnswerData.author?.avatar ?? null} size="large" />
+                        {selectedAnswerData.author?.name}
+                      </div>
                     </motion.div>
-                  ))
-                ) : (
-                  <span className="has-text-grey-light">No one picked this</span>
-                )}
+                  )}
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Author section */}
-          <div className="mb-4">
-            <h4 className="subtitle is-6 mb-2">Who wrote this answer?</h4>
-            {!currentAnswer.authorRevealed ? (
-              <motion.button
-                className="button is-warning is-fullwidth"
-                onClick={() => onRevealAuthor(currentAnswer.text)}
-                disabled={!currentAnswer.pickersRevealed}
-                whileHover={currentAnswer.pickersRevealed ? buttonHover : undefined}
-                whileTap={currentAnswer.pickersRevealed ? buttonTap : undefined}
-              >
-                Reveal Author
-              </motion.button>
-            ) : (
-              <div>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={springDefault}
-                  className="is-flex is-align-items-center is-justify-content-center mb-3"
-                >
-                  <PlayerAvatar avatar={currentAnswer.author?.avatar ?? null} size="medium" />
-                  <span className="ml-2 is-size-5 has-text-weight-semibold">
-                    {currentAnswer.author?.name}
-                  </span>
-                </motion.div>
-
-                {/* Point awarded indicator */}
-                {currentAnswer.pointAwarded && (
+              {/* Floating +1 point badge */}
+              <AnimatePresence>
+                {selectedAnswerData.authorRevealed && selectedAnswerData.correctPickers.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...springDefault, delay: 0.3 }}
-                    className="notification is-success is-light has-text-centered"
+                    initial={{ opacity: 0, rotateX: -90, y: -20 }}
+                    animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                    exit={{ opacity: 0, rotateX: 90, y: -20 }}
+                    transition={{ ...springBouncy, delay: 0.3 }}
+                    className="notification is-success is-flex is-align-items-center is-justify-content-center"
+                    style={{
+                      gap: '0.5rem',
+                      marginTop: '1rem',
+                      transformOrigin: 'top center',
+                      perspective: 800,
+                    }}
                   >
-                    <span className="icon">
-                      <i className="fas fa-check-circle"></i>
-                    </span>
-                    <strong>+1 point</strong> to{' '}
-                    {currentAnswer.correctPickers.map(p => p.name).join(', ')}'s team!
+                    <strong>+1 point</strong> for
+                    <TeamName
+                      player1={selectedAnswerData.correctPickers[0]}
+                      player2={selectedAnswerData.author ?? undefined}
+                      size="small"
+                    />
+                    !
                   </motion.div>
                 )}
-              </div>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <div className="buttons is-centered mt-5">
+              </AnimatePresence>
+            </motion.div>
             <button
-              className="button"
-              onClick={handlePrevious}
-              disabled={currentAnswerIndex === 0}
-            >
-              Previous
-            </button>
-            {currentAnswerIndex < answers.length - 1 ? (
-              <button
-                className="button is-primary"
-                onClick={handleNext}
-              >
-                Next Answer
-              </button>
-            ) : allRevealed ? (
-              <motion.button
-                className="button is-success is-large"
-                onClick={onFinishRound}
-                whileHover={buttonHover}
-                whileTap={buttonTap}
-              >
-                Finish Round
-              </motion.button>
-            ) : (
-              <button className="button is-light" disabled>
-                Reveal all authors first
-              </button>
-            )}
-          </div>
-        </motion.div>
+              className="modal-close is-large"
+              aria-label="close"
+              onClick={closeModal}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
-
-      {/* Answer overview dots */}
-      <div className="is-flex is-justify-content-center gap-2 mt-4">
-        {answers.map((answer, idx) => (
-          <button
-            key={answer.text}
-            className={`pool-answer-dot ${idx === currentAnswerIndex ? 'is-active' : ''} ${answer.authorRevealed ? 'is-revealed' : ''}`}
-            onClick={() => setCurrentAnswerIndex(idx)}
-            title={answer.text}
-          />
-        ))}
-      </div>
     </div>
   );
 }

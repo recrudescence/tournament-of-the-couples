@@ -30,7 +30,6 @@ const variantStyles: Record<AlertVariant, { icon: string; buttonClass: string }>
 };
 
 export function AlertModal({
-  title,
   message,
   confirmText = 'ok',
   cancelText = 'cancel',
@@ -92,40 +91,35 @@ export function AlertModal({
             exit="hidden"
             transition={springDefault}
           >
-            <header className="modal-card-head">
-              <p className="modal-card-title">
-                <span className="mr-2">{icon}</span>
-                {title || (variant === 'danger' ? 'Confirm' : '!!')}
-              </p>
-            </header>
+            <div className="box">
+              <section className="modal-card-body mb-4">
+                <p className="is-size-5">{icon} {message}</p>
+              </section>
 
-            <section className="modal-card-body">
-              <p className="is-size-5">{message}</p>
-            </section>
-
-            <footer className="modal-card-foot is-justify-content-flex-end" style={{ gap: '0.5rem' }}>
-              {isConfirm && (
+              <footer className="modal-card-footer is-flex is-justify-content-space-between">
+                {isConfirm && (
+                  <motion.button
+                    className="button"
+                    onClick={handleCancel}
+                    transition={springStiff}
+                    whileHover={buttonHover}
+                    whileTap={buttonTap}
+                  >
+                    {cancelText}
+                  </motion.button>
+                )}
                 <motion.button
-                  className="button"
-                  onClick={handleCancel}
+                  className={`button ${buttonClass}`}
+                  onClick={handleConfirm}
                   transition={springStiff}
-                  whileHover={buttonHover}
+                  whileHover={variant === 'danger' ? nervousHover : buttonHover}
                   whileTap={buttonTap}
+                  autoFocus
                 >
-                  {cancelText}
+                  {confirmText}
                 </motion.button>
-              )}
-              <motion.button
-                className={`button ${buttonClass}`}
-                onClick={handleConfirm}
-                transition={springStiff}
-                whileHover={variant === 'danger' ? nervousHover : buttonHover}
-                whileTap={buttonTap}
-                autoFocus
-              >
-                {confirmText}
-              </motion.button>
-            </footer>
+              </footer>
+            </div>
           </motion.div>
         </div>
       )}
