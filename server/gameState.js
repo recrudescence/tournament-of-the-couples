@@ -1,5 +1,4 @@
 const roomCodeGenerator = require('./roomCodeGenerator');
-const {RoundVariant} = require("../src/types/game");
 
 // Logging helper - silent in test environment
 const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
@@ -359,7 +358,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     throw new Error('Open ended should not have options');
   }
 
-  if (variant === RoundVariant.POOL_SELECTION && options !== null) {
+  if (variant === 'pool_selection' && options !== null) {
     throw new Error('Pool selection should not have options');
   }
 
@@ -383,7 +382,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     submittedInCurrentPhase: [], // Track who has submitted in THIS answering session
     createdAt: Date.now(), // Timestamp for response time calculation (survives reconnection)
     // Pool selection specific fields
-    ...(variant === RoundVariant.POOL_SELECTION && { picks: {}, picksSubmitted: [] })
+    ...(variant === 'pool_selection' && { picks: {}, picksSubmitted: [] })
   };
 
   log(`Round ${roundNumber} started: ${question} (${variant})`);
@@ -467,7 +466,7 @@ function startSelecting(roomCode) {
     throw new Error('No active round');
   }
 
-  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) {
+  if (gameState.currentRound.variant !== 'pool_selection') {
     throw new Error('Not a pool selection round');
   }
 
@@ -734,7 +733,7 @@ function submitPick(roomCode, socketId, pickedAnswer) {
     throw new Error('No active round');
   }
 
-  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) {
+  if (gameState.currentRound.variant !== 'pool_selection') {
     throw new Error('Not a pool selection round');
   }
 
@@ -777,7 +776,7 @@ function submitPick(roomCode, socketId, pickedAnswer) {
 function areAllPicksIn(roomCode) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return false;
-  if (gameState.currentRound.variant !== RoundVariant.POOL_SELECTION) return false;
+  if (gameState.currentRound.variant !== 'pool_selection') return false;
 
   const connectedPlayers = gameState.players.filter(p => p.connected);
   const picksCount = connectedPlayers.filter(p =>

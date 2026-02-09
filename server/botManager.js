@@ -1,6 +1,5 @@
 const gameState = require('./gameState');
 const database = require('./database');
-const {RoundVariant} = require("../src/types/game");
 
 // Logging helper - silent in test environment
 const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
@@ -176,8 +175,21 @@ function scheduleBotAnswers(roomCode, io) {
 
         // Check if round is complete
         if (gameState.isRoundComplete(roomCode)) {
-          gameState.completeRound(roomCode);
-          io.to(roomCode).emit('allAnswersIn');
+          const state = gameState.getGameState(roomCode);
+          if (state.currentRound.variant === 'pool_selection') {
+            // Transition to selecting phase
+            gameState.startSelecting(roomCode);
+            const answerPool = gameState.getAnswerPool(roomCode);
+            io.to(roomCode).emit('poolReady', {
+              answers: answerPool,
+              gameState: gameState.getGameState(roomCode)
+            });
+            // Schedule bot picks
+            scheduleBotPicks(roomCode, io);
+          } else {
+            gameState.completeRound(roomCode);
+            io.to(roomCode).emit('allAnswersIn');
+          }
         }
       } catch (err) {
         console.error(`Bot answer error (${bot.name}):`, err);
@@ -204,7 +216,7 @@ function cancelBotTimers(roomCode) {
 function scheduleBotPicks(roomCode, io) {
   const state = gameState.getGameState(roomCode);
   if (!state || !state.currentRound) return;
-  if (state.currentRound.variant !== RoundVariant.POOL_SELECTION) return;
+  if (state.currentRound.variant !== 'pool_selection') return;
 
   // Get existing timers or create new set
   let timers = botTimers.get(roomCode);

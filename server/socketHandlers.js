@@ -3,7 +3,6 @@ const database = require('./database');
 const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 const botManager = require('./botManager');
-const {RoundVariant} = require("../src/types/game");
 
 // Track pending room deletions (for host disconnect grace period)
 const pendingDeletions = new Map();
@@ -492,7 +491,7 @@ function setupSocketHandlers(io) {
         // Check if round is complete
         if (gameState.isRoundComplete(roomCode)) {
           // For pool_selection, emit poolReady instead of allAnswersIn
-          if (state.currentRound.variant === RoundVariant.POOL_SELECTION) {
+          if (state.currentRound.variant === 'pool_selection') {
             // Transition to selecting phase
             gameState.startSelecting(roomCode);
             const answerPool = gameState.getAnswerPool(roomCode);

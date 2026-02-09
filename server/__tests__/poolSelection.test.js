@@ -55,6 +55,29 @@ describe('Pool Selection Variant', () => {
     });
   });
 
+  describe('startSelecting', () => {
+    it('transitions round to selecting phase', () => {
+      gameState.startRound(roomCode, 'Favorite food?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', 'Pizza', 1000);
+      gameState.submitAnswer(roomCode, 'player2-socket', 'Sushi', 1200);
+      gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+
+      gameState.startSelecting(roomCode);
+      const state = gameState.getGameState(roomCode);
+
+      expect(state.currentRound.status).toBe('selecting');
+    });
+
+    it('rejects non-pool_selection rounds', () => {
+      gameState.startRound(roomCode, 'Open ended?', 'open_ended');
+
+      expect(() => {
+        gameState.startSelecting(roomCode);
+      }).toThrow('Not a pool selection round');
+    });
+  });
+
   describe('submitPick', () => {
     beforeEach(() => {
       gameState.startRound(roomCode, 'Favorite food?', 'pool_selection');
@@ -113,6 +136,7 @@ describe('Pool Selection Variant', () => {
       gameState.submitAnswer(roomCode, 'player2-socket', 'Sushi', 1200);
       gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
       gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
     });
 
     it('returns false when no picks', () => {
@@ -212,6 +236,7 @@ describe('Pool Selection Variant', () => {
       gameState.submitAnswer(roomCode, 'player2-socket', 'Sushi', 1200);
       gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
       gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
     });
 
     it('returns empty array when no one picked the answer', () => {
@@ -277,6 +302,7 @@ describe('Pool Selection Variant', () => {
       gameState.submitAnswer(roomCode, 'player2-socket', 'Sushi', 1200);
       gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
       gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
     });
 
     it('returns empty correctPickers when partner picked wrong', () => {
@@ -334,6 +360,9 @@ describe('Pool Selection Variant', () => {
       gameState.submitAnswer(roomCode, 'player4-socket', 'London', 1100);
 
       expect(gameState.isRoundComplete(roomCode)).toBe(true);
+
+      // Transition to selecting phase
+      gameState.startSelecting(roomCode);
 
       // Get answer pool
       const pool = gameState.getAnswerPool(roomCode);

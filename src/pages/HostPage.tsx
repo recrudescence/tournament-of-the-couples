@@ -60,6 +60,10 @@ export function HostPage() {
   const allAnswersIn = phase === 'answering' && playerCount > 0 && submittedCount >= playerCount;
   const isImportedMode = Boolean(gameState?.importedQuestions);
 
+  // Pool selection derived values
+  const picksSubmitted = gameState?.currentRound?.picksSubmitted ?? [];
+  const allPicksIn = playerCount > 0 && picksSubmitted.length >= playerCount;
+
   const gameStatus = useMemo(() => {
     if (phase === 'roundSetup') return 'Setting Up';
     if (phase === 'reveal') return 'Revealing';
@@ -489,6 +493,8 @@ export function HostPage() {
                   allAnswersIn={allAnswersIn}
                   onReopenAnswering={handleReopenAnswering}
                   onStartScoring={handleStartScoring}
+                  picksSubmitted={picksSubmitted}
+                  allPicksIn={allPicksIn}
                 />
               )}
 

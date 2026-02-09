@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
@@ -6,6 +6,7 @@ import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
 import {useWakeLock} from '../hooks/useWakeLock';
 import {useTimer} from '../hooks/useTimer';
+import {useCountdown} from '../hooks/useCountdown';
 import {ExitButton} from '../components/common/ExitButton';
 import {PlayerHeader} from '../components/player/PlayerHeader';
 import {WaitingStatus} from '../components/player/WaitingStatus';
@@ -71,6 +72,10 @@ export function PlayerPage() {
   const [selectedOption, setSelectedOption] = useState('');
   const [dualAnswers, setDualAnswers] = useState<{ self: string; partner: string }>({ self: '', partner: '' });
 
+  // Ref to access current answer in countdown expiry callback
+  const answerRef = useRef(answer);
+  useEffect(() => { answerRef.current = answer; }, [answer]);
+
   // UI feedback state (ephemeral, genuinely local)
   const [myTeamPointsThisRound, setMyTeamPointsThisRound] = useState<number | null>(null);
 
@@ -92,6 +97,23 @@ export function PlayerPage() {
 
   const { error, showError } = useGameError();
   const { responseTime, startTimer, stopTimer, getFinalTime } = useTimer();
+
+  // Ref to track if auto-submit has been triggered (prevents duplicate submissions)
+  const autoSubmittedRef = useRef(false);
+
+  // Auto-submit handler for countdown expiry (pool selection)
+  const handleCountdownExpire = useCallback(() => {
+    // Will be filled in after we have access to answer state
+  }, []);
+
+  // Countdown for pool selection rounds (30 seconds)
+  const {
+    remaining: countdownRemaining,
+    isExpired: countdownExpired,
+    start: startCountdown,
+    stop: stopCountdown,
+    reset: resetCountdown
+  } = useCountdown({ onExpire: handleCountdownExpire });
 
   // Derive phase and round info from gameState (single source of truth)
   const phase = derivePlayerPhase(gameState, playerInfo?.name);
@@ -155,11 +177,35 @@ export function PlayerPage() {
   }, [gameState?.status, wakeLockSupported, requestWakeLock]);
 
   // Start timer when entering answering phase (on mount or when round changes)
+  // Pool selection uses countdown, other variants use count-up timer
   useEffect(() => {
     if (phase === 'answering' && currentRound?.createdAt) {
-      startTimer(currentRound.createdAt);
+      autoSubmittedRef.current = false; // Reset auto-submit flag for new round
+      if (currentRound.variant === RoundVariant.POOL_SELECTION) {
+        startCountdown(currentRound.createdAt);
+      } else {
+        startTimer(currentRound.createdAt);
+      }
     }
-  }, [phase, currentRound?.createdAt, startTimer]);
+  }, [phase, currentRound?.createdAt, currentRound?.variant, startTimer, startCountdown]);
+
+  // Auto-submit when countdown expires for pool selection
+  useEffect(() => {
+    if (
+      countdownExpired &&
+      phase === 'answering' &&
+      currentRound?.variant === RoundVariant.POOL_SELECTION &&
+      !hasSubmitted &&
+      !autoSubmittedRef.current
+    ) {
+      autoSubmittedRef.current = true;
+      const currentAnswer = answerRef.current.trim();
+      if (currentAnswer) {
+        emit('submitAnswer', { answer: currentAnswer, responseTime: 30000 });
+      }
+      // If no answer provided, user just misses the round (can't submit empty)
+    }
+  }, [countdownExpired, phase, currentRound?.variant, hasSubmitted, emit]);
 
   // Pre-fill answer from previous submission when returning to answering phase
   // Only runs when phase changes to 'answering' (not when other players submit)
@@ -193,6 +239,7 @@ export function PlayerPage() {
         setResponseTimes({});
         setLocalAnswerPool([]); // Reset pool for new round
         setRevealInfo(null); // Clear reveal state when round actually starts
+        resetCountdown(); // Reset countdown for new round
         startTimer(questionCreatedAt);
       }),
 
@@ -315,7 +362,7 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError, startTimer, myPlayer?.teamId, clearPlayerInfo, navigate]);
+  }, [on, dispatch, showError, startTimer, resetCountdown, myPlayer?.teamId, clearPlayerInfo, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -352,13 +399,23 @@ export function PlayerPage() {
       finalAnswer = finalAnswer.trim();
     }
 
-    stopTimer();
-    const finalResponseTime = getFinalTime();
-
-    emit('submitAnswer', {
-      answer: finalAnswer,
-      responseTime: finalResponseTime
-    });
+    // Pool selection uses countdown; others use count-up timer
+    if (variant === RoundVariant.POOL_SELECTION) {
+      stopCountdown();
+      // Response time is how much of the 30s was used (30000 - remaining)
+      const finalResponseTime = 30000 - countdownRemaining;
+      emit('submitAnswer', {
+        answer: finalAnswer,
+        responseTime: finalResponseTime
+      });
+    } else {
+      stopTimer();
+      const finalResponseTime = getFinalTime();
+      emit('submitAnswer', {
+        answer: finalAnswer,
+        responseTime: finalResponseTime
+      });
+    }
   };
 
   const handlePick = (pickedAnswer: string) => {
@@ -423,6 +480,8 @@ export function PlayerPage() {
               partner={{ name: myPartner?.name ?? '', avatar: myPartner?.avatar ?? null }}
               dualAnswers={dualAnswers}
               onDualAnswerChange={(key, value) => setDualAnswers(prev => ({ ...prev, [key]: value }))}
+              countdown={variant === RoundVariant.POOL_SELECTION ? countdownRemaining : undefined}
+              isExpired={variant === RoundVariant.POOL_SELECTION ? countdownExpired : undefined}
             />
           )}
 

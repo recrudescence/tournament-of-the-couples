@@ -19,6 +19,9 @@ interface AnswerSubmissionFormProps {
   partner: PlayerIdentity;
   dualAnswers: { self: string; partner: string };
   onDualAnswerChange: (key: 'self' | 'partner', value: string) => void;
+  // Countdown mode (pool selection)
+  countdown?: number; // Remaining time in ms (undefined = use responseTime count-up)
+  isExpired?: boolean;
 }
 
 export function AnswerSubmissionForm({
@@ -36,14 +39,21 @@ export function AnswerSubmissionForm({
   player,
   partner,
   dualAnswers,
-  onDualAnswerChange
+  onDualAnswerChange,
+  countdown,
+  isExpired
 }: AnswerSubmissionFormProps) {
+  const isCountdownMode = countdown !== undefined;
+  const timerValue = isCountdownMode ? countdown : responseTime;
+  const isLowTime = isCountdownMode && countdown < 10000; // < 10 seconds
+  const timerColor = isExpired ? 'is-danger' : isLowTime ? 'is-warning' : 'is-info';
+
   return (
     <div className="box">
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
         <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
-        <div className="tag is-mono is-info is-large">
-          {formatResponseTime(responseTime, 2)}
+        <div className={`tag is-mono ${timerColor} is-large`}>
+          {formatResponseTime(timerValue, isCountdownMode ? 1 : 2)}
         </div>
       </div>
 
