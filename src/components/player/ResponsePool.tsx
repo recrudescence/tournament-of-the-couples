@@ -44,10 +44,7 @@ export function ResponsePool({
           animate={{ scale: 1, opacity: 1 }}
           transition={springDefault}
         >
-          <span className="icon is-large has-text-success">
-            <i className="fas fa-check-circle fa-3x"></i>
-          </span>
-          <h3 className="title is-4 mt-4">Pick submitted!</h3>
+          <h3 className="title is-4">Pick submitted!</h3>
           <p className="subtitle is-6">Waiting for others to pick...</p>
         </motion.div>
       </div>

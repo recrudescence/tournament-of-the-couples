@@ -4,7 +4,7 @@ import {type CurrentRound, type Player, RoundVariant} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
 import {formatResponseTime} from '../../utils/formatUtils';
-import {springDefault} from '../../styles/motion';
+import {bubbleEntrance, bubbleFloat, bubbleFloatTransition, springDefault, staggerDelay} from '../../styles/motion';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -73,6 +73,35 @@ export function AnsweringPhase({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pool selection: show all answers while players are picking */}
+      {isPoolSelection && allAnswersIn && currentRound?.answerPool && (
+        <>
+          <h3 className="subtitle is-5 mb-3">Answer Pool</h3>
+          <div className="response-pool mb-4">
+            <AnimatePresence>
+              {currentRound.answerPool.map((answer, index) => (
+                <motion.span
+                  key={answer}
+                  animate={bubbleFloat(index)}
+                  transition={bubbleFloatTransition(index)}
+                >
+                  <motion.span
+                    variants={bubbleEntrance}
+                    initial="hidden"
+                    animate="visible"
+                    transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
+                    className="response-bubble"
+                    style={{ cursor: 'default' }}
+                  >
+                    {answer}
+                  </motion.span>
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+        </>
       )}
 
       <h3 className="subtitle is-5 mb-3">
