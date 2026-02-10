@@ -251,8 +251,8 @@ function scheduleBotPicks(roomCode, io) {
         // Get own answer to exclude
         const ownAnswer = currentState.currentRound.answers[bot.name]?.text;
 
-        // Pick a random answer that isn't their own and isn't empty
-        const availableAnswers = answerPool.filter(a => a !== ownAnswer && a && a.trim() !== '');
+        // Pick a random answer that isn't their own
+        const availableAnswers = answerPool.filter(a => a !== ownAnswer);
         if (availableAnswers.length === 0) return;
 
         const pickedAnswer = availableAnswers[Math.floor(Math.random() * availableAnswers.length)];
