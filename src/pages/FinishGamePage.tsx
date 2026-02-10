@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutGroup, motion } from 'framer-motion';
-import { usePlayerInfo } from '../hooks/usePlayerInfo';
-import { useSocket } from '../hooks/useSocket';
-import { useGameContext } from '../context/GameContext';
-import { useCelebrationConfetti } from '../hooks/useConfetti';
-import { usePodiumConfetti } from '../hooks/usePodiumConfetti';
-import { ExitButton } from '../components/common/ExitButton';
-import { TeamName } from '../components/common/TeamName';
-import { PlaceBadge } from '../components/common/PlaceBadge';
-import { ScoreDisplay } from '../components/common/ScoreDisplay';
-import type { Player, Team } from '../types/game';
-import { findPlayerBySocketId } from '../utils/playerUtils';
-import { calculateAllPlaces, sortTeamsWithTiebreaker } from '../utils/rankingUtils';
-import { springGentle } from '../styles/motion';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {LayoutGroup, motion} from 'framer-motion';
+import {usePlayerInfo} from '../hooks/usePlayerInfo';
+import {useSocket} from '../hooks/useSocket';
+import {useGameContext} from '../context/GameContext';
+import {useCelebrationConfetti} from '../hooks/useConfetti';
+import {usePodiumConfetti} from '../hooks/usePodiumConfetti';
+import {ExitButton} from '../components/common/ExitButton';
+import {TeamName} from '../components/common/TeamName';
+import {PlaceBadge} from '../components/common/PlaceBadge';
+import {ScoreDisplay} from '../components/common/ScoreDisplay';
+import type {Player, Team} from '../types/game';
+import {findPlayerBySocketId} from '../utils/playerUtils';
+import {calculateAllPlaces, sortTeamsWithTiebreaker} from '../utils/rankingUtils';
+import {springGentle} from '../styles/motion';
 
 function formatTotalTime(ms: number): string {
   const seconds = ms / 1000;
@@ -59,7 +59,7 @@ function StandingsRow({
       onMouseLeave={isHost ? () => setHovered(false) : undefined}
     >
       <div
-        className={`box ${isWinner ? 'winning-team-border' : ''}`}
+        className={`box has-background-white ${isWinner ? 'winning-team-border' : ''}`}
         style={{
           position: 'relative',
           zIndex: 1,

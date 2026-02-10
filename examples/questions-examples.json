@@ -2,7 +2,7 @@
   "title": "lil sample game with all the question types",
   "chapters": [
     {
-      "title": "the open ended questions chapter!",
+      "title": "the open ended questions section!",
       "questions": [
         {
           "question": "what is your favorite movie?",
@@ -17,7 +17,7 @@
       ]
     },
     {
-      "title": "the Multiple Choice Questions chapter",
+      "title": "the Multiple Choice Questions",
       "questions": [
         {
           "question": "what's the best comfort food?",
@@ -34,7 +34,7 @@
       ]
     },
     {
-      "title": "question style: binary chapter",
+      "title": "question style: binary picks",
       "questions": [
         {
           "question": "who is more likely to be late?",
@@ -45,6 +45,15 @@
           "question": "who's the funnier one?",
           "variant": "binary",
           "answerForBoth": true
+        }
+      ]
+    },
+    {
+      "title": "special variant: pool selection!",
+      "questions": [
+        {
+          "question": "if you could instantly learn a foreign language, what language would it be?",
+          "variant": "pool_selection"
         }
       ]
     }

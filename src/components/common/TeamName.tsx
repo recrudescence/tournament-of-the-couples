@@ -1,5 +1,5 @@
-import { PlayerAvatar } from './PlayerAvatar';
-import type { Player } from '../../types/game';
+import {PlayerAvatar} from './PlayerAvatar';
+import type {Player} from '../../types/game';
 
 interface TeamNameProps {
   player1: Player | undefined;
@@ -22,7 +22,7 @@ export function TeamName({ player1, player2, size = 'small' }: TeamNameProps) {
           </div>
         )}
       </div>
-      <span className="has-text-weight-bold">
+      <span className="has-text-weight-bold has-text-primary">
         {player1?.name ?? '?'} & {player2?.name ?? '?'}
       </span>
     </div>
