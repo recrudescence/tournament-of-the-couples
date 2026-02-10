@@ -77,6 +77,8 @@ export interface CurrentRound {
   picks?: Record<string, string>; // playerName -> picked answer text
   picksSubmitted?: string[]; // player names who submitted picks
   answerPool?: string[]; // shuffled answer texts (set when all answers are in)
+  revealedPoolAnswers?: string[]; // answer texts that have been revealed (for reconnection)
+  revealedPoolPickers?: Record<string, Player[]>; // answerText -> pickers (for reconnection)
 }
 
 export interface GameState {

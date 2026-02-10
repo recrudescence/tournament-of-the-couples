@@ -1,6 +1,6 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
-import {bubbleEntrance, bubbleFloat, bubbleFloatTransition, springDefault, staggerDelay,} from '../../styles/motion';
+import {springDefault} from '../../styles/motion';
 import type {PlayerAvatar as PlayerAvatarType} from '../../types/game';
 
 interface ResponsePoolProps {
@@ -12,6 +12,14 @@ interface ResponsePoolProps {
   onPick: (answer: string) => void;
 }
 
+interface PoolItem {
+  displayText: string;
+  actualAnswer: string;
+  isOwn: boolean;
+  isEmpty: boolean;
+  count: number; // For consolidated empty responses
+}
+
 export function ResponsePool({
   answers,
   myAnswer,
@@ -19,19 +27,81 @@ export function ResponsePool({
   hasPicked,
   onPick,
 }: ResponsePoolProps) {
-  // Track selection by index to handle duplicate answer texts
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const handleSelectAnswer = (index: number, answer: string) => {
-    if (hasPicked) return;
-    if (answer === myAnswer) return; // Can't pick own answer
+  // Check if my answer is empty
+  const myAnswerIsEmpty = !myAnswer || myAnswer.trim() === '';
 
+  // Build consolidated pool: separate real answers from empty ones
+  const poolItems = useMemo(() => {
+    const items: PoolItem[] = [];
+    let emptyCount = 0;
+    let myEmptyIncluded = false;
+
+    for (const answer of answers) {
+      const isEmpty = !answer || answer.trim() === '';
+
+      if (isEmpty) {
+        emptyCount++;
+        if (answer === myAnswer) {
+          myEmptyIncluded = true;
+        }
+      } else {
+        items.push({
+          displayText: answer,
+          actualAnswer: answer,
+          isOwn: answer === myAnswer,
+          isEmpty: false,
+          count: 1,
+        });
+      }
+    }
+
+    // Add consolidated empty response(s)
+    if (emptyCount > 0) {
+      if (myAnswerIsEmpty && myEmptyIncluded) {
+        // Player submitted empty: show their own + others consolidated
+        items.push({
+          displayText: '(no response)',
+          actualAnswer: myAnswer,
+          isOwn: true,
+          isEmpty: true,
+          count: 1,
+        });
+        if (emptyCount > 1) {
+          items.push({
+            displayText: '(no response)',
+            actualAnswer: '', // Empty string for "others"
+            isOwn: false,
+            isEmpty: true,
+            count: emptyCount - 1,
+          });
+        }
+      } else {
+        // Player submitted real answer: one consolidated empty pill
+        items.push({
+          displayText: '(no response)',
+          actualAnswer: '',
+          isOwn: false,
+          isEmpty: true,
+          count: emptyCount,
+        });
+      }
+    }
+
+    return items;
+  }, [answers, myAnswer, myAnswerIsEmpty]);
+
+  const handleSelectAnswer = (index: number) => {
+    if (hasPicked) return;
+    const item = poolItems[index];
+    if (item.isOwn) return; // Can't pick own answer (including own empty)
     setSelectedIndex(index);
   };
 
   const handleConfirm = () => {
     if (selectedIndex !== null) {
-      onPick(answers[selectedIndex]);
+      onPick(poolItems[selectedIndex].actualAnswer);
     }
   };
 
@@ -61,41 +131,28 @@ export function ResponsePool({
 
       {/* Answer Pool */}
       <div className="response-pool">
-        <AnimatePresence>
-          {answers.map((answer, index) => {
-            const isEmpty = !answer || answer.trim() === '';
-            const displayText = isEmpty ? '(no response)' : answer;
-            const isOwnAnswer = answer === myAnswer;
-            const isDisabled = isOwnAnswer || isEmpty;
-            const isSelected = index === selectedIndex;
+        {poolItems.map((item, index) => {
+          const isDisabled = item.isOwn; // Only own answer is disabled
+          const isSelected = index === selectedIndex;
 
-            return (
-              <motion.span
-                key={index}
-                animate={bubbleFloat(index)}
-                transition={bubbleFloatTransition(index)}
-              >
-              <motion.button
-                variants={bubbleEntrance}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                className={`response-bubble ${isOwnAnswer ? 'is-own' : ''} ${isEmpty ? 'is-empty' : ''} ${isSelected ? 'is-selected' : ''}`}
-                onClick={() => !isDisabled && handleSelectAnswer(index, answer)}
-                disabled={isDisabled}
-                whileHover={!isDisabled ? { scale: 1.03, y: -2 } : undefined}
-                whileTap={!isDisabled ? { scale: 0.97 } : undefined}
-              >
-                  {displayText}
-                {isOwnAnswer && (
-                  <span className="tag is-small is-light ml-2">yours</span>
-                )}
-              </motion.button>
-              </motion.span>
-            );
-          })}
-        </AnimatePresence>
+          return (
+            <button
+              key={item.actualAnswer || `empty-${item.isOwn ? 'own' : 'other'}`}
+              className={`response-bubble ${item.isOwn ? 'is-own' : ''} ${item.isEmpty && !item.isOwn ? 'is-empty-pickable' : ''} ${item.isEmpty && item.isOwn ? 'is-empty is-own' : ''} ${isSelected ? 'is-selected' : ''}`}
+              onClick={() => !isDisabled && handleSelectAnswer(index)}
+              disabled={isDisabled}
+              style={{ '--index': index } as React.CSSProperties}
+            >
+              {item.displayText}
+              {item.isOwn && (
+                <span className="tag is-small is-light ml-2">yours</span>
+              )}
+              {item.isEmpty && item.count > 1 && (
+                <span className="tag is-small is-light ml-2">×{item.count}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Confirmation */}

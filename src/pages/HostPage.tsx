@@ -51,7 +51,7 @@ export function HostPage() {
 
   // Pool selection state
   const [revealedPickers, setRevealedPickers] = useState<Record<string, Player[]>>({});
-  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; authors: Player[]; correctPickers: Player[] }>>({});
+  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }>>({});
 
   // Derived values
   const playerCount = gameState?.players.length ?? 0;
@@ -77,7 +77,31 @@ export function HostPage() {
       setRoundNumber(gameState.currentRound.roundNumber);
       if (gameState.status === 'scoring' || gameState.currentRound.status === 'complete') {
         setPhase('scoring');
-      } else if (gameState.currentRound.status === 'answering') {
+
+        // Restore revealed pool state for pool selection mode
+        if (gameState.currentRound.revealedPoolPickers) {
+          setRevealedPickers(gameState.currentRound.revealedPoolPickers);
+        }
+        if (gameState.currentRound.revealedPoolAnswers?.length) {
+          const restored: Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }> = {};
+          for (const answerText of gameState.currentRound.revealedPoolAnswers) {
+            // Find authors of this answer
+            const authors = gameState.players.filter(p =>
+              gameState.currentRound?.answers[p.name]?.text === answerText
+            );
+            const isEmptyAnswer = !answerText || answerText.trim() === '';
+            // Mark as revealed with minimal data (correctPickers already awarded, so empty is fine)
+            restored[answerText] = {
+              author: authors[0] || {} as Player,
+              authors: authors,
+              correctPickers: [], // Points already awarded, don't need to show again
+              isEmptyAnswer
+            };
+          }
+          setRevealedAuthors(restored);
+        }
+      } else if (gameState.currentRound.status === 'answering' || gameState.currentRound.status === 'selecting') {
+        // 'selecting' is pool selection mode after answers are in but before scoring
         setPhase('answering');
       }
     } else if (gameState?.status === 'playing') {
@@ -166,11 +190,15 @@ export function HostPage() {
       }),
 
       on('pickersRevealed', ({ answerText, pickers }) => {
-        setRevealedPickers(prev => ({ ...prev, [answerText]: pickers }));
+        // Normalize empty/null/undefined to empty string for consistent keying
+        const key = answerText || '';
+        setRevealedPickers(prev => ({ ...prev, [key]: pickers }));
       }),
 
-      on('authorRevealed', ({ answerText, author, authors, correctPickers }) => {
-        setRevealedAuthors(prev => ({ ...prev, [answerText]: { author, authors: authors || [author], correctPickers } }));
+      on('authorRevealed', ({ answerText, author, authors, correctPickers, isEmptyAnswer }) => {
+        // Normalize empty/null/undefined to empty string for consistent keying
+        const key = answerText || '';
+        setRevealedAuthors(prev => ({ ...prev, [key]: { author, authors: authors || [author], correctPickers, isEmptyAnswer } }));
       }),
 
       // allAnswersIn is now derived from gameState, no handler needed

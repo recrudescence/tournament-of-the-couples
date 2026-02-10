@@ -382,7 +382,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     submittedInCurrentPhase: [], // Track who has submitted in THIS answering session
     createdAt: Date.now(), // Timestamp for response time calculation (survives reconnection)
     // Pool selection specific fields
-    ...(variant === 'pool_selection' && { picks: {}, picksSubmitted: [] })
+    ...(variant === 'pool_selection' && { picks: {}, picksSubmitted: [], revealedPoolAnswers: [], revealedPoolPickers: {} })
   };
 
   log(`Round ${roundNumber} started: ${question} (${variant})`);
@@ -758,10 +758,22 @@ function submitPick(roomCode, socketId, pickedAnswer) {
     throw new Error('Invalid pick: answer not in pool');
   }
 
-  // Cannot pick own answer
+  // Cannot pick own answer (unless it's empty and others also submitted empty)
   const ownAnswer = gameState.currentRound.answers[player.name]?.text;
   if (pickedAnswer === ownAnswer) {
-    throw new Error('Cannot pick your own answer');
+    // Special case: if picking empty string, allow it if multiple people submitted empty
+    const isPickingEmpty = !pickedAnswer || pickedAnswer.trim() === '';
+    if (isPickingEmpty) {
+      const emptyCount = Object.values(gameState.currentRound.answers)
+        .filter(a => !a.text || a.text.trim() === '').length;
+      if (emptyCount <= 1) {
+        // Only the player themselves submitted empty - can't pick it
+        throw new Error('Cannot pick your own answer');
+      }
+      // Multiple empty answers exist, allow picking empty
+    } else {
+      throw new Error('Cannot pick your own answer');
+    }
   }
 
   // Store pick
@@ -883,6 +895,41 @@ function checkCorrectPick(roomCode, answerText) {
   };
 }
 
+// Check if a pool answer has already been revealed (prevents duplicate point awards)
+function isPoolAnswerRevealed(roomCode, answerText) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return false;
+
+  const revealed = gameState.currentRound.revealedPoolAnswers || [];
+  return revealed.includes(answerText);
+}
+
+// Mark a pool answer as revealed
+function markPoolAnswerRevealed(roomCode, answerText) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return;
+
+  if (!gameState.currentRound.revealedPoolAnswers) {
+    gameState.currentRound.revealedPoolAnswers = [];
+  }
+
+  if (!gameState.currentRound.revealedPoolAnswers.includes(answerText)) {
+    gameState.currentRound.revealedPoolAnswers.push(answerText);
+  }
+}
+
+// Store revealed pickers for an answer (for reconnection)
+function markPoolPickersRevealed(roomCode, answerText, pickers) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) return;
+
+  if (!gameState.currentRound.revealedPoolPickers) {
+    gameState.currentRound.revealedPoolPickers = {};
+  }
+
+  gameState.currentRound.revealedPoolPickers[answerText] = pickers;
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -925,5 +972,8 @@ module.exports = {
   getPickersForAnswer,
   getAuthorsOfAnswer,
   getAuthorOfAnswer,
-  checkCorrectPick
+  checkCorrectPick,
+  isPoolAnswerRevealed,
+  markPoolAnswerRevealed,
+  markPoolPickersRevealed
 };

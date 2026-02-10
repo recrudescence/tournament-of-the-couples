@@ -104,6 +104,35 @@ describe('Pool Selection Variant', () => {
       }).toThrow('Cannot pick your own answer');
     });
 
+    it('rejects pick of empty when only player submitted empty', () => {
+      // Start fresh round where only one player submits empty
+      gameState.startRound(roomCode, 'Empty test?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', '', 1000); // Alice empty
+      gameState.submitAnswer(roomCode, 'player2-socket', 'Sushi', 1200);
+      gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
+
+      expect(() => {
+        gameState.submitPick(roomCode, 'player1-socket', '');
+      }).toThrow('Cannot pick your own answer');
+    });
+
+    it('allows pick of empty when multiple players submitted empty', () => {
+      // Start fresh round where multiple players submit empty
+      gameState.startRound(roomCode, 'Multiple empty test?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', '', 1000); // Alice empty
+      gameState.submitAnswer(roomCode, 'player2-socket', '', 1200); // Bob empty
+      gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
+
+      // Should not throw - Alice can pick empty because Bob also submitted empty
+      expect(() => {
+        gameState.submitPick(roomCode, 'player1-socket', '');
+      }).not.toThrow();
+    });
+
     it('rejects pick when not in selecting phase', () => {
       // Start fresh round (still in answering phase)
       gameState.startRound(roomCode, 'New question?', 'pool_selection');
@@ -345,6 +374,24 @@ describe('Pool Selection Variant', () => {
       const result = gameState.checkCorrectPick(roomCode, 'Pizza');
 
       expect(result.correctPickers).toEqual([]);
+    });
+
+    it('returns correct pickers for empty answers', () => {
+      // Start fresh round with empty answers
+      gameState.startRound(roomCode, 'Empty test?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', '', 1000); // Alice empty
+      gameState.submitAnswer(roomCode, 'player2-socket', '', 1200); // Bob empty (Alice's partner)
+      gameState.submitAnswer(roomCode, 'player3-socket', 'Tacos', 900);
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
+      gameState.startSelecting(roomCode);
+
+      // Alice picks empty (guessing Bob didn't respond - correct!)
+      gameState.submitPick(roomCode, 'player1-socket', '');
+
+      const result = gameState.checkCorrectPick(roomCode, '');
+
+      expect(result.correctPickers).toHaveLength(1);
+      expect(result.correctPickers[0].name).toBe('Alice');
     });
   });
 

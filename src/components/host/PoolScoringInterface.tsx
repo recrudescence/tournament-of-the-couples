@@ -1,10 +1,27 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {TeamName} from '../common/TeamName';
-import {bubbleEntrance, buttonHover, buttonTap, springBouncy, springDefault, staggerDelay,} from '../../styles/motion';
+import {buttonHover, buttonTap, springBouncy} from '../../styles/motion';
 import type {CurrentRound, Player} from '../../types/game';
+
+// Special key for consolidated empty responses
+const EMPTY_ANSWER_KEY = '__EMPTY__';
+
+interface PoolItem {
+  key: string; // Unique key for selection (text or EMPTY_ANSWER_KEY)
+  text: string; // Actual answer text
+  displayText: string;
+  isEmpty: boolean;
+  count: number; // Number of authors (for empty consolidation)
+  pickCount: number;
+  pickersRevealed: boolean;
+  authorRevealed: boolean;
+  pickers: Player[];
+  authors: Player[];
+  correctPickers: Player[];
+}
 
 interface PoolScoringInterfaceProps {
   question: string;
@@ -13,7 +30,7 @@ interface PoolScoringInterfaceProps {
   onRevealAuthor: (answerText: string) => void;
   onFinishRound: () => void;
   revealedPickers: Record<string, Player[]>;
-  revealedAuthors: Record<string, { author: Player; authors: Player[]; correctPickers: Player[] }>;
+  revealedAuthors: Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }>;
 }
 
 export function PoolScoringInterface({
@@ -25,38 +42,84 @@ export function PoolScoringInterface({
   revealedPickers,
   revealedAuthors,
 }: PoolScoringInterfaceProps) {
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  // Build answer data
-  const answers = Object.entries(currentRound.answers || {}).map(([, answer]) => {
-    const text = answer.text;
+  // Build consolidated answer data
+  const poolItems = useMemo(() => {
+    const items: PoolItem[] = [];
     const picks = currentRound.picks || {};
-    const pickCount = Object.values(picks).filter(p => p === text).length;
-    const pickers = revealedPickers[text] || [];
-    const authorData = revealedAuthors[text];
 
-    return {
-      text,
-      pickCount,
-      pickersRevealed: text in revealedPickers,
-      authorRevealed: text in revealedAuthors,
-      pickers,
-      author: authorData?.author || null,
-      authors: authorData?.authors || [],
-      correctPickers: authorData?.correctPickers || [],
-    };
-  });
+    // Count picks for empty responses once (picks that are empty string or falsy)
+    const emptyPickCount = Object.values(picks).filter(p => !p || (p.trim() === '')).length;
 
-  const selectedAnswerData = answers.find(a => a.text === selectedAnswer);
-  const allRevealed = answers.every(a => a.authorRevealed);
-  const revealedCount = answers.filter(a => a.authorRevealed).length;
+    // Count how many empty answers there are
+    const emptyCount = Object.values(currentRound.answers || {}).filter(
+      a => !a.text || a.text.trim() === ''
+    ).length;
 
-  const handleBubbleClick = (text: string) => {
-    setSelectedAnswer(text);
+    for (const [, answer] of Object.entries(currentRound.answers || {})) {
+      const text = answer.text;
+      const isEmpty = !text || text.trim() === '';
+
+      if (!isEmpty) {
+        const pickCount = Object.values(picks).filter(p => p === text).length;
+        const pickers = revealedPickers[text] || [];
+        const authorData = revealedAuthors[text];
+
+        items.push({
+          key: text,
+          text,
+          displayText: text,
+          isEmpty: false,
+          count: 1,
+          pickCount,
+          pickersRevealed: text in revealedPickers,
+          authorRevealed: text in revealedAuthors,
+          pickers,
+          authors: authorData?.authors || [],
+          correctPickers: authorData?.correctPickers || [],
+        });
+      }
+    }
+
+    // Add consolidated empty response if any
+    if (emptyCount > 0) {
+      // For empty, we use empty string as the key for revealedPickers/revealedAuthors
+      // Check for empty string key existence using hasOwnProperty for reliability
+      const emptyPickers = revealedPickers[''] || [];
+      const emptyAuthorData = revealedAuthors[''];
+      const pickersRevealed = Object.prototype.hasOwnProperty.call(revealedPickers, '');
+      const authorRevealed = Object.prototype.hasOwnProperty.call(revealedAuthors, '');
+
+      items.push({
+        key: EMPTY_ANSWER_KEY,
+        text: '',
+        displayText: '(no response)',
+        isEmpty: true,
+        count: emptyCount,
+        pickCount: emptyPickCount,
+        pickersRevealed,
+        authorRevealed,
+        pickers: emptyPickers,
+        authors: emptyAuthorData?.authors || [],
+        correctPickers: emptyAuthorData?.correctPickers || [],
+      });
+    }
+
+    return items;
+  }, [currentRound.answers, currentRound.picks, revealedPickers, revealedAuthors]);
+
+  const selectedAnswerData = poolItems.find(a => a.key === selectedKey);
+  const allRevealed = poolItems.every(a => a.authorRevealed);
+  const revealedCount = poolItems.filter(a => a.authorRevealed).length;
+  const totalCount = poolItems.length;
+
+  const handleBubbleClick = (key: string) => {
+    setSelectedKey(key);
   };
 
   const closeModal = () => {
-    setSelectedAnswer(null);
+    setSelectedKey(null);
   };
 
   return (
@@ -70,45 +133,36 @@ export function PoolScoringInterface({
       <div className="mb-4">
         <div className="is-flex is-justify-content-space-between is-align-items-center mb-2">
           <span className="has-text-grey">Tap an answer to reveal</span>
-          <span className="has-text-grey">{revealedCount} / {answers.length} revealed</span>
+          <span className="has-text-grey">{revealedCount} / {totalCount} revealed</span>
         </div>
         <progress
           className="progress is-primary is-small"
           value={revealedCount}
-          max={answers.length}
+          max={totalCount}
         />
       </div>
 
       {/* Answer Pool */}
-      <div className="response-pool mb-5" style={{ minHeight: '120px' }}>
-        <AnimatePresence>
-          {answers.map((answer, index) => {
-            const isEmpty = !answer.text || answer.text.trim() === '';
-            const displayText = isEmpty ? '(no response)' : answer.text;
-            return (
-              <motion.span key={index}>
-                <motion.button
-                  variants={bubbleEntrance}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                  className={`response-bubble ${answer.authorRevealed ? 'is-scored' : ''} ${isEmpty ? 'is-empty' : ''}`}
-                  onClick={() => handleBubbleClick(answer.text)}
-                  whileHover={{ scale: 1.05, y: -3 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  {displayText}
-                  <span className={`tag is-small ml-2 ${answer.authorRevealed ? 'is-success' : 'is-info'}`} style={{
-                    borderRadius: '999px',
-                    minWidth: '1.5rem',
-                  }}>
-                    {answer.pickCount}
-                  </span>
-                </motion.button>
-              </motion.span>
-            );
-          })}
-        </AnimatePresence>
+      <div className="response-pool mb-5 " style={{ minHeight: '6rem' }}>
+        {poolItems.map((item, index) => (
+          <button
+            key={item.key}
+            className={`response-bubble ${item.authorRevealed ? 'is-scored' : ''} ${item.isEmpty ? 'is-empty' : ''}`}
+            onClick={() => handleBubbleClick(item.key)}
+            style={{ '--index': index } as React.CSSProperties}
+          >
+            {item.displayText}
+            {item.isEmpty && item.count > 1 && (
+              <span className="tag is-small is-light ml-2">×{item.count}</span>
+            )}
+            <span className={`tag is-small ml-2 ${item.authorRevealed ? 'is-success' : 'is-info'}`} style={{
+              borderRadius: '999px',
+              minWidth: '1.5rem',
+            }}>
+              {item.pickCount}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Finish Round Button */}
@@ -131,7 +185,7 @@ export function PoolScoringInterface({
 
       {/* Answer Modal */}
       <AnimatePresence>
-        {selectedAnswer && selectedAnswerData && (
+        {selectedKey && selectedAnswerData && (
           <motion.div
             className="modal is-active"
             initial={{ opacity: 0 }}
@@ -203,8 +257,8 @@ export function PoolScoringInterface({
                               }}
                               title={picker.name + (isCorrect ? ' ✓' : '')}
                               onAnimationComplete={() => {
-                                if (isCorrect) {
-                                  // Fire confetti from this element's position
+                                // Fire confetti for correct picks, but not for empty/no-response answers
+                                if (isCorrect && !selectedAnswerData.isEmpty) {
                                   const el = document.querySelector(`[data-picker-id="${picker.socketId}"]`);
                                   if (el) {
                                     const rect = el.getBoundingClientRect();
@@ -269,12 +323,14 @@ export function PoolScoringInterface({
                       className="has-text-centered"
                     >
                       <div className="title is-4 mt-3 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap" style={{ gap: '0.75rem' }}>
-                        Written by:
+                        {!selectedAnswerData.isEmpty && 'Written by:'}
                         {selectedAnswerData.authors.map((author, idx) => (
                           <span key={author.socketId} className="is-flex is-align-items-center" style={{ gap: '0.25rem' }}>
                             <PlayerAvatar avatar={author.avatar} size="large" />
                             {author.name}
-                            {idx < selectedAnswerData.authors.length - 1 && <span>&</span>}
+                            {idx < selectedAnswerData.authors.length - 1 && (
+                              <span>{selectedAnswerData.isEmpty ? ',' : '&'}</span>
+                            )}
                           </span>
                         ))}
                       </div>
@@ -283,36 +339,58 @@ export function PoolScoringInterface({
                 </div>
               </div>
 
-              {/* Floating +1 point badge(s) - one per correct picker */}
+              {/* Floating badge(s) for correct pickers */}
               <AnimatePresence>
-                {selectedAnswerData.authorRevealed && selectedAnswerData.correctPickers.map((picker, idx) => {
-                  // Find the author that this picker is partnered with
-                  const partnerAuthor = selectedAnswerData.authors.find(a => a.partnerId === picker.socketId);
-                  return (
+                {selectedAnswerData.authorRevealed && selectedAnswerData.correctPickers.length > 0 && (
+                  selectedAnswerData.isEmpty ? (
+                    // Empty answer: show consolidated "no points" message
                     <motion.div
-                      key={picker.socketId}
+                      key="no-points"
                       initial={{ opacity: 0, rotateX: -90, y: -20 }}
                       animate={{ opacity: 1, rotateX: 0, y: 0 }}
                       exit={{ opacity: 0, rotateX: 90, y: -20 }}
-                      transition={{ ...springBouncy, delay: 0.3 + idx * 0.15 }}
-                      className="notification is-success is-flex is-align-items-center is-justify-content-center"
+                      transition={{ ...springBouncy, delay: 0.3 }}
+                      className="notification is-info is-flex is-align-items-center is-justify-content-center"
                       style={{
                         gap: '0.5rem',
-                        marginTop: idx === 0 ? '1rem' : '0.5rem',
+                        marginTop: '1rem',
                         transformOrigin: 'top center',
                         perspective: 800,
                       }}
                     >
-                      <strong>+1 point</strong> for
-                      <TeamName
-                        player1={picker}
-                        player2={partnerAuthor}
-                        size="small"
-                      />
-                      !
+                      <strong>correct guesses!</strong> but no points
                     </motion.div>
-                  );
-                })}
+                  ) : (
+                    // Regular answer: show +1 point per correct picker
+                    selectedAnswerData.correctPickers.map((picker, idx) => {
+                      const partnerAuthor = selectedAnswerData.authors.find(a => a.partnerId === picker.socketId);
+                      return (
+                        <motion.div
+                          key={picker.socketId}
+                          initial={{ opacity: 0, rotateX: -90, y: -20 }}
+                          animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                          exit={{ opacity: 0, rotateX: 90, y: -20 }}
+                          transition={{ ...springBouncy, delay: 0.3 + idx * 0.15 }}
+                          className="notification is-success is-flex is-align-items-center is-justify-content-center"
+                          style={{
+                            gap: '0.5rem',
+                            marginTop: idx === 0 ? '1rem' : '0.5rem',
+                            transformOrigin: 'top center',
+                            perspective: 800,
+                          }}
+                        >
+                          <strong>+1 point</strong> for
+                          <TeamName
+                            player1={picker}
+                            player2={partnerAuthor}
+                            size="small"
+                          />
+                          !
+                        </motion.div>
+                      );
+                    })
+                  )
+                )}
               </AnimatePresence>
             </motion.div>
             <button

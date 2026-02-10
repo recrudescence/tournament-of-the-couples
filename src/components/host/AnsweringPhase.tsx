@@ -5,7 +5,7 @@ import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
 import {useCountdown} from '../../hooks/useCountdown';
 import {formatResponseTime} from '../../utils/formatUtils';
-import {bubbleEntrance, springDefault, staggerDelay} from '../../styles/motion';
+import {springDefault} from '../../styles/motion';
 
 interface AnsweringPhaseProps {
   question: string;
@@ -114,33 +114,36 @@ export function AnsweringPhase({
       )}
 
       {/* Pool selection: show all answers while players are picking */}
-      {isPoolSelection && allAnswersIn && currentRound?.answerPool && (
-        <>
-          <h3 className="subtitle is-5 mb-3">Answer Pool</h3>
-          <div className="response-pool mb-4">
-            <AnimatePresence>
-              {currentRound.answerPool.map((answer, index) => {
-                const isEmpty = !answer || answer.trim() === '';
-                const displayText = isEmpty ? '(no response)' : answer;
-                return (
-                  <motion.span key={index}>
-                    <motion.span
-                      variants={bubbleEntrance}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ ...springDefault, delay: staggerDelay(index, 0, 0.08) }}
-                      className={`response-bubble ${isEmpty ? 'is-empty' : ''}`}
-                      style={{ cursor: 'default' }}
-                    >
-                      {displayText}
-                    </motion.span>
-                  </motion.span>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        </>
-      )}
+      {isPoolSelection && allAnswersIn && currentRound?.answerPool && (() => {
+        // Consolidate empty responses
+        const realAnswers = currentRound.answerPool.filter(a => a && a.trim() !== '');
+        const emptyCount = currentRound.answerPool.filter(a => !a || a.trim() === '').length;
+
+        const poolItems = [
+          ...realAnswers.map(a => ({ text: a, isEmpty: false, count: 1 })),
+          ...(emptyCount > 0 ? [{ text: '(no response)', isEmpty: true, count: emptyCount }] : [])
+        ];
+
+        return (
+          <>
+            <h3 className="subtitle is-5 mb-3">Answer Pool</h3>
+            <div className="response-pool mb-4">
+              {poolItems.map((item, index) => (
+                <span
+                  key={item.isEmpty ? 'empty' : item.text}
+                  className={`response-bubble ${item.isEmpty ? 'is-empty' : ''}`}
+                  style={{ cursor: 'default', '--index': index } as React.CSSProperties}
+                >
+                  {item.text}
+                  {item.isEmpty && item.count > 1 && (
+                    <span className="tag is-small is-light ml-2">×{item.count}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </>
+        );
+      })()}
 
       <h3 className="subtitle is-5 mb-3">
         {isSelectingPhase ? 'Pick Status' : 'Answer Status'}
