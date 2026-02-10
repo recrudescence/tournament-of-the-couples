@@ -41,9 +41,22 @@ Tournament of the Couples is a real-time multiplayer party game where pairs of p
 - Host manually scores based on matching selections
 
 **Pool Selection**
-- Players submit freeform text answers
+- Players submit freeform text answers (30-second timer, auto-submits empty if time expires)
 - Once all answers are in, answers are shuffled into an anonymous pool
 - Each player tries to guess which answer their partner wrote
-- Correct guesses automatically award 1 point
+- Correct guesses automatically award 1 point (except for empty/no-response answers which award no points but still show correct picks)
 - Host reveals pickers and authors for each answer during scoring
 - Phase flow: `answering → [all answers in] → selecting → [all picks in] → scoring → next round`
+
+**Empty/No-Response Handling (Pool Selection):**
+- Players who don't respond within 30 seconds auto-submit an empty answer
+- Empty answers are consolidated into a single "(no response)" pill in the pool
+- Players can pick "(no response)" to guess that their partner didn't respond
+- Correctly guessing a partner's empty response shows as "correct!" but awards no points
+- If multiple players submit empty, they see their own empty as a separate disabled pill marked "yours"
+
+**Reveal State Persistence:**
+- Revealed pool answers and pickers are stored server-side to prevent duplicate point awards on host refresh
+- `revealedPoolAnswers[]` tracks which answers have been revealed
+- `revealedPoolPickers{}` stores picker lists for each revealed answer
+- On host reconnection, revealed state is restored from game state

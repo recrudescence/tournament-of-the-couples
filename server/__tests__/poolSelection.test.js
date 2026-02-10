@@ -438,4 +438,67 @@ describe('Pool Selection Variant', () => {
       expect(tokyoResult.correctPickers[0].name).toBe('Dave');
     });
   });
+
+  describe('reveal tracking (prevents duplicate point awards)', () => {
+    beforeEach(() => {
+      gameState.startRound(roomCode, 'Test question?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'player2-socket', 'Answer2', 1200);
+      gameState.submitAnswer(roomCode, 'player3-socket', 'Answer3', 900);
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Answer4', 1100);
+      gameState.startSelecting(roomCode);
+      gameState.submitPick(roomCode, 'player1-socket', 'Answer2');
+      gameState.submitPick(roomCode, 'player2-socket', 'Answer1');
+      gameState.submitPick(roomCode, 'player3-socket', 'Answer4');
+      gameState.submitPick(roomCode, 'player4-socket', 'Answer3');
+      gameState.completeRound(roomCode);
+    });
+
+    it('isPoolAnswerRevealed returns false for unrevealed answers', () => {
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'Answer1')).toBe(false);
+    });
+
+    it('markPoolAnswerRevealed marks answer as revealed', () => {
+      gameState.markPoolAnswerRevealed(roomCode, 'Answer1');
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'Answer1')).toBe(true);
+    });
+
+    it('revealedPoolAnswers persists in game state', () => {
+      gameState.markPoolAnswerRevealed(roomCode, 'Answer1');
+      gameState.markPoolAnswerRevealed(roomCode, 'Answer2');
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.revealedPoolAnswers).toContain('Answer1');
+      expect(state.currentRound.revealedPoolAnswers).toContain('Answer2');
+      expect(state.currentRound.revealedPoolAnswers).not.toContain('Answer3');
+    });
+
+    it('markPoolPickersRevealed stores pickers for answer', () => {
+      const mockPickers = [{ name: 'Alice', socketId: 'player1-socket' }];
+      gameState.markPoolPickersRevealed(roomCode, 'Answer2', mockPickers);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.revealedPoolPickers['Answer2']).toEqual(mockPickers);
+    });
+
+    it('revealedPoolPickers persists across multiple answers', () => {
+      const pickers1 = [{ name: 'Alice' }];
+      const pickers2 = [{ name: 'Bob' }, { name: 'Charlie' }];
+
+      gameState.markPoolPickersRevealed(roomCode, 'Answer1', pickers1);
+      gameState.markPoolPickersRevealed(roomCode, 'Answer2', pickers2);
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.revealedPoolPickers['Answer1']).toEqual(pickers1);
+      expect(state.currentRound.revealedPoolPickers['Answer2']).toEqual(pickers2);
+    });
+
+    it('initializes revealedPoolAnswers and revealedPoolPickers on round start', () => {
+      gameState.startRound(roomCode, 'New question?', 'pool_selection');
+      const state = gameState.getGameState(roomCode);
+
+      expect(state.currentRound.revealedPoolAnswers).toEqual([]);
+      expect(state.currentRound.revealedPoolPickers).toEqual({});
+    });
+  });
 });

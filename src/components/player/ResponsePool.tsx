@@ -95,13 +95,16 @@ export function ResponsePool({
   const handleSelectAnswer = (index: number) => {
     if (hasPicked) return;
     const item = poolItems[index];
-    if (item.isOwn) return; // Can't pick own answer (including own empty)
+    if (!item || item.isOwn) return; // Can't pick own answer (including own empty)
     setSelectedIndex(index);
   };
 
   const handleConfirm = () => {
     if (selectedIndex !== null) {
-      onPick(poolItems[selectedIndex].actualAnswer);
+      const item = poolItems[selectedIndex];
+      if (item) {
+        onPick(item.actualAnswer);
+      }
     }
   };
 

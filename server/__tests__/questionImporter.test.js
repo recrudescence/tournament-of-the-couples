@@ -106,6 +106,25 @@ describe('Question Importer', () => {
       const result = questionImporter.validateQuestionSet(data);
       expect(result.valid).toBe(false);
     });
+
+    it('accepts pool_selection variant', () => {
+      const data = {
+        title: 'Test',
+        chapters: [{ title: 'Ch', questions: [{ question: 'Q', variant: 'pool_selection' }] }]
+      };
+      const result = questionImporter.validateQuestionSet(data);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects pool_selection with options', () => {
+      const data = {
+        title: 'Test',
+        chapters: [{ title: 'Ch', questions: [{ question: 'Q', variant: 'pool_selection', options: ['A'] }] }]
+      };
+      const result = questionImporter.validateQuestionSet(data);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Pool selection');
+    });
   });
 
   describe('countQuestions', () => {

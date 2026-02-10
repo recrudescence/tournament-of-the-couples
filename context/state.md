@@ -79,7 +79,12 @@ Understanding the in-memory game state structure is critical for working with th
       "Alice": "Red",                 // Alice picked the answer "Red" as her guess
       "Bob": "Blue"
     },
-    picksSubmitted: ["Alice", "Bob"]  // Array of player names who submitted picks
+    picksSubmitted: ["Alice", "Bob"], // Array of player names who submitted picks
+    answerPool: ["Red", "Blue", ...], // Shuffled answer texts (set when all answers are in, persists for reconnection)
+    revealedPoolAnswers: ["Red"],     // Answer texts that have been revealed (prevents duplicate point awards)
+    revealedPoolPickers: {            // Pickers for each revealed answer (for reconnection state restoration)
+      "Red": [{ name: "Alice", socketId: "...", avatar: {...} }]
+    }
   }
 }
 ```

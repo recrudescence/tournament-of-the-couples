@@ -3,7 +3,7 @@
  * Handles JSON import format for question sets
  */
 
-const VALID_VARIANTS = ['open_ended', 'multiple_choice', 'binary'];
+const VALID_VARIANTS = ['open_ended', 'multiple_choice', 'binary', 'pool_selection'];
 const MIN_MC_OPTIONS = 2;
 const MAX_MC_OPTIONS = 6;
 const BINARY_OPTIONS_COUNT = 2;
@@ -102,6 +102,11 @@ function validateQuestionSet(data) {
         // Open ended should not have options
         if (question.options != null && question.options.length > 0) {
           return { valid: false, error: `${questionPrefix}: Open ended questions should not have options` };
+        }
+      } else if (variant === 'pool_selection') {
+        // Pool selection should not have options
+        if (question.options != null && question.options.length > 0) {
+          return { valid: false, error: `${questionPrefix}: Pool selection questions should not have options` };
         }
       }
 
