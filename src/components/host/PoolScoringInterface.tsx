@@ -69,7 +69,7 @@ export function PoolScoringInterface({
         items.push({
           key: text,
           text,
-          displayText: text,
+          displayText: text.toLowerCase(),
           isEmpty: false,
           count: 1,
           pickCount,

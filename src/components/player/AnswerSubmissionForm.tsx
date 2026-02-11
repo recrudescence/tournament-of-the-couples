@@ -53,7 +53,7 @@ export function AnswerSubmissionForm({
   return (
     <div className="box">
       <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
-        <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
+        <h2 className="subtitle is-4 mb-0">Question {roundNumber}</h2>
         <div className={`tag is-mono ${timerColor} is-large ${timerClass}`}>
           {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
         </div>

@@ -40,7 +40,7 @@ export function QuestionReveal({
 
   return (
     <div className="box">
-      <h2 className="subtitle is-5 has-text-grey mb-4">Round {roundNumber}</h2>
+      <h2 className="subtitle is-5 has-text-grey mb-4">Question {roundNumber}</h2>
 
       <AnimatePresence mode="wait">
         {showChapterStage && (

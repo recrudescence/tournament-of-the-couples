@@ -43,7 +43,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
 
   return (
     <div className="box">
-      <h2 className="subtitle is-4 mb-4">Start New Round</h2>
+      <h2 className="subtitle is-4 mb-4">Ask New Question</h2>
 
       {/* Variant Tabs */}
       <div className="tabs is-centered is-boxed mb-4">
