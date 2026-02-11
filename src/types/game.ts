@@ -70,6 +70,7 @@ export interface CurrentRound {
   options: string[] | null;
   answerForBoth: boolean; // When true, players answer for both themselves and their partner
   status: RoundStatus;
+  roundState?: string; // Unified round state from state machine (idle, reveal_chapter, reveal_variant, answering, selecting, scoring, complete)
   answers: Record<string, Answer>; // When answerForBoth, text is JSON: { [playerName]: answer }
   submittedInCurrentPhase: string[];
   createdAt: number; // Server timestamp for response time calculation (survives reconnection)

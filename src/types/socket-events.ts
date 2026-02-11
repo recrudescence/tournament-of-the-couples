@@ -40,6 +40,12 @@ export interface ClientToServerEvents {
   // Question import
   advanceCursor: () => void;
   sendRevealUpdate: (data: { stage: string; chapterTitle?: string; variant?: string }) => void;
+
+  // Host controls: Question management
+  resetQuestion: () => void;
+  restartQuestion: () => void;
+  previousQuestion: () => void;
+  skipQuestion: () => void;
 }
 
 export interface ServerToClientEvents {
@@ -125,4 +131,30 @@ export interface ServerToClientEvents {
   }) => void;
   revealUpdate: (data: { stage: string; chapterTitle?: string; variant?: string }) => void;
   allQuestionsCompleted: () => void;
+
+  // Host controls: Question management
+  questionReset: (data: { gameState: GameState }) => void;
+  questionRestarted: (data: {
+    cursorData: {
+      chapterIndex: number;
+      questionIndex: number;
+      question: ImportedQuestion;
+      chapter: ImportedChapter;
+      isNewChapter: boolean;
+      isLastQuestion: boolean;
+    } | null;
+    gameState: GameState;
+  }) => void;
+  cursorChanged: (data: {
+    action: 'previous' | 'skip';
+    cursorData: {
+      chapterIndex: number;
+      questionIndex: number;
+      question: ImportedQuestion;
+      chapter: ImportedChapter;
+      isNewChapter: boolean;
+      isLastQuestion: boolean;
+    } | null;
+    gameState: GameState;
+  }) => void;
 }

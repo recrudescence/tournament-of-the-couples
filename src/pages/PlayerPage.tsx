@@ -345,6 +345,67 @@ export function PlayerPage() {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
         navigate('/game?room=' + state.roomCode);
       }),
+
+      // Host controls: Question management events
+      on('questionReset', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Reset all local state
+        setAnswer('');
+        setSelectedOption('');
+        setDualAnswers({ self: '', partner: '' });
+        setMyTeamPointsThisRound(null);
+        setRevealedAnswers({});
+        setResponseTimes({});
+        setLocalAnswerPool([]);
+        setRevealInfo(null);
+        resetCountdown();
+      }),
+
+      on('questionRestarted', ({ cursorData, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Reset local state
+        setAnswer('');
+        setSelectedOption('');
+        setDualAnswers({ self: '', partner: '' });
+        setMyTeamPointsThisRound(null);
+        setRevealedAnswers({});
+        setResponseTimes({});
+        setLocalAnswerPool([]);
+        resetCountdown();
+        // Set reveal info if we have cursor data
+        if (cursorData) {
+          setRevealInfo({
+            chapterTitle: cursorData.chapter.title,
+            stage: cursorData.isNewChapter ? 'chapter_title' : 'variant_context'
+          });
+        }
+      }),
+
+      on('cursorChanged', ({ cursorData, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Reset local state
+        setAnswer('');
+        setSelectedOption('');
+        setDualAnswers({ self: '', partner: '' });
+        setMyTeamPointsThisRound(null);
+        setRevealedAnswers({});
+        setResponseTimes({});
+        setLocalAnswerPool([]);
+        resetCountdown();
+        // Set reveal info for the new question
+        if (cursorData) {
+          setRevealInfo({
+            chapterTitle: cursorData.chapter.title,
+            stage: cursorData.isNewChapter ? 'chapter_title' : 'variant_context'
+          });
+        }
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());

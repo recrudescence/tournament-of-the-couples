@@ -3,6 +3,7 @@ const database = require('./database');
 const roomCodeGenerator = require('./roomCodeGenerator');
 const { handleHostJoin, handlePlayerReconnect, handleNewPlayerJoin } = require('./joinHandlers');
 const botManager = require('./botManager');
+const { RoundState, canTransition, RoundAction, canRetreatCursor, canAdvanceCursor, hasSubmittedAnswers } = require('./roundStateMachine');
 
 // Track pending room deletions (for host disconnect grace period)
 const pendingDeletions = new Map();
@@ -972,8 +973,243 @@ function setupSocketHandlers(io) {
         return;
       }
 
+      // Update round state for reveal stages
+      if (stage === 'chapter_title' && state.currentRound) {
+        gameState.setRoundState(roomCode, RoundState.REVEAL_CHAPTER);
+      } else if (stage === 'variant_context' && state.currentRound) {
+        gameState.setRoundState(roomCode, RoundState.REVEAL_VARIANT);
+      }
+
       // Broadcast to all players in the room
       io.to(roomCode).emit('revealUpdate', { stage, chapterTitle, variant });
+    });
+
+    // ========================================================================
+    // HOST CONTROLS: Question Management
+    // ========================================================================
+
+    // Reset Question (manual mode only) - discard current question, return to question entry
+    socket.on('resetQuestion', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can reset questions' });
+        return;
+      }
+
+      // Check if this action is valid
+      if (!canTransition(roomCode, RoundAction.RESET_QUESTION)) {
+        socket.emit('error', { message: 'Cannot reset question in current state (reset is only for manual mode)' });
+        return;
+      }
+
+      try {
+        // Cancel any pending bot timers or pool selection timeouts
+        botManager.cancelBotTimers(roomCode);
+        if (poolSelectionTimeouts.has(roomCode)) {
+          clearTimeout(poolSelectionTimeouts.get(roomCode));
+          poolSelectionTimeouts.delete(roomCode);
+        }
+
+        // Clear round data but keep game in playing state
+        gameState.clearCurrentRound(roomCode);
+
+        const updatedState = gameState.getGameState(roomCode);
+        console.log(`[Reset] Room ${roomCode}: question reset, returning to question entry`);
+
+        io.to(roomCode).emit('questionReset', {
+          gameState: updatedState
+        });
+      } catch (err) {
+        console.error('Reset question error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Restart Question (imported mode only) - clear answers, restart from reveal phase
+    socket.on('restartQuestion', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can restart questions' });
+        return;
+      }
+
+      // Check if this action is valid
+      if (!canTransition(roomCode, RoundAction.RESTART_QUESTION)) {
+        socket.emit('error', { message: 'Cannot restart question in current state (restart is only for imported mode)' });
+        return;
+      }
+
+      try {
+        // Cancel any pending bot timers or pool selection timeouts
+        botManager.cancelBotTimers(roomCode);
+        if (poolSelectionTimeouts.has(roomCode)) {
+          clearTimeout(poolSelectionTimeouts.get(roomCode));
+          poolSelectionTimeouts.delete(roomCode);
+        }
+
+        // Get current question data before clearing round
+        const cursorData = gameState.getCurrentQuestion(roomCode);
+
+        // Clear round data
+        gameState.clearCurrentRound(roomCode);
+
+        const updatedState = gameState.getGameState(roomCode);
+        console.log(`[Restart] Room ${roomCode}: question restarted at ch${cursorData?.chapterIndex}:q${cursorData?.questionIndex}`);
+
+        io.to(roomCode).emit('questionRestarted', {
+          cursorData,
+          gameState: updatedState
+        });
+      } catch (err) {
+        console.error('Restart question error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Previous Question (imported mode only) - go back one question
+    socket.on('previousQuestion', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can navigate questions' });
+        return;
+      }
+
+      // Check if this action is valid
+      if (!canTransition(roomCode, RoundAction.PREVIOUS_QUESTION)) {
+        socket.emit('error', { message: 'Cannot go to previous question in current state' });
+        return;
+      }
+
+      // Check if we can actually retreat
+      if (!canRetreatCursor(roomCode)) {
+        socket.emit('error', { message: 'Already at first question' });
+        return;
+      }
+
+      try {
+        // Cancel any pending bot timers or pool selection timeouts
+        botManager.cancelBotTimers(roomCode);
+        if (poolSelectionTimeouts.has(roomCode)) {
+          clearTimeout(poolSelectionTimeouts.get(roomCode));
+          poolSelectionTimeouts.delete(roomCode);
+        }
+
+        // Clear current round
+        gameState.clearCurrentRound(roomCode);
+
+        // Retreat cursor
+        const cursorData = gameState.retreatCursor(roomCode);
+
+        const updatedState = gameState.getGameState(roomCode);
+        console.log(`[Previous] Room ${roomCode}: cursor moved to ch${cursorData?.chapterIndex}:q${cursorData?.questionIndex}`);
+
+        io.to(roomCode).emit('cursorChanged', {
+          action: 'previous',
+          cursorData,
+          gameState: updatedState
+        });
+      } catch (err) {
+        console.error('Previous question error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Skip Question (imported mode only) - skip to next question
+    socket.on('skipQuestion', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      const state = gameState.getGameState(roomCode);
+      if (!state) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      // Verify requester is the host
+      if (!state.host || state.host.socketId !== socket.id) {
+        socket.emit('error', { message: 'Only the host can navigate questions' });
+        return;
+      }
+
+      // Check if this action is valid
+      if (!canTransition(roomCode, RoundAction.SKIP_QUESTION)) {
+        socket.emit('error', { message: 'Cannot skip question in current state' });
+        return;
+      }
+
+      // Check if we can actually advance
+      if (!canAdvanceCursor(roomCode)) {
+        // At last question - emit allQuestionsCompleted
+        console.log(`[Skip] Room ${roomCode}: at last question, emitting allQuestionsCompleted`);
+        io.to(roomCode).emit('allQuestionsCompleted');
+        return;
+      }
+
+      try {
+        // Cancel any pending bot timers or pool selection timeouts
+        botManager.cancelBotTimers(roomCode);
+        if (poolSelectionTimeouts.has(roomCode)) {
+          clearTimeout(poolSelectionTimeouts.get(roomCode));
+          poolSelectionTimeouts.delete(roomCode);
+        }
+
+        // Clear current round
+        gameState.clearCurrentRound(roomCode);
+
+        // Advance cursor
+        const cursorData = gameState.advanceCursor(roomCode);
+
+        const updatedState = gameState.getGameState(roomCode);
+        console.log(`[Skip] Room ${roomCode}: cursor moved to ch${cursorData?.chapterIndex}:q${cursorData?.questionIndex}`);
+
+        io.to(roomCode).emit('cursorChanged', {
+          action: 'skip',
+          cursorData,
+          gameState: updatedState
+        });
+      } catch (err) {
+        console.error('Skip question error:', err);
+        socket.emit('error', { message: err.message });
+      }
     });
 
     // Handle disconnection

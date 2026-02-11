@@ -378,6 +378,7 @@ function startRound(roomCode, question, variant = 'open_ended', options = null, 
     options,
     answerForBoth, // When true, players answer for both themselves and their partner
     status: 'answering',
+    roundState: 'answering', // Unified round state for state machine
     answers: {},
     submittedInCurrentPhase: [], // Track who has submitted in THIS answering session
     createdAt: Date.now(), // Timestamp for response time calculation (survives reconnection)
@@ -930,6 +931,141 @@ function markPoolPickersRevealed(roomCode, answerText, pickers) {
   gameState.currentRound.revealedPoolPickers[answerText] = pickers;
 }
 
+// ============================================================================
+// CURSOR MANIPULATION FUNCTIONS
+// ============================================================================
+
+// Retreat cursor to previous question
+// Returns cursor data like advanceCursor, or null if at first question
+function retreatCursor(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (!gameState.importedQuestions) {
+    throw new Error('No imported questions');
+  }
+
+  let cursor = gameState.questionCursor;
+  const chapters = gameState.importedQuestions.chapters;
+
+  if (!cursor) {
+    throw new Error('Cursor not initialized');
+  }
+
+  let isNewChapter = false;
+
+  if (cursor.questionIndex > 0) {
+    // Previous question in same chapter
+    cursor = { chapterIndex: cursor.chapterIndex, questionIndex: cursor.questionIndex - 1 };
+  } else if (cursor.chapterIndex > 0) {
+    // Last question of previous chapter
+    const prevChapter = chapters[cursor.chapterIndex - 1];
+    cursor = { chapterIndex: cursor.chapterIndex - 1, questionIndex: prevChapter.questions.length - 1 };
+    isNewChapter = true; // Entering a different chapter
+  } else {
+    // Already at first question
+    return null;
+  }
+
+  gameState.questionCursor = cursor;
+
+  const chapter = chapters[cursor.chapterIndex];
+  const question = chapter.questions[cursor.questionIndex];
+
+  // Determine if this is the last question overall
+  const isLastChapter = cursor.chapterIndex === chapters.length - 1;
+  const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
+  const isLastQuestion = isLastChapter && isLastQuestionInChapter;
+
+  log(`Retreated to Chapter ${cursor.chapterIndex + 1}, Question ${cursor.questionIndex + 1}`);
+
+  return {
+    chapterIndex: cursor.chapterIndex,
+    questionIndex: cursor.questionIndex,
+    question,
+    chapter: { title: chapter.title },
+    isNewChapter,
+    isLastQuestion
+  };
+}
+
+// Set cursor to an arbitrary position
+function setCursor(roomCode, chapterIndex, questionIndex) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (!gameState.importedQuestions) {
+    throw new Error('No imported questions');
+  }
+
+  const chapters = gameState.importedQuestions.chapters;
+
+  // Validate position
+  if (chapterIndex < 0 || chapterIndex >= chapters.length) {
+    throw new Error('Invalid chapter index');
+  }
+
+  const chapter = chapters[chapterIndex];
+  if (questionIndex < 0 || questionIndex >= chapter.questions.length) {
+    throw new Error('Invalid question index');
+  }
+
+  const oldCursor = gameState.questionCursor;
+  const isNewChapter = !oldCursor || oldCursor.chapterIndex !== chapterIndex;
+
+  gameState.questionCursor = { chapterIndex, questionIndex };
+
+  const question = chapter.questions[questionIndex];
+
+  // Determine if this is the last question overall
+  const isLastChapter = chapterIndex === chapters.length - 1;
+  const isLastQuestionInChapter = questionIndex === chapter.questions.length - 1;
+  const isLastQuestion = isLastChapter && isLastQuestionInChapter;
+
+  log(`Set cursor to Chapter ${chapterIndex + 1}, Question ${questionIndex + 1}`);
+
+  return {
+    chapterIndex,
+    questionIndex,
+    question,
+    chapter: { title: chapter.title },
+    isNewChapter,
+    isLastQuestion
+  };
+}
+
+// Clear current round data for reset/restart
+// Preserves cursor position, clears round state
+function clearCurrentRound(roomCode) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  gameState.currentRound = null;
+  gameState.status = 'playing';
+
+  log('Current round cleared');
+}
+
+// Set the round state (for state machine transitions)
+function setRoundState(roomCode, roundState) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState) {
+    throw new Error('Game not initialized');
+  }
+
+  if (gameState.currentRound) {
+    gameState.currentRound.roundState = roundState;
+  }
+
+  log(`Round state set to: ${roundState}`);
+}
+
 module.exports = {
   initializeGame,
   addPlayer,
@@ -975,5 +1111,10 @@ module.exports = {
   checkCorrectPick,
   isPoolAnswerRevealed,
   markPoolAnswerRevealed,
-  markPoolPickersRevealed
+  markPoolPickersRevealed,
+  // Cursor manipulation (for host controls)
+  retreatCursor,
+  setCursor,
+  clearCurrentRound,
+  setRoundState,
 };

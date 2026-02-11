@@ -262,10 +262,17 @@ describe('Component Smoke Tests', () => {
             players={[]}
             phase="roundSetup"
             allAnswersIn={false}
+            isImportedMode={false}
+            questionCursor={null}
+            importedQuestions={null}
             onKickPlayer={vi.fn()}
             onReopenAnswering={vi.fn()}
             onStartScoring={vi.fn()}
             onResetGame={vi.fn()}
+            onResetQuestion={vi.fn()}
+            onRestartQuestion={vi.fn()}
+            onPreviousQuestion={vi.fn()}
+            onSkipQuestion={vi.fn()}
           />
         );
 

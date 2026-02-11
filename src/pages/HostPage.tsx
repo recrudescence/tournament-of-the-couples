@@ -273,6 +273,72 @@ export function HostPage() {
         setCurrentImportedQuestion(null);
         setPhase('roundSetup'); // Show completion UI in roundSetup slot
       }),
+
+      // Host controls: Question management events
+      on('questionReset', ({ gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Clear UI state
+        setRevealedAnswers(new Set());
+        setRevealedPickers({});
+        setRevealedAuthors({});
+        setTeamPointsAwarded({});
+        setRevealedResponseTimes({});
+        setShowFinishBtn(false);
+        setPhase('roundSetup');
+      }),
+
+      on('questionRestarted', ({ cursorData, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Clear UI state
+        setRevealedAnswers(new Set());
+        setRevealedPickers({});
+        setRevealedAuthors({});
+        setTeamPointsAwarded({});
+        setRevealedResponseTimes({});
+        setShowFinishBtn(false);
+        // Go back to reveal phase with current question data
+        if (cursorData) {
+          setCurrentImportedQuestion({
+            question: cursorData.question,
+            chapter: cursorData.chapter,
+            isNewChapter: cursorData.isNewChapter,
+            isLastQuestion: cursorData.isLastQuestion
+          });
+          setRevealStage(cursorData.isNewChapter ? 'chapter_title' : 'variant_context');
+          setPhase('reveal');
+        } else {
+          setPhase('roundSetup');
+        }
+      }),
+
+      on('cursorChanged', ({ cursorData, gameState: state }) => {
+        if (state) {
+          dispatch({ type: 'SET_GAME_STATE', payload: state });
+        }
+        // Clear UI state
+        setRevealedAnswers(new Set());
+        setRevealedPickers({});
+        setRevealedAuthors({});
+        setTeamPointsAwarded({});
+        setRevealedResponseTimes({});
+        setShowFinishBtn(false);
+        // Go to reveal phase with new cursor data
+        if (cursorData) {
+          setCurrentImportedQuestion({
+            question: cursorData.question,
+            chapter: cursorData.chapter,
+            isNewChapter: cursorData.isNewChapter,
+            isLastQuestion: cursorData.isLastQuestion
+          });
+          setRevealStage(cursorData.isNewChapter ? 'chapter_title' : 'variant_context');
+          setPhase('reveal');
+          setAllQuestionsCompleted(false);
+        }
+      }),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
@@ -448,6 +514,62 @@ export function HostPage() {
     emit('kickPlayer', { targetSocketId: socketId });
   };
 
+  // Host control: Reset question (manual mode) - discard and return to question entry
+  const handleResetQuestion = async () => {
+    const confirmed = await confirm({
+      title: 'reset question',
+      message: 'discard this question and return to question entry?',
+      variant: 'warning',
+      confirmText: 'reset',
+    });
+    if (confirmed) {
+      emit('resetQuestion');
+    }
+  };
+
+  // Host control: Restart question (imported mode) - clear answers and restart from reveal
+  const handleRestartQuestion = async () => {
+    const hasAnswers = Object.keys(gameState?.currentRound?.answers ?? {}).length > 0;
+    if (hasAnswers) {
+      const confirmed = await confirm({
+        title: 'restart question',
+        message: 'clear all answers and restart this question?',
+        variant: 'warning',
+        confirmText: 'restart',
+      });
+      if (!confirmed) return;
+    }
+    emit('restartQuestion');
+  };
+
+  // Host control: Previous question (imported mode)
+  const handlePreviousQuestion = async () => {
+    const hasAnswers = Object.keys(gameState?.currentRound?.answers ?? {}).length > 0;
+    if (hasAnswers) {
+      const confirmed = await confirm({
+        title: 'previous question',
+        message: 'go back to the previous question? current progress will be lost.',
+        variant: 'warning',
+        confirmText: 'go back',
+      });
+      if (!confirmed) return;
+    }
+    emit('previousQuestion');
+  };
+
+  // Host control: Skip question (imported mode)
+  const handleSkipQuestion = async () => {
+    const confirmed = await confirm({
+      title: 'skip question',
+      message: 'skip this question and move to the next one?',
+      variant: 'warning',
+      confirmText: 'skip',
+    });
+    if (confirmed) {
+      emit('skipQuestion');
+    }
+  };
+
   if (!playerInfo || !isConnected) {
     return (
       <section className="section">
@@ -572,10 +694,17 @@ export function HostPage() {
                   players={gameState?.players || []}
                   phase={phase}
                   allAnswersIn={allAnswersIn}
+                  isImportedMode={isImportedMode}
+                  questionCursor={gameState?.questionCursor ?? null}
+                  importedQuestions={gameState?.importedQuestions ?? null}
                   onKickPlayer={handleKickPlayer}
                   onReopenAnswering={handleReopenAnswering}
                   onStartScoring={handleStartScoring}
                   onResetGame={handleResetGame}
+                  onResetQuestion={handleResetQuestion}
+                  onRestartQuestion={handleRestartQuestion}
+                  onPreviousQuestion={handlePreviousQuestion}
+                  onSkipQuestion={handleSkipQuestion}
                 />
               </div>
             </div>
