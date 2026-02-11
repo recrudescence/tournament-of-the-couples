@@ -146,6 +146,23 @@ export function PlayerPage() {
     }
   }, [playerInfo, dispatch]);
 
+  // Track if we've joined this session (to avoid duplicate joins)
+  const hasJoinedRef = useRef(false);
+
+  // Join game on initial mount (handles page refresh)
+  useEffect(() => {
+    if (!hasJoinedRef.current && isConnected && playerInfo?.roomCode) {
+      hasJoinedRef.current = true;
+      console.log('Joining game on mount...');
+      emit('joinGame', {
+        roomCode: playerInfo.roomCode,
+        name: playerInfo.name,
+        isHost: playerInfo.isHost,
+        isReconnect: true,
+      });
+    }
+  }, [isConnected, playerInfo, emit]);
+
   // Re-join game on socket reconnection (handles network drops)
   useEffect(() => {
     if (reconnectCount > 0 && playerInfo?.roomCode) {
@@ -205,27 +222,51 @@ export function PlayerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, playerInfo?.name, currentRound?.roundNumber]);
 
+  // Track last known round number to detect missed rounds on reconnect
+  const lastKnownRoundRef = useRef<number | null>(null);
+
   // Socket event handlers - simplified to just update gameState
   useEffect(() => {
+    // Helper to reset all round-related local state
+    const resetRoundState = () => {
+      setAnswer('');
+      setSelectedOption('');
+      setDualAnswers({ self: '', partner: '' });
+      setMyTeamPointsThisRound(null);
+      setRevealedAnswers({});
+      setResponseTimes({});
+      setLocalAnswerPool([]);
+      setRevealInfo(null);
+      resetCountdown();
+    };
+
     const unsubscribers = [
       on('joinSuccess', ({ gameState: state }) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
+
+        // If reconnecting to an active round we haven't seen before, reset form state
+        // (handles case where player missed roundStarted event while disconnected)
+        const currentRoundNum = state.currentRound?.roundNumber ?? null;
+        if (currentRoundNum !== null && currentRoundNum !== lastKnownRoundRef.current) {
+          lastKnownRoundRef.current = currentRoundNum;
+          resetRoundState();
+          // Start timer from the round's creation time
+          if (state.currentRound?.createdAt) {
+            if (state.currentRound.variant === RoundVariant.POOL_SELECTION) {
+              startCountdown(state.currentRound.createdAt);
+            } else {
+              startTimer(state.currentRound.createdAt);
+            }
+          }
+        }
       }),
 
       on('roundStarted', ({ gameState: state, questionCreatedAt }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
+          lastKnownRoundRef.current = state.currentRound?.roundNumber ?? null;
         }
-        // Reset form inputs for new round
-        setAnswer('');
-        setSelectedOption('');
-        setDualAnswers({ self: '', partner: '' });
-        setMyTeamPointsThisRound(null);
-        setRevealedAnswers({});
-        setResponseTimes({});
-        setLocalAnswerPool([]); // Reset pool for new round
-        setRevealInfo(null); // Clear reveal state when round actually starts
-        resetCountdown(); // Reset countdown for new round
+        resetRoundState();
         startTimer(questionCreatedAt);
       }),
 
@@ -351,32 +392,14 @@ export function PlayerPage() {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
-        // Reset all local state
-        setAnswer('');
-        setSelectedOption('');
-        setDualAnswers({ self: '', partner: '' });
-        setMyTeamPointsThisRound(null);
-        setRevealedAnswers({});
-        setResponseTimes({});
-        setLocalAnswerPool([]);
-        setRevealInfo(null);
-        resetCountdown();
+        resetRoundState();
       }),
 
       on('questionRestarted', ({ cursorData, gameState: state }) => {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
-        // Reset local state
-        setAnswer('');
-        setSelectedOption('');
-        setDualAnswers({ self: '', partner: '' });
-        setMyTeamPointsThisRound(null);
-        setRevealedAnswers({});
-        setResponseTimes({});
-        setLocalAnswerPool([]);
-        resetCountdown();
-        // Set reveal info if we have cursor data
+        resetRoundState();
         if (cursorData) {
           setRevealInfo({
             chapterTitle: cursorData.chapter.title,
@@ -389,16 +412,7 @@ export function PlayerPage() {
         if (state) {
           dispatch({ type: 'SET_GAME_STATE', payload: state });
         }
-        // Reset local state
-        setAnswer('');
-        setSelectedOption('');
-        setDualAnswers({ self: '', partner: '' });
-        setMyTeamPointsThisRound(null);
-        setRevealedAnswers({});
-        setResponseTimes({});
-        setLocalAnswerPool([]);
-        resetCountdown();
-        // Set reveal info for the new question
+        resetRoundState();
         if (cursorData) {
           setRevealInfo({
             chapterTitle: cursorData.chapter.title,
@@ -409,7 +423,7 @@ export function PlayerPage() {
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
-  }, [on, dispatch, showError, startTimer, resetCountdown, myPlayer?.teamId, clearPlayerInfo, navigate]);
+  }, [on, dispatch, showError, startTimer, startCountdown, resetCountdown, myPlayer?.teamId, clearPlayerInfo, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
