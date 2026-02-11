@@ -204,7 +204,7 @@ export function FinishGamePage() {
                 const place = places.get(team.teamId) ?? i + 1;
                 return (
                   <div key={team.teamId} className={showTopTwo ? 'column is-half' : ''}>
-                    <div className={`box has-text-centered p-6 ${i === 0 ? 'has-background-primary has-text-white' : 'has-background-info-light'}`}>
+                    <div className={`box has-text-centered p-6 has-background-primary-soft has-text-white`}>
                       {hasAnyScores && <PlaceBadge place={place} size="large" />}
                       <div className="is-flex is-justify-content-center mb-3 mt-2">
                         <TeamName player1={player1} player2={player2} size="medium" />
@@ -212,9 +212,9 @@ export function FinishGamePage() {
                       <ScoreDisplay
                         score={team.score}
                         size="xlarge"
-                        color={i === 0 ? 'white' : 'auto'}
+                        color='auto'
                         highlighted
-                        className={i === 0 ? 'title is-1' : 'title is-3'}
+                        className='title'
                       />
                     </div>
                   </div>
