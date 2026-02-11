@@ -49,7 +49,7 @@ Tournament of the Couples is a real-time multiplayer party game where pairs of p
 - Phase flow: `answering → [all answers in] → selecting → [all picks in] → scoring → next round`
 
 **Empty/No-Response Handling (Pool Selection):**
-- Players who don't respond within 30 seconds auto-submit an empty answer
+- Players who don't respond within 60 seconds auto-submit an empty answer
 - Empty answers are consolidated into a single "(no response)" pill in the pool
 - Players can pick "(no response)" to guess that their partner didn't respond
 - Correctly guessing a partner's empty response shows as "correct!" but awards no points

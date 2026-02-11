@@ -42,7 +42,7 @@ export function AnsweringPhase({
   // Count-up timer for regular rounds
   const { responseTime, startTimer, stopTimer } = useTimer();
 
-  // Countdown timer for pool selection rounds (30 seconds)
+  // Countdown timer for pool selection rounds
   const {
     remaining: countdownRemaining,
     isExpired: countdownExpired,

@@ -8,9 +8,9 @@ const botManager = require('./botManager');
 const pendingDeletions = new Map();
 const HOST_DISCONNECT_GRACE_PERIOD = 5000; // 5 seconds
 
-// Track pool selection answer timeouts (30 second limit)
+// Track pool selection answer timeouts (60 second limit)
 const poolSelectionTimeouts = new Map();
-const POOL_SELECTION_DURATION = 30000; // 30 seconds
+const POOL_SELECTION_DURATION = 60000; // 60 seconds
 
 function setupSocketHandlers(io) {
   io.on('connection', (socket) => {

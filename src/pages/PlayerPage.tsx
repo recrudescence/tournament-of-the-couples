@@ -106,10 +106,10 @@ export function PlayerPage() {
     if (autoSubmittedRef.current) return;
     autoSubmittedRef.current = true;
     const currentAnswer = answerRef.current.trim();
-    emit('submitAnswer', { answer: currentAnswer, responseTime: 30000 });
+    emit('submitAnswer', { answer: currentAnswer, responseTime: 60000 });
   }, [emit]);
 
-  // Countdown for pool selection rounds (30 seconds)
+  // Countdown for pool selection rounds
   const {
     remaining: countdownRemaining,
     isExpired: countdownExpired,
@@ -388,8 +388,8 @@ export function PlayerPage() {
     // Pool selection uses countdown; others use count-up timer
     if (variant === RoundVariant.POOL_SELECTION) {
       stopCountdown();
-      // Response time is how much of the 30s was used (30000 - remaining)
-      const finalResponseTime = 30000 - countdownRemaining;
+      // Response time is how much of the 60s was used (60000 - remaining)
+      const finalResponseTime = 60000 - countdownRemaining;
       emit('submitAnswer', {
         answer: finalAnswer,
         responseTime: finalResponseTime

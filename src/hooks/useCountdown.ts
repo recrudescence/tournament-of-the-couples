@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-const POOL_SELECTION_DURATION = 30000; // 30 seconds
+const POOL_SELECTION_DURATION = 60000; // 60 seconds
 
 interface UseCountdownOptions {
   duration?: number;
