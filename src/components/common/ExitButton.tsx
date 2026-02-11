@@ -29,7 +29,8 @@ export function ExitButton() {
     <button
       onClick={handleExit}
       className="button is-info is-small exit-button-fixed"
-      title="Exit to home"
+      data-tooltip-id="tooltip"
+      data-tooltip-content="Exit to home"
     >
       ← Exit
     </button>

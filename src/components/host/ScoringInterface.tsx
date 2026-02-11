@@ -140,7 +140,8 @@ export function ScoringInterface({
                       <button
                         className="button is-light is-small"
                         onClick={() => handleReopenScoring(team.teamId, originalIndex)}
-                        title="Re-score"
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content="Re-score"
                       >
                         ↪️
                       </button>

@@ -48,7 +48,8 @@ export function PlayerAvatar({
         flexShrink: 0,
         cursor: isClickable ? 'pointer' : undefined,
       }}
-      title={title}
+      data-tooltip-id="tooltip"
+      data-tooltip-content={title}
     >
       {avatar.emoji}
     </div>

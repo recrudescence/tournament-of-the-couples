@@ -127,7 +127,8 @@ export function RoundControls({
                       className="button is-info is-small is-light"
                       onClick={onPreviousQuestion}
                       disabled={!canGoPrevious}
-                      title={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
+                      data-tooltip-id="tooltip"
+                      data-tooltip-content={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
                     >
                       ← Previous
                     </button>
@@ -135,7 +136,8 @@ export function RoundControls({
                       className="button is-info is-small is-light"
                       onClick={onSkipQuestion}
                       disabled={!canSkip}
-                      title={canSkip ? 'Skip to next question' : 'Already at last question'}
+                      data-tooltip-id="tooltip"
+                      data-tooltip-content={canSkip ? 'Skip to next question' : 'Already at last question'}
                     >
                       Skip →
                     </button>

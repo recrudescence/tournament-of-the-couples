@@ -618,3 +618,33 @@ input[type="radio"] {
   background: #FF6600;
   border-color: #CC5500;
 }
+
+/* ============================================================================
+   TOOLTIPS - Custom styling for react-tooltip (visible in screen shares)
+   ============================================================================ */
+
+.app-tooltip {
+  background: hsl(0, 0%, 98%) !important;
+  color: hsl(0, 0%, 20%) !important;
+  border: 1px solid hsl(0, 0%, 85%) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  font-size: 0.85rem !important;
+  padding: 0.4rem 0.75rem !important;
+  border-radius: 6px !important;
+  z-index: 9999 !important;
+  opacity: 1 !important;
+}
+
+.app-tooltip .react-tooltip-arrow {
+  border-color: hsl(0, 0%, 85%) !important;
+}
+
+[data-theme="halloween"] .app-tooltip {
+  background: #2A2A4E !important;
+  color: #E8E8E8 !important;
+  border-color: #4A3A6E !important;
+}
+
+[data-theme="halloween"] .app-tooltip .react-tooltip-arrow {
+  border-color: #4A3A6E !important;
+}

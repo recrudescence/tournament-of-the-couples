@@ -348,7 +348,8 @@ export function PlayerPage() {
           if (pointsAwarded < 0) {
             setMyTeamPointsThisRound(null);
           } else {
-            setMyTeamPointsThisRound(pointsAwarded);
+            // Accumulate points (pool mode may award multiple times per round)
+            setMyTeamPointsThisRound(prev => (prev ?? 0) + pointsAwarded);
           }
         }
       }),

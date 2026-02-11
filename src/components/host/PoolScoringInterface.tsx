@@ -255,7 +255,8 @@ export function PoolScoringInterface({
                                 borderRadius: '50%',
                                 boxShadow: isCorrect ? '0 0 0 3px hsl(141, 53%, 53%), 0 0 12px hsl(141, 53%, 53%)' : undefined,
                               }}
-                              title={picker.name + (isCorrect ? ' ✓' : '')}
+                              data-tooltip-id="tooltip"
+                              data-tooltip-content={picker.name + (isCorrect ? ' ✓' : '')}
                               onAnimationComplete={() => {
                                 // Fire confetti for correct picks, but not for empty/no-response answers
                                 if (isCorrect && !selectedAnswerData.isEmpty) {
@@ -371,7 +372,7 @@ export function PoolScoringInterface({
                           animate={{ opacity: 1, rotateX: 0, y: 0 }}
                           exit={{ opacity: 0, rotateX: 90, y: -20 }}
                           transition={{ ...springBouncy, delay: 0.3 + idx * 0.15 }}
-                          className="notification is-success is-flex is-align-items-center is-justify-content-center"
+                          className="notification is-secondary is-flex is-align-items-center is-justify-content-center"
                           style={{
                             gap: '0.5rem',
                             marginTop: idx === 0 ? '1rem' : '0.5rem',
