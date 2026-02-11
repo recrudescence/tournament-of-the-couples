@@ -216,7 +216,7 @@ export function PoolScoringInterface({
                 {/* Answer box with picker stickers */}
                 <div className="mb-5" style={{ position: 'relative', minHeight: '8rem' }}>
                   <div className="box has-background-white-ter has-text-centered py-5" style={{ position: 'relative' }}>
-                    <h3 className={`title is-4 mb-0 ${(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? 'has-text-grey-light' : ''}`} style={(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? { fontStyle: 'italic' } : undefined}>
+                    <h3 className={`title is-4 mb-0 ${(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? 'has-text-grey-light' : ''}`} style={{ whiteSpace: 'pre-wrap', ...(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? { fontStyle: 'italic' } : {} }}>
                       "{(!selectedAnswerData.text || selectedAnswerData.text.trim() === '') ? '(no response)' : selectedAnswerData.text}"
                     </h3>
 

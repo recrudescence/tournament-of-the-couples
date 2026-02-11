@@ -81,7 +81,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
                 id="questionInput"
                 className="textarea is-medium"
                 rows={6}
-                placeholder="What's your partner's favorite movie?"
+                placeholder="What's your partner's favorite ...?"
                 value={questionInput}
                 onChange={(e) => setQuestionInput(e.target.value)}
                 required
@@ -100,7 +100,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
                   id="mcQuestionInput"
                   className="textarea is-medium"
                   rows={4}
-                  placeholder="What's your partner's favorite color?"
+                  placeholder="What's your partner's favorite ...?"
                   value={questionInput}
                   onChange={(e) => setQuestionInput(e.target.value)}
                   required
@@ -195,7 +195,7 @@ export function QuestionForm({ onSubmit, onError }: QuestionFormProps) {
                   id="poolQuestionInput"
                   className="textarea is-medium"
                   rows={6}
-                  placeholder="What's your partner's dream vacation?"
+                  placeholder="What's your partner's dream ...?"
                   value={questionInput}
                   onChange={(e) => setQuestionInput(e.target.value)}
                   required
