@@ -1,4 +1,4 @@
-import {motion, AnimatePresence} from "framer-motion";
+import {AnimatePresence, motion} from "framer-motion";
 import {PlayerAvatar} from "../common/PlayerAvatar";
 import type {PlayerAvatar as PlayerAvatarType} from "../../types/game";
 import {flipInLeft, scalePop, springBouncy, springDefault} from "../../styles/motion";
@@ -37,7 +37,7 @@ export function HostHeader({hostName, hostAvatar, roundNumber, gameStatus}: Host
           </div>
         </div>
         <div className="column">
-          <p className="heading">Round</p>
+          <p className="heading">Question</p>
           <div style={{ perspective: 200 }}>
             <AnimatePresence mode="wait">
               <motion.span

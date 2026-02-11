@@ -40,6 +40,8 @@ const VALID_TRANSITIONS = {
     [RoundAction.REVEAL_CHAPTER]: RoundState.REVEAL_CHAPTER,
     [RoundAction.REVEAL_VARIANT]: RoundState.REVEAL_VARIANT,
     [RoundAction.START_ANSWERING]: RoundState.ANSWERING,
+    [RoundAction.PREVIOUS_QUESTION]: RoundState.IDLE,
+    [RoundAction.SKIP_QUESTION]: RoundState.IDLE,
   },
   [RoundState.REVEAL_CHAPTER]: {
     [RoundAction.REVEAL_VARIANT]: RoundState.REVEAL_VARIANT,
