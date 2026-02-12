@@ -1,78 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import NoSleep from 'nosleep.js';
 
 /**
  * Hook to prevent screen from sleeping on mobile devices
- * Uses the Wake Lock API when available
+ * Uses NoSleep.js which falls back to a hidden video loop
+ * when the Wake Lock API isn't available
  */
 export function useWakeLock() {
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
+  const noSleepRef = useRef<NoSleep | null>(null);
   const [isActive, setIsActive] = useState(false);
 
+  // Initialize NoSleep instance
   useEffect(() => {
-    // Check if Wake Lock API is supported
-    setIsSupported('wakeLock' in navigator);
+    noSleepRef.current = new NoSleep();
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
   }, []);
 
-  const requestWakeLock = useCallback(async () => {
-    if (!('wakeLock' in navigator)) {
-      return;
-    }
-
-    // Only request wake lock if document is visible
-    if (document.visibilityState !== 'visible') {
-      return;
-    }
-
-    try {
-      wakeLockRef.current = await navigator.wakeLock.request('screen');
+  const requestWakeLock = useCallback(() => {
+    if (noSleepRef.current && !isActive) {
+      noSleepRef.current.enable();
       setIsActive(true);
-
-      wakeLockRef.current.addEventListener('release', () => {
-        setIsActive(false);
-      });
-    } catch (err) {
-      console.error('[WakeLock] Failed to acquire wake lock:', err);
     }
-  }, []);
+  }, [isActive]);
 
-  const releaseWakeLock = useCallback(async () => {
-    if (wakeLockRef.current) {
-      try {
-        await wakeLockRef.current.release();
-        wakeLockRef.current = null;
-        setIsActive(false);
-      } catch (err) {
-        console.error('[WakeLock] Failed to release wake lock:', err);
-      }
+  const releaseWakeLock = useCallback(() => {
+    if (noSleepRef.current && isActive) {
+      noSleepRef.current.disable();
+      setIsActive(false);
     }
-  }, []);
-
-  // Re-acquire wake lock when page becomes visible again
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && wakeLockRef.current === null && isSupported) {
-        await requestWakeLock();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isSupported, requestWakeLock]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (wakeLockRef.current) {
-        wakeLockRef.current.release().catch(console.error);
-      }
-    };
-  }, []);
+  }, [isActive]);
 
   return {
-    isSupported,
+    isSupported: true, // NoSleep.js always works via video fallback
     isActive,
     requestWakeLock,
     releaseWakeLock,

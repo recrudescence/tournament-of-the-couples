@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Derived state pattern**: UI state derived from `gameState` where possible (not duplicated)
 - **Bulma CSS framework** for styling (imported in `main.tsx`)
 - **Framer Motion** for animations (3D transforms, spring physics, enter/exit transitions)
-- **Wake Lock API** to prevent mobile screen sleep during gameplay
+- **NoSleep.js** to prevent mobile screen sleep during gameplay (video fallback for broader browser support)
 
 **Backend:** Node.js, Express 5, Socket.io (unchanged)
 - Server code remains vanilla JavaScript
