@@ -149,11 +149,12 @@ export function PlayerPage() {
   // Track if we've joined this session (to avoid duplicate joins)
   const hasJoinedRef = useRef(false);
 
-  // Join game on initial mount (handles page refresh)
+  // Join game on initial mount (handles page refresh only)
+  // Skip if gameState already exists (came from LobbyPage transition, not a refresh)
   useEffect(() => {
-    if (!hasJoinedRef.current && isConnected && playerInfo?.roomCode) {
+    if (!hasJoinedRef.current && isConnected && playerInfo?.roomCode && !gameState) {
       hasJoinedRef.current = true;
-      console.log('Joining game on mount...');
+      console.log('Joining game on mount (page refresh)...');
       emit('joinGame', {
         roomCode: playerInfo.roomCode,
         name: playerInfo.name,
@@ -161,7 +162,7 @@ export function PlayerPage() {
         isReconnect: true,
       });
     }
-  }, [isConnected, playerInfo, emit]);
+  }, [isConnected, playerInfo, gameState, emit]);
 
   // Re-join game on socket reconnection (handles network drops)
   useEffect(() => {
