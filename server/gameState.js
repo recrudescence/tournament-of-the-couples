@@ -3,6 +3,12 @@ const roomCodeGenerator = require('./roomCodeGenerator');
 // Logging helper - silent in test environment
 const log = process.env.NODE_ENV === 'test' ? () => {} : console.log;
 
+// Normalize answer text for case-insensitive comparison
+function normalizeAnswer(text) {
+  if (!text) return '';
+  return text.toLowerCase().trim();
+}
+
 // In-memory game states - Map of roomCode -> gameState
 const gameStates = new Map();
 
@@ -753,28 +759,28 @@ function submitPick(roomCode, socketId, pickedAnswer) {
     throw new Error('Must submit answer before picking');
   }
 
-  // Validate answer exists in pool
-  const answerPool = Object.values(gameState.currentRound.answers).map(a => a.text);
-  if (!answerPool.includes(pickedAnswer)) {
+  // Validate answer exists in pool (case-insensitive)
+  const normalizedPick = normalizeAnswer(pickedAnswer);
+  const answerPool = Object.values(gameState.currentRound.answers).map(a => normalizeAnswer(a.text));
+  if (!answerPool.includes(normalizedPick)) {
     throw new Error('Invalid pick: answer not in pool');
   }
 
-  // Cannot pick own answer (unless it's empty and others also submitted empty)
+  // Cannot pick own answer UNLESS others also wrote the same answer (case-insensitive)
+  // This allows picking a duplicate answer even if you also wrote it
   const ownAnswer = gameState.currentRound.answers[player.name]?.text;
-  if (pickedAnswer === ownAnswer) {
-    // Special case: if picking empty string, allow it if multiple people submitted empty
-    const isPickingEmpty = !pickedAnswer || pickedAnswer.trim() === '';
-    if (isPickingEmpty) {
-      const emptyCount = Object.values(gameState.currentRound.answers)
-        .filter(a => !a.text || a.text.trim() === '').length;
-      if (emptyCount <= 1) {
-        // Only the player themselves submitted empty - can't pick it
-        throw new Error('Cannot pick your own answer');
-      }
-      // Multiple empty answers exist, allow picking empty
-    } else {
+  const normalizedOwn = normalizeAnswer(ownAnswer);
+
+  if (normalizedPick === normalizedOwn) {
+    // Count how many people wrote this same answer (case-insensitive)
+    const matchingAnswers = Object.values(gameState.currentRound.answers)
+      .filter(a => normalizeAnswer(a.text) === normalizedPick);
+
+    if (matchingAnswers.length <= 1) {
+      // Only the player themselves wrote this answer - can't pick it
       throw new Error('Cannot pick your own answer');
     }
+    // Multiple people wrote the same answer, allow picking it
   }
 
   // Store pick
@@ -845,14 +851,15 @@ function getPickersForAnswer(roomCode, answerText) {
   return pickers;
 }
 
-// Get ALL players who wrote a specific answer text (handles duplicates)
+// Get ALL players who wrote a specific answer text (handles duplicates, case-insensitive)
 function getAuthorsOfAnswer(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return [];
 
+  const normalizedSearch = normalizeAnswer(answerText);
   const authors = [];
   for (const [playerName, answer] of Object.entries(gameState.currentRound.answers || {})) {
-    if (answer.text === answerText) {
+    if (normalizeAnswer(answer.text) === normalizedSearch) {
       const player = gameState.players.find(p => p.name === playerName);
       if (player) authors.push(player);
     }
@@ -867,7 +874,7 @@ function getAuthorOfAnswer(roomCode, answerText) {
 }
 
 // Check if players correctly picked their partner's answer
-// Returns all correct pickers and their team IDs (handles duplicate answers)
+// Returns all correct pickers and their team IDs (handles duplicate answers, case-insensitive)
 function checkCorrectPick(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return { correctPickers: [], teamIds: [] };
@@ -875,15 +882,20 @@ function checkCorrectPick(roomCode, answerText) {
   const authors = getAuthorsOfAnswer(roomCode, answerText);
   if (authors.length === 0) return { correctPickers: [], teamIds: [] };
 
+  const normalizedAnswer = normalizeAnswer(answerText);
   const correctPickers = [];
   const teamIds = [];
 
-  // For each author, check if their partner picked this answer text
+  // For each author, check if their partner picked this answer (case-insensitive)
   for (const author of authors) {
     const partner = gameState.players.find(p => p.socketId === author.partnerId);
     if (partner) {
+      // Only check picks from players who have actually submitted a pick
+      const hasPartnerPicked = gameState.currentRound.picksSubmitted?.includes(partner.name);
+      if (!hasPartnerPicked) continue;
+
       const partnerPick = gameState.currentRound.picks[partner.name];
-      if (partnerPick === answerText) {
+      if (normalizeAnswer(partnerPick) === normalizedAnswer) {
         correctPickers.push(partner);
         if (author.teamId && !teamIds.includes(author.teamId)) {
           teamIds.push(author.teamId);
@@ -901,15 +913,17 @@ function checkCorrectPick(roomCode, answerText) {
 }
 
 // Check if a pool answer has already been revealed (prevents duplicate point awards)
+// Uses normalized comparison so "Water" and "water" are treated as the same
 function isPoolAnswerRevealed(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return false;
 
   const revealed = gameState.currentRound.revealedPoolAnswers || [];
-  return revealed.includes(answerText);
+  const normalizedSearch = normalizeAnswer(answerText);
+  return revealed.some(r => normalizeAnswer(r) === normalizedSearch);
 }
 
-// Mark a pool answer as revealed
+// Mark a pool answer as revealed (stores normalized version)
 function markPoolAnswerRevealed(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return;
@@ -918,12 +932,17 @@ function markPoolAnswerRevealed(roomCode, answerText) {
     gameState.currentRound.revealedPoolAnswers = [];
   }
 
-  if (!gameState.currentRound.revealedPoolAnswers.includes(answerText)) {
+  const normalized = normalizeAnswer(answerText);
+  const alreadyRevealed = gameState.currentRound.revealedPoolAnswers
+    .some(r => normalizeAnswer(r) === normalized);
+
+  if (!alreadyRevealed) {
     gameState.currentRound.revealedPoolAnswers.push(answerText);
   }
 }
 
 // Store revealed pickers for an answer (for reconnection)
+// Uses normalized key so all case variations map to the same pickers
 function markPoolPickersRevealed(roomCode, answerText, pickers) {
   const gameState = gameStates.get(roomCode);
   if (!gameState || !gameState.currentRound) return;
@@ -932,7 +951,8 @@ function markPoolPickersRevealed(roomCode, answerText, pickers) {
     gameState.currentRound.revealedPoolPickers = {};
   }
 
-  gameState.currentRound.revealedPoolPickers[answerText] = pickers;
+  const normalized = normalizeAnswer(answerText);
+  gameState.currentRound.revealedPoolPickers[normalized] = pickers;
 }
 
 // ============================================================================

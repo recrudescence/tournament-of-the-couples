@@ -269,6 +269,62 @@ describe('Pool Selection Variant', () => {
     });
   });
 
+  describe('case-insensitive duplicate handling', () => {
+    beforeEach(() => {
+      gameState.startRound(roomCode, 'Favorite animal?', 'pool_selection');
+      // Alice and Carol both write "Dog" (different casing)
+      gameState.submitAnswer(roomCode, 'player1-socket', 'Dog', 1000);
+      gameState.submitAnswer(roomCode, 'player2-socket', 'Cat', 1200);
+      gameState.submitAnswer(roomCode, 'player3-socket', 'DOG', 900);  // Same as Alice (different case)
+      gameState.submitAnswer(roomCode, 'player4-socket', 'Bird', 1100);
+      gameState.startSelecting(roomCode);
+    });
+
+    it('getAuthorsOfAnswer returns all authors with case-insensitive matching', () => {
+      // Both Alice (Dog) and Carol (DOG) should be found
+      const authors = gameState.getAuthorsOfAnswer(roomCode, 'dog');
+      expect(authors).toHaveLength(2);
+      expect(authors.map(a => a.name)).toContain('Alice');
+      expect(authors.map(a => a.name)).toContain('Carol');
+    });
+
+    it('allows picking duplicate answer even if you wrote the same thing', () => {
+      // Alice wrote "Dog", Carol wrote "DOG" - Alice should be able to pick "dog"
+      // because Carol also wrote it (case-insensitive)
+      expect(() => {
+        gameState.submitPick(roomCode, 'player1-socket', 'DOG');
+      }).not.toThrow();
+    });
+
+    it('checkCorrectPick finds correct pickers for duplicate answers (case-insensitive)', () => {
+      // Setup: Alice (Dog) is paired with Bob (Cat), Carol (DOG) is paired with Dave (Bird)
+      // Both Bob and Dave pick "dog" (guessing their partner wrote it)
+      gameState.submitPick(roomCode, 'player2-socket', 'Dog');  // Bob picks (for Alice)
+      gameState.submitPick(roomCode, 'player4-socket', 'dog');  // Dave picks (for Carol)
+
+      // Check "dog" answer - should find both correct pickers
+      const result = gameState.checkCorrectPick(roomCode, 'Dog');
+
+      expect(result.correctPickers).toHaveLength(2);
+      expect(result.correctPickers.map(p => p.name)).toContain('Bob');
+      expect(result.correctPickers.map(p => p.name)).toContain('Dave');
+      // Both teams should score
+      expect(result.teamIds).toHaveLength(2);
+    });
+
+    it('isPoolAnswerRevealed works with case-insensitive matching', () => {
+      gameState.markPoolAnswerRevealed(roomCode, 'Dog');
+
+      // All case variations should be considered revealed
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'Dog')).toBe(true);
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'dog')).toBe(true);
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'DOG')).toBe(true);
+
+      // Different answer should not be revealed
+      expect(gameState.isPoolAnswerRevealed(roomCode, 'Cat')).toBe(false);
+    });
+  });
+
   describe('getPickersForAnswer', () => {
     beforeEach(() => {
       gameState.startRound(roomCode, 'Favorite food?', 'pool_selection');
@@ -484,12 +540,13 @@ describe('Pool Selection Variant', () => {
       expect(state.currentRound.revealedPoolAnswers).not.toContain('Answer3');
     });
 
-    it('markPoolPickersRevealed stores pickers for answer', () => {
+    it('markPoolPickersRevealed stores pickers for answer (normalized key)', () => {
       const mockPickers = [{ name: 'Alice', socketId: 'player1-socket' }];
       gameState.markPoolPickersRevealed(roomCode, 'Answer2', mockPickers);
 
       const state = gameState.getGameState(roomCode);
-      expect(state.currentRound.revealedPoolPickers['Answer2']).toEqual(mockPickers);
+      // Keys are stored normalized (lowercase)
+      expect(state.currentRound.revealedPoolPickers['answer2']).toEqual(mockPickers);
     });
 
     it('revealedPoolPickers persists across multiple answers', () => {
@@ -500,8 +557,9 @@ describe('Pool Selection Variant', () => {
       gameState.markPoolPickersRevealed(roomCode, 'Answer2', pickers2);
 
       const state = gameState.getGameState(roomCode);
-      expect(state.currentRound.revealedPoolPickers['Answer1']).toEqual(pickers1);
-      expect(state.currentRound.revealedPoolPickers['Answer2']).toEqual(pickers2);
+      // Keys are stored normalized (lowercase)
+      expect(state.currentRound.revealedPoolPickers['answer1']).toEqual(pickers1);
+      expect(state.currentRound.revealedPoolPickers['answer2']).toEqual(pickers2);
     });
 
     it('initializes revealedPoolAnswers and revealedPoolPickers on round start', () => {

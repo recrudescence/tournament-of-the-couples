@@ -17,7 +17,12 @@ interface PoolItem {
   actualAnswer: string;
   isOwn: boolean;
   isEmpty: boolean;
-  count: number; // For consolidated empty responses
+  count: number; // For consolidated responses
+}
+
+// Normalize answer for case-insensitive grouping
+function normalizeAnswer(text: string): string {
+  return (text || '').toLowerCase().trim();
 }
 
 export function ResponsePool({
@@ -29,67 +34,92 @@ export function ResponsePool({
 }: ResponsePoolProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Find my answer text from the pool
+  // Find my answer from the pool
   const myAnswerEntry = answers.find(a => a.playerName === myPlayerName);
   const myAnswerText = myAnswerEntry?.answer ?? '';
-  const myAnswerIsEmpty = !myAnswerText || myAnswerText.trim() === '';
+  const myAnswerNormalized = normalizeAnswer(myAnswerText);
+  const myAnswerIsEmpty = !myAnswerNormalized;
 
-  // Build consolidated pool: separate real answers from empty ones
+  // Build consolidated pool:
+  // - Group duplicate answers (case-insensitive) from others
+  // - Keep viewer's own answer separate with "yours" label
+  // - If viewer's answer is duplicated by others, show both "yours" and consolidated others
   const poolItems = useMemo(() => {
     const items: PoolItem[] = [];
-    let emptyCount = 0;
+
+    // Track empty responses
+    let emptyFromOthers = 0;
     let myEmptyIncluded = false;
+
+    // Group non-empty answers by normalized text (excluding viewer's own)
+    const otherAnswerGroups = new Map<string, { displayText: string; actualAnswer: string; count: number }>();
 
     for (const entry of answers) {
       const isEmpty = !entry.answer || entry.answer.trim() === '';
       const isOwn = entry.playerName === myPlayerName;
+      const normalized = normalizeAnswer(entry.answer);
 
       if (isEmpty) {
-        emptyCount++;
         if (isOwn) {
           myEmptyIncluded = true;
+        } else {
+          emptyFromOthers++;
         }
-      } else {
+      } else if (isOwn) {
+        // Add viewer's own answer (always separate, marked "yours")
         items.push({
           displayText: entry.answer,
           actualAnswer: entry.answer,
-          isOwn,
+          isOwn: true,
           isEmpty: false,
           count: 1,
         });
+      } else {
+        // Group other players' answers by normalized text
+        const existing = otherAnswerGroups.get(normalized);
+        if (existing) {
+          existing.count++;
+        } else {
+          otherAnswerGroups.set(normalized, {
+            displayText: entry.answer,
+            actualAnswer: entry.answer,
+            count: 1,
+          });
+        }
       }
     }
 
-    // Add consolidated empty response(s)
-    if (emptyCount > 0) {
-      if (myAnswerIsEmpty && myEmptyIncluded) {
-        // Player submitted empty: show their own + others consolidated
-        items.push({
-          displayText: '(no response)',
-          actualAnswer: myAnswerText,
-          isOwn: true,
-          isEmpty: true,
-          count: 1,
-        });
-        if (emptyCount > 1) {
-          items.push({
-            displayText: '(no response)',
-            actualAnswer: '', // Empty string for "others"
-            isOwn: false,
-            isEmpty: true,
-            count: emptyCount - 1,
-          });
-        }
-      } else {
-        // Player submitted real answer: one consolidated empty pill
-        items.push({
-          displayText: '(no response)',
-          actualAnswer: '',
-          isOwn: false,
-          isEmpty: true,
-          count: emptyCount,
-        });
-      }
+    // Add consolidated groups from other players
+    for (const group of otherAnswerGroups.values()) {
+      items.push({
+        displayText: group.displayText,
+        actualAnswer: group.actualAnswer,
+        isOwn: false,
+        isEmpty: false,
+        count: group.count,
+      });
+    }
+
+    // Add consolidated empty responses
+    if (myAnswerIsEmpty && myEmptyIncluded) {
+      // Player submitted empty: show their own
+      items.push({
+        displayText: '(no response)',
+        actualAnswer: myAnswerText,
+        isOwn: true,
+        isEmpty: true,
+        count: 1,
+      });
+    }
+    if (emptyFromOthers > 0) {
+      // Consolidated empty from others
+      items.push({
+        displayText: '(no response)',
+        actualAnswer: '',
+        isOwn: false,
+        isEmpty: true,
+        count: emptyFromOthers,
+      });
     }
 
     return items;
@@ -153,7 +183,7 @@ export function ResponsePool({
               {item.isOwn && (
                 <span className="tag is-small is-light ml-2">yours</span>
               )}
-              {item.isEmpty && item.count > 1 && (
+              {!item.isOwn && item.count > 1 && (
                 <span className="tag is-small is-light ml-2">×{item.count}</span>
               )}
             </button>

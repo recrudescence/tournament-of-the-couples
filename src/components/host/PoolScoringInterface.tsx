@@ -9,12 +9,17 @@ import type {CurrentRound, Player} from '../../types/game';
 // Special key for consolidated empty responses
 const EMPTY_ANSWER_KEY = '__EMPTY__';
 
+// Normalize answer for case-insensitive grouping
+function normalizeAnswer(text: string): string {
+  return (text || '').toLowerCase().trim();
+}
+
 interface PoolItem {
-  key: string; // Unique key for selection (text or EMPTY_ANSWER_KEY)
-  text: string; // Actual answer text
+  key: string; // Unique key for selection (normalized text or EMPTY_ANSWER_KEY)
+  text: string; // One of the actual answer texts (for display/reveal calls)
   displayText: string;
   isEmpty: boolean;
-  count: number; // Number of authors (for empty consolidation)
+  count: number; // Number of authors
   pickCount: number;
   pickersRevealed: boolean;
   authorRevealed: boolean;
@@ -44,48 +49,65 @@ export function PoolScoringInterface({
 }: PoolScoringInterfaceProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  // Build consolidated answer data
+  // Build consolidated answer data (group by normalized text)
   const poolItems = useMemo(() => {
     const items: PoolItem[] = [];
     const picks = currentRound.picks || {};
 
-    // Count picks for empty responses once (picks that are empty string or falsy)
-    const emptyPickCount = Object.values(picks).filter(p => !p || (p.trim() === '')).length;
+    // Count picks for empty responses (case-insensitive: empty or whitespace only)
+    const emptyPickCount = Object.values(picks).filter(p => !p || p.trim() === '').length;
 
-    // Count how many empty answers there are
-    const emptyCount = Object.values(currentRound.answers || {}).filter(
-      a => !a.text || a.text.trim() === ''
-    ).length;
+    // Group answers by normalized text
+    const answerGroups = new Map<string, { text: string; count: number }>();
+    let emptyCount = 0;
 
     for (const [, answer] of Object.entries(currentRound.answers || {})) {
       const text = answer.text;
       const isEmpty = !text || text.trim() === '';
 
-      if (!isEmpty) {
-        const pickCount = Object.values(picks).filter(p => p === text).length;
-        const pickers = revealedPickers[text] || [];
-        const authorData = revealedAuthors[text];
-
-        items.push({
-          key: text,
-          text,
-          displayText: text.toLowerCase(),
-          isEmpty: false,
-          count: 1,
-          pickCount,
-          pickersRevealed: text in revealedPickers,
-          authorRevealed: text in revealedAuthors,
-          pickers,
-          authors: authorData?.authors || [],
-          correctPickers: authorData?.correctPickers || [],
-        });
+      if (isEmpty) {
+        emptyCount++;
+      } else {
+        const normalized = normalizeAnswer(text);
+        const existing = answerGroups.get(normalized);
+        if (existing) {
+          existing.count++;
+        } else {
+          answerGroups.set(normalized, { text, count: 1 });
+        }
       }
+    }
+
+    // Build pool items from grouped answers
+    for (const [normalized, group] of answerGroups) {
+      // Count picks for this answer (case-insensitive)
+      const pickCount = Object.values(picks).filter(
+        p => normalizeAnswer(p) === normalized
+      ).length;
+
+      // Look up revealed data by normalized key
+      const pickers = revealedPickers[normalized] || [];
+      const authorData = revealedAuthors[normalized];
+      const pickersRevealed = normalized in revealedPickers;
+      const authorRevealed = normalized in revealedAuthors;
+
+      items.push({
+        key: normalized,
+        text: group.text, // Use one of the original texts for display/reveal
+        displayText: group.text.toLowerCase(),
+        isEmpty: false,
+        count: group.count,
+        pickCount,
+        pickersRevealed,
+        authorRevealed,
+        pickers,
+        authors: authorData?.authors || [],
+        correctPickers: authorData?.correctPickers || [],
+      });
     }
 
     // Add consolidated empty response if any
     if (emptyCount > 0) {
-      // For empty, we use empty string as the key for revealedPickers/revealedAuthors
-      // Check for empty string key existence using hasOwnProperty for reliability
       const emptyPickers = revealedPickers[''] || [];
       const emptyAuthorData = revealedAuthors[''];
       const pickersRevealed = Object.prototype.hasOwnProperty.call(revealedPickers, '');
@@ -152,7 +174,7 @@ export function PoolScoringInterface({
             style={{ '--index': index } as React.CSSProperties}
           >
             {item.displayText}
-            {item.isEmpty && item.count > 1 && (
+            {item.count > 1 && (
               <span className="tag is-small is-light ml-2">×{item.count}</span>
             )}
             <span className={`tag is-small ml-2 ${item.authorRevealed ? 'is-success' : 'is-info'}`} style={{

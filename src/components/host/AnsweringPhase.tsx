@@ -115,12 +115,27 @@ export function AnsweringPhase({
 
       {/* Pool selection: show all answers while players are picking */}
       {isPoolSelection && allAnswersIn && currentRound?.answerPool && (() => {
-        // Consolidate empty responses
-        const realAnswers = currentRound.answerPool.filter(a => a.answer && a.answer.trim() !== '');
-        const emptyCount = currentRound.answerPool.filter(a => !a.answer || a.answer.trim() === '').length;
+        // Consolidate duplicate answers (case-insensitive) and empty responses
+        const answerGroups = new Map<string, { text: string; count: number }>();
+        let emptyCount = 0;
+
+        for (const entry of currentRound.answerPool) {
+          const isEmpty = !entry.answer || entry.answer.trim() === '';
+          if (isEmpty) {
+            emptyCount++;
+          } else {
+            const normalized = entry.answer.toLowerCase().trim();
+            const existing = answerGroups.get(normalized);
+            if (existing) {
+              existing.count++;
+            } else {
+              answerGroups.set(normalized, { text: entry.answer, count: 1 });
+            }
+          }
+        }
 
         const poolItems = [
-          ...realAnswers.map(a => ({ text: a.answer, isEmpty: false, count: 1 })),
+          ...Array.from(answerGroups.values()).map(g => ({ text: g.text, isEmpty: false, count: g.count })),
           ...(emptyCount > 0 ? [{ text: '(no response)', isEmpty: true, count: emptyCount }] : [])
         ];
 
@@ -130,12 +145,12 @@ export function AnsweringPhase({
             <div className="response-pool mb-4">
               {poolItems.map((item, index) => (
                 <span
-                  key={item.isEmpty ? 'empty' : item.text}
+                  key={item.isEmpty ? 'empty' : item.text.toLowerCase()}
                   className={`response-bubble ${item.isEmpty ? 'is-empty' : ''}`}
                   style={{ cursor: 'default', '--index': index } as React.CSSProperties}
                 >
                   {item.text.toLowerCase()}
-                  {item.isEmpty && item.count > 1 && (
+                  {item.count > 1 && (
                     <span className="tag is-small is-light ml-2">×{item.count}</span>
                   )}
                 </span>

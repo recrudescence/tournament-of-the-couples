@@ -20,6 +20,12 @@ import {HostHeader} from "../components/host/HostHeader.tsx";
 
 type HostPhase = 'roundSetup' | 'reveal' | 'answering' | 'scoring';
 
+// Normalize answer for case-insensitive keying
+function normalizeAnswer(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.toLowerCase().trim();
+}
+
 interface CurrentImportedQuestion {
   question: ImportedQuestion;
   chapter: ImportedChapter;
@@ -85,13 +91,16 @@ export function HostPage() {
         if (gameState.currentRound.revealedPoolAnswers?.length) {
           const restored: Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }> = {};
           for (const answerText of gameState.currentRound.revealedPoolAnswers) {
-            // Find authors of this answer
-            const authors = gameState.players.filter(p =>
-              gameState.currentRound?.answers[p.name]?.text === answerText
-            );
-            const isEmptyAnswer = !answerText || answerText.trim() === '';
+            // Find authors of this answer (case-insensitive)
+            const normalizedAnswer = normalizeAnswer(answerText);
+            const authors = gameState.players.filter(p => {
+              const playerAnswer = gameState.currentRound?.answers[p.name]?.text;
+              return normalizeAnswer(playerAnswer) === normalizedAnswer;
+            });
+            const isEmptyAnswer = !normalizedAnswer;
             // Mark as revealed with minimal data (correctPickers already awarded, so empty is fine)
-            restored[answerText] = {
+            // Use normalized key for consistency
+            restored[normalizedAnswer] = {
               author: authors[0] || {} as Player,
               authors: authors,
               correctPickers: [], // Points already awarded, don't need to show again
@@ -190,14 +199,14 @@ export function HostPage() {
       }),
 
       on('pickersRevealed', ({ answerText, pickers }) => {
-        // Normalize empty/null/undefined to empty string for consistent keying
-        const key = answerText || '';
+        // Normalize for case-insensitive keying
+        const key = normalizeAnswer(answerText);
         setRevealedPickers(prev => ({ ...prev, [key]: pickers }));
       }),
 
       on('authorRevealed', ({ answerText, author, authors, correctPickers, isEmptyAnswer }) => {
-        // Normalize empty/null/undefined to empty string for consistent keying
-        const key = answerText || '';
+        // Normalize for case-insensitive keying
+        const key = normalizeAnswer(answerText);
         setRevealedAuthors(prev => ({ ...prev, [key]: { author, authors: authors || [author], correctPickers, isEmptyAnswer } }));
       }),
 
