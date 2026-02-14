@@ -1,7 +1,7 @@
-import {motion, AnimatePresence} from 'framer-motion';
+import {AnimatePresence, motion} from 'framer-motion';
 import {Host} from "../../types/game.ts";
 import {PlayerAvatar} from "../../components/common/PlayerAvatar.tsx";
-import {chapterEntrance, springBouncy, fadeIn, springDefault} from '../../styles/motion';
+import {fadeIn, springDefault} from '../../styles/motion';
 
 interface RevealInfo {
   chapterTitle?: string;
@@ -20,39 +20,23 @@ export function WaitingStatus({ host, isInitialRound = false, revealInfo }: Wait
   if (revealInfo) {
     return (
       <AnimatePresence mode="wait">
-        {revealInfo.stage === 'chapter_title' && revealInfo.chapterTitle && (
-          <motion.div
-            key="chapter"
-            className="box has-text-centered has-background-primary has-text-white p-6"
-            variants={chapterEntrance}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={springBouncy}
-          >
-            <h2 className="title is-2 has-text-white mb-0">{revealInfo.chapterTitle}</h2>
-          </motion.div>
-        )}
-
-        {revealInfo.stage === 'variant_context' && (
-          <motion.div
-            key="ready"
-            className="box has-text-centered has-background-info-light p-5"
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={springDefault}
-          >
-            <h2 className="title is-3 mb-3">Get ready...</h2>
-            <p className="has-text-grey is-size-5">
-              {revealInfo.variant === 'binary' && 'Choose between your partner options'}
-              {revealInfo.variant === 'multiple_choice' && 'Pick from multiple choices'}
-              {revealInfo.variant === 'open_ended' && 'Share your thoughts'}
-              {!revealInfo.variant && 'The question is coming...'}
-            </p>
-          </motion.div>
-        )}
+        <motion.div
+          key="ready"
+          className="box has-text-centered has-background-info-light p-5"
+          variants={fadeIn}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          transition={springDefault}
+        >
+          <h2 className="title is-3 mb-3">Get ready...</h2>
+          <p className="has-text-grey is-size-5">
+            {revealInfo.variant === 'binary' && 'pick either you or your partner'}
+            {revealInfo.variant === 'multiple_choice' && 'pick from multiple choices'}
+            {revealInfo.variant === 'open_ended' && 'share your thoughts'}
+            {!revealInfo.variant && 'The question is coming...'}
+          </p>
+        </motion.div>
       </AnimatePresence>
     );
   }
