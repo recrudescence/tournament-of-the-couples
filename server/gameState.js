@@ -800,7 +800,7 @@ function areAllPicksIn(roomCode) {
   return picksCount === connectedPlayers.length;
 }
 
-// Get shuffled answer pool (just the text, no attribution)
+// Get shuffled answer pool with player identity (for "yours" label)
 // If pool already exists in currentRound, return it (for reconnection consistency)
 // Otherwise generate, store, and return a new shuffled pool
 function getAnswerPool(roomCode) {
@@ -812,7 +812,11 @@ function getAnswerPool(roomCode) {
     return gameState.currentRound.answerPool;
   }
 
-  const answers = Object.values(gameState.currentRound.answers).map(a => a.text);
+  // Build array with player names (for identity) and answer text
+  const answers = Object.entries(gameState.currentRound.answers).map(([playerName, a]) => ({
+    playerName,
+    answer: a.text
+  }));
 
   // Fisher-Yates shuffle
   for (let i = answers.length - 1; i > 0; i--) {

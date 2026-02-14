@@ -17,7 +17,7 @@ import {ResponsePool} from '../components/player/ResponsePool';
 import {transformBinaryOptions} from '../utils/playerUtils';
 import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
-import {GameState, RoundVariant} from '../types/game';
+import {GameState, RoundVariant, PoolAnswer} from '../types/game';
 
 type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'selecting' | 'picked' | 'scoring' | 'ended';
 
@@ -86,7 +86,7 @@ export function PlayerPage() {
   const [responseTimes, setResponseTimes] = useState<Record<string, number>>({});
 
   // Pool selection state (local state as fallback, prefer gameState.currentRound.answerPool)
-  const [localAnswerPool, setLocalAnswerPool] = useState<string[]>([]);
+  const [localAnswerPool, setLocalAnswerPool] = useState<PoolAnswer[]>([]);
 
   // Reveal sync state (for imported question mode)
   const [revealInfo, setRevealInfo] = useState<{
@@ -562,7 +562,7 @@ export function PlayerPage() {
           {(phase === 'selecting' || phase === 'picked') && answerPool.length > 0 && (
             <ResponsePool
               answers={answerPool}
-              myAnswer={submittedAnswer}
+              myPlayerName={playerInfo?.name ?? ''}
               partnerName={myPartner?.name ?? ''}
               partnerAvatar={myPartner?.avatar ?? null}
               hasPicked={phase === 'picked'}

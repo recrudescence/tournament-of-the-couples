@@ -1,4 +1,4 @@
-import type { GameState, Player, GameStatus, ImportedQuestion, ImportedChapter } from './game';
+import type { GameState, Player, GameStatus, ImportedQuestion, ImportedChapter, PoolAnswer } from './game';
 
 export interface ClientToServerEvents {
   // common
@@ -103,7 +103,7 @@ export interface ServerToClientEvents {
     gameState: GameState;
   }) => void;
   allAnswersIn: () => void;
-  poolReady: (data: { answers: string[]; gameState: GameState }) => void;
+  poolReady: (data: { answers: PoolAnswer[]; gameState: GameState }) => void;
   pickSubmitted: (data: { playerName: string; picksSubmitted: string[]; gameState: GameState }) => void;
   allPicksIn: () => void;
   scoringStarted: (data: GameState) => void;

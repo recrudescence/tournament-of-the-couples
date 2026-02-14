@@ -62,6 +62,11 @@ export interface Answer {
   responseTime: number; // milliseconds
 }
 
+export interface PoolAnswer {
+  playerName: string;
+  answer: string;
+}
+
 export interface CurrentRound {
   roundNumber: number;
   roundId: string | null;
@@ -77,7 +82,7 @@ export interface CurrentRound {
   // Pool selection specific (undefined for other variants)
   picks?: Record<string, string>; // playerName -> picked answer text
   picksSubmitted?: string[]; // player names who submitted picks
-  answerPool?: string[]; // shuffled answer texts (set when all answers are in)
+  answerPool?: PoolAnswer[]; // shuffled answers with player identity (set when all answers are in)
   revealedPoolAnswers?: string[]; // answer texts that have been revealed (for reconnection)
   revealedPoolPickers?: Record<string, Player[]>; // answerText -> pickers (for reconnection)
 }

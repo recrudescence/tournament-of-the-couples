@@ -116,11 +116,11 @@ export function AnsweringPhase({
       {/* Pool selection: show all answers while players are picking */}
       {isPoolSelection && allAnswersIn && currentRound?.answerPool && (() => {
         // Consolidate empty responses
-        const realAnswers = currentRound.answerPool.filter(a => a && a.trim() !== '');
-        const emptyCount = currentRound.answerPool.filter(a => !a || a.trim() === '').length;
+        const realAnswers = currentRound.answerPool.filter(a => a.answer && a.answer.trim() !== '');
+        const emptyCount = currentRound.answerPool.filter(a => !a.answer || a.answer.trim() === '').length;
 
         const poolItems = [
-          ...realAnswers.map(a => ({ text: a, isEmpty: false, count: 1 })),
+          ...realAnswers.map(a => ({ text: a.answer, isEmpty: false, count: 1 })),
           ...(emptyCount > 0 ? [{ text: '(no response)', isEmpty: true, count: emptyCount }] : [])
         ];
 
@@ -134,7 +134,7 @@ export function AnsweringPhase({
                   className={`response-bubble ${item.isEmpty ? 'is-empty' : ''}`}
                   style={{ cursor: 'default', '--index': index } as React.CSSProperties}
                 >
-                  {item.text}
+                  {item.text.toLowerCase()}
                   {item.isEmpty && item.count > 1 && (
                     <span className="tag is-small is-light ml-2">×{item.count}</span>
                   )}

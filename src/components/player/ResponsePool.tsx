@@ -1,11 +1,11 @@
 import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {springDefault} from '../../styles/motion';
-import type {PlayerAvatar as PlayerAvatarType} from '../../types/game';
+import type {PlayerAvatar as PlayerAvatarType, PoolAnswer} from '../../types/game';
 
 interface ResponsePoolProps {
-  answers: string[];
-  myAnswer: string;
+  answers: PoolAnswer[];
+  myPlayerName: string;
   partnerName: string;
   partnerAvatar: PlayerAvatarType | null;
   hasPicked: boolean;
@@ -22,15 +22,17 @@ interface PoolItem {
 
 export function ResponsePool({
   answers,
-  myAnswer,
+  myPlayerName,
   partnerName,
   hasPicked,
   onPick,
 }: ResponsePoolProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Check if my answer is empty
-  const myAnswerIsEmpty = !myAnswer || myAnswer.trim() === '';
+  // Find my answer text from the pool
+  const myAnswerEntry = answers.find(a => a.playerName === myPlayerName);
+  const myAnswerText = myAnswerEntry?.answer ?? '';
+  const myAnswerIsEmpty = !myAnswerText || myAnswerText.trim() === '';
 
   // Build consolidated pool: separate real answers from empty ones
   const poolItems = useMemo(() => {
@@ -38,19 +40,20 @@ export function ResponsePool({
     let emptyCount = 0;
     let myEmptyIncluded = false;
 
-    for (const answer of answers) {
-      const isEmpty = !answer || answer.trim() === '';
+    for (const entry of answers) {
+      const isEmpty = !entry.answer || entry.answer.trim() === '';
+      const isOwn = entry.playerName === myPlayerName;
 
       if (isEmpty) {
         emptyCount++;
-        if (answer === myAnswer) {
+        if (isOwn) {
           myEmptyIncluded = true;
         }
       } else {
         items.push({
-          displayText: answer,
-          actualAnswer: answer,
-          isOwn: answer === myAnswer,
+          displayText: entry.answer,
+          actualAnswer: entry.answer,
+          isOwn,
           isEmpty: false,
           count: 1,
         });
@@ -63,7 +66,7 @@ export function ResponsePool({
         // Player submitted empty: show their own + others consolidated
         items.push({
           displayText: '(no response)',
-          actualAnswer: myAnswer,
+          actualAnswer: myAnswerText,
           isOwn: true,
           isEmpty: true,
           count: 1,
@@ -90,7 +93,7 @@ export function ResponsePool({
     }
 
     return items;
-  }, [answers, myAnswer, myAnswerIsEmpty]);
+  }, [answers, myPlayerName, myAnswerText, myAnswerIsEmpty]);
 
   const handleSelectAnswer = (index: number) => {
     if (hasPicked) return;
@@ -146,7 +149,7 @@ export function ResponsePool({
               disabled={isDisabled}
               style={{ '--index': index } as React.CSSProperties}
             >
-              {item.displayText}
+              {item.displayText.toLowerCase()}
               {item.isOwn && (
                 <span className="tag is-small is-light ml-2">yours</span>
               )}

@@ -208,14 +208,23 @@ describe('Pool Selection Variant', () => {
       gameState.submitAnswer(roomCode, 'player4-socket', 'Pasta', 1100);
     });
 
-    it('returns all answer texts', () => {
+    it('returns all answer texts with player names', () => {
       const pool = gameState.getAnswerPool(roomCode);
 
       expect(pool).toHaveLength(4);
-      expect(pool).toContain('Pizza');
-      expect(pool).toContain('Sushi');
-      expect(pool).toContain('Tacos');
-      expect(pool).toContain('Pasta');
+      const answers = pool.map(p => p.answer);
+      expect(answers).toContain('Pizza');
+      expect(answers).toContain('Sushi');
+      expect(answers).toContain('Tacos');
+      expect(answers).toContain('Pasta');
+
+      // Each entry should have playerName and answer
+      pool.forEach(entry => {
+        expect(entry).toHaveProperty('playerName');
+        expect(entry).toHaveProperty('answer');
+        expect(typeof entry.playerName).toBe('string');
+        expect(typeof entry.answer).toBe('string');
+      });
     });
 
     it('returns shuffled array (different order)', () => {
@@ -224,19 +233,21 @@ describe('Pool Selection Variant', () => {
       const pools = new Set();
       for (let i = 0; i < 10; i++) {
         const pool = gameState.getAnswerPool(roomCode);
-        pools.add(pool.join(','));
+        pools.add(pool.map(p => p.answer).join(','));
       }
       // With 10 tries, we should almost certainly see at least 2 different orderings
       expect(pools.size).toBeGreaterThanOrEqual(1); // Minimum guarantee
     });
 
-    it('does not include player attribution', () => {
+    it('includes player names for identity matching', () => {
       const pool = gameState.getAnswerPool(roomCode);
 
-      // Pool should just be strings, not objects with player info
-      pool.forEach(answer => {
-        expect(typeof answer).toBe('string');
-      });
+      // Each entry should contain playerName so players can identify their own answer
+      const playerNames = pool.map(p => p.playerName);
+      expect(playerNames).toContain('Alice');
+      expect(playerNames).toContain('Bob');
+      expect(playerNames).toContain('Carol');
+      expect(playerNames).toContain('Dave');
     });
 
     it('returns same pool on subsequent calls (caching for reconnection)', () => {

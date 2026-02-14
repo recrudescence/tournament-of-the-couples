@@ -228,7 +228,6 @@ function scheduleBotPicks(roomCode, io) {
   }
 
   const botPlayers = state.players.filter(p => isBot(p.socketId) && p.connected);
-  const answerPool = Object.values(state.currentRound.answers).map(a => a.text);
 
   for (const bot of botPlayers) {
     // Random delay 1-4 seconds
@@ -248,11 +247,10 @@ function scheduleBotPicks(roomCode, io) {
           return;
         }
 
-        // Get own answer to exclude
-        const ownAnswer = currentState.currentRound.answers[bot.name]?.text;
-
-        // Pick a random answer that isn't their own
-        const availableAnswers = answerPool.filter(a => a !== ownAnswer);
+        // Pick a random answer that isn't their own (filter by player name, not text)
+        const availableAnswers = Object.entries(currentState.currentRound.answers)
+          .filter(([playerName]) => playerName !== bot.name)
+          .map(([, a]) => a.text);
         if (availableAnswers.length === 0) return;
 
         const pickedAnswer = availableAnswers[Math.floor(Math.random() * availableAnswers.length)];
