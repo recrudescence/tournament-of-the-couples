@@ -874,17 +874,18 @@ function getAuthorOfAnswer(roomCode, answerText) {
 }
 
 // Check if players correctly picked their partner's answer
-// Returns all correct pickers and their team IDs (handles duplicate answers, case-insensitive)
+// Returns all correct pickers and points per team (handles duplicate answers, case-insensitive)
+// If both players on a team wrote the same answer and both picked correctly, the team gets 2 points
 function checkCorrectPick(roomCode, answerText) {
   const gameState = gameStates.get(roomCode);
-  if (!gameState || !gameState.currentRound) return { correctPickers: [], teamIds: [] };
+  if (!gameState || !gameState.currentRound) return { correctPickers: [], teamIds: [], teamPoints: {} };
 
   const authors = getAuthorsOfAnswer(roomCode, answerText);
-  if (authors.length === 0) return { correctPickers: [], teamIds: [] };
+  if (authors.length === 0) return { correctPickers: [], teamIds: [], teamPoints: {} };
 
   const normalizedAnswer = normalizeAnswer(answerText);
   const correctPickers = [];
-  const teamIds = [];
+  const teamPoints = {}; // teamId -> number of points
 
   // For each author, check if their partner picked this answer (case-insensitive)
   for (const author of authors) {
@@ -897,16 +898,20 @@ function checkCorrectPick(roomCode, answerText) {
       const partnerPick = gameState.currentRound.picks[partner.name];
       if (normalizeAnswer(partnerPick) === normalizedAnswer) {
         correctPickers.push(partner);
-        if (author.teamId && !teamIds.includes(author.teamId)) {
-          teamIds.push(author.teamId);
+        if (author.teamId) {
+          // Increment points for this team (multiple correct picks = multiple points)
+          teamPoints[author.teamId] = (teamPoints[author.teamId] || 0) + 1;
         }
       }
     }
   }
 
+  const teamIds = Object.keys(teamPoints);
+
   return {
     correctPickers,
     teamIds,
+    teamPoints, // teamId -> points earned
     // Keep teamId for backwards compatibility (first team)
     teamId: teamIds.length > 0 ? teamIds[0] : null
   };

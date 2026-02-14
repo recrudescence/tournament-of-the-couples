@@ -4,6 +4,7 @@ import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
+import {useWakeLock} from '../hooks/useWakeLock';
 import {useAlert} from '../context/AlertContext';
 import {ExitButton} from '../components/common/ExitButton';
 import {QuestionForm} from '../components/host/QuestionForm';
@@ -40,6 +41,12 @@ export function HostPage() {
   const { gameState, dispatch } = useGameContext();
   const { error, showError } = useGameError();
   const { confirm } = useAlert();
+  const { requestWakeLock } = useWakeLock();
+
+  // Request wake lock to prevent screen sleep while hosting
+  useEffect(() => {
+    requestWakeLock();
+  }, [requestWakeLock]);
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [roundNumber, setRoundNumber] = useState(1);
@@ -57,7 +64,7 @@ export function HostPage() {
 
   // Pool selection state
   const [revealedPickers, setRevealedPickers] = useState<Record<string, Player[]>>({});
-  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }>>({});
+  const [revealedAuthors, setRevealedAuthors] = useState<Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; teamPoints?: Record<string, number>; isEmptyAnswer?: boolean }>>({});
 
   // Derived values
   const playerCount = gameState?.players.length ?? 0;
@@ -204,10 +211,10 @@ export function HostPage() {
         setRevealedPickers(prev => ({ ...prev, [key]: pickers }));
       }),
 
-      on('authorRevealed', ({ answerText, author, authors, correctPickers, isEmptyAnswer }) => {
+      on('authorRevealed', ({ answerText, author, authors, correctPickers, teamPoints, isEmptyAnswer }) => {
         // Normalize for case-insensitive keying
         const key = normalizeAnswer(answerText);
-        setRevealedAuthors(prev => ({ ...prev, [key]: { author, authors: authors || [author], correctPickers, isEmptyAnswer } }));
+        setRevealedAuthors(prev => ({ ...prev, [key]: { author, authors: authors || [author], correctPickers, teamPoints, isEmptyAnswer } }));
       }),
 
       // allAnswersIn is now derived from gameState, no handler needed

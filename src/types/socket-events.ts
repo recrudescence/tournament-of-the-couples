@@ -110,7 +110,7 @@ export interface ServerToClientEvents {
   returnedToAnswering: (data: GameState) => void;
   answerRevealed: (data: { playerName: string; responderName?: string; answer: string; responseTime: number }) => void;
   pickersRevealed: (data: { answerText: string; pickers: Player[] }) => void;
-  authorRevealed: (data: { answerText: string; author: Player; authors?: Player[]; correctPickers: Player[]; teamId?: string | null; teamIds?: string[]; isEmptyAnswer?: boolean }) => void;
+  authorRevealed: (data: { answerText: string; author: Player; authors?: Player[]; correctPickers: Player[]; teamId?: string | null; teamIds?: string[]; teamPoints?: Record<string, number>; isEmptyAnswer?: boolean }) => void;
   scoreUpdated: (data: { teamId: string; newScore: number; pointsAwarded: number }) => void;
   readyForNextRound: (data: GameState) => void;
 

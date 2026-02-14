@@ -323,6 +323,52 @@ describe('Pool Selection Variant', () => {
       // Different answer should not be revealed
       expect(gameState.isPoolAnswerRevealed(roomCode, 'Cat')).toBe(false);
     });
+
+    it('awards 2 points when both teammates wrote same answer and both picked correctly', () => {
+      // Both Bob and Dave pick "dog" (correct for their partners Alice and Carol)
+      gameState.submitPick(roomCode, 'player2-socket', 'Dog'); // Bob picks for Alice
+      gameState.submitPick(roomCode, 'player4-socket', 'DOG'); // Dave picks for Carol
+
+      const result = gameState.checkCorrectPick(roomCode, 'dog');
+
+      // Both teams should have points
+      expect(result.teamIds).toHaveLength(2);
+      expect(result.teamPoints).toBeDefined();
+
+      // Each team gets 1 point (different teams)
+      const team1Id = gameState.getGameState(roomCode).players.find(p => p.name === 'Alice').teamId;
+      const team2Id = gameState.getGameState(roomCode).players.find(p => p.name === 'Carol').teamId;
+
+      expect(result.teamPoints[team1Id]).toBe(1);
+      expect(result.teamPoints[team2Id]).toBe(1);
+    });
+
+    it('awards 2 points when SAME team has both players write same answer and both pick correctly', () => {
+      // New scenario: Alice and Bob (same team) both write "water", Carol writes "fire", Dave writes "earth"
+      gameState.startRound(roomCode, 'Element?', 'pool_selection');
+      gameState.submitAnswer(roomCode, 'player1-socket', 'water', 1000); // Alice
+      gameState.submitAnswer(roomCode, 'player2-socket', 'water', 1200); // Bob (Alice's partner, same answer!)
+      gameState.submitAnswer(roomCode, 'player3-socket', 'fire', 900);   // Carol
+      gameState.submitAnswer(roomCode, 'player4-socket', 'earth', 1100); // Dave
+      gameState.startSelecting(roomCode);
+
+      // Both Alice and Bob can pick "water" because the other teammate also wrote it
+      // Alice picks "water" guessing Bob wrote it (correct!)
+      // Bob picks "water" guessing Alice wrote it (correct!)
+      gameState.submitPick(roomCode, 'player1-socket', 'water');
+      gameState.submitPick(roomCode, 'player2-socket', 'water');
+
+      const result = gameState.checkCorrectPick(roomCode, 'water');
+
+      // Both Alice and Bob are correct pickers
+      expect(result.correctPickers).toHaveLength(2);
+      expect(result.correctPickers.map(p => p.name)).toContain('Alice');
+      expect(result.correctPickers.map(p => p.name)).toContain('Bob');
+
+      // Same team gets 2 points (both players correct)
+      const teamId = gameState.getGameState(roomCode).players.find(p => p.name === 'Alice').teamId;
+      expect(result.teamPoints[teamId]).toBe(2);
+    });
   });
 
   describe('getPickersForAnswer', () => {

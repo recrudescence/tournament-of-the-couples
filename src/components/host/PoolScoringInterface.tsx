@@ -26,6 +26,7 @@ interface PoolItem {
   pickers: Player[];
   authors: Player[];
   correctPickers: Player[];
+  teamPoints: Record<string, number>; // teamId -> points earned
 }
 
 interface PoolScoringInterfaceProps {
@@ -35,7 +36,7 @@ interface PoolScoringInterfaceProps {
   onRevealAuthor: (answerText: string) => void;
   onFinishRound: () => void;
   revealedPickers: Record<string, Player[]>;
-  revealedAuthors: Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; isEmptyAnswer?: boolean }>;
+  revealedAuthors: Record<string, { author: Player; authors: Player[]; correctPickers: Player[]; teamPoints?: Record<string, number>; isEmptyAnswer?: boolean }>;
 }
 
 export function PoolScoringInterface({
@@ -103,6 +104,7 @@ export function PoolScoringInterface({
         pickers,
         authors: authorData?.authors || [],
         correctPickers: authorData?.correctPickers || [],
+        teamPoints: authorData?.teamPoints || {},
       });
     }
 
@@ -125,6 +127,7 @@ export function PoolScoringInterface({
         pickers: emptyPickers,
         authors: emptyAuthorData?.authors || [],
         correctPickers: emptyAuthorData?.correctPickers || [],
+        teamPoints: emptyAuthorData?.teamPoints || {},
       });
     }
 
@@ -384,12 +387,15 @@ export function PoolScoringInterface({
                       <strong>correct guesses!</strong> but no points
                     </motion.div>
                   ) : (
-                    // Regular answer: show +1 point per correct picker
-                    selectedAnswerData.correctPickers.map((picker, idx) => {
-                      const partnerAuthor = selectedAnswerData.authors.find(a => a.partnerId === picker.socketId);
+                    // Regular answer: show points per team
+                    Object.entries(selectedAnswerData.teamPoints).map(([teamId, points], idx) => {
+                      // Find the players for this team from correct pickers
+                      const teamPickers = selectedAnswerData.correctPickers.filter(p => p.teamId === teamId);
+                      const picker = teamPickers[0];
+                      const partnerAuthor = picker ? selectedAnswerData.authors.find(a => a.partnerId === picker.socketId) : undefined;
                       return (
                         <motion.div
-                          key={picker.socketId}
+                          key={teamId}
                           initial={{ opacity: 0, rotateX: -90, y: -20 }}
                           animate={{ opacity: 1, rotateX: 0, y: 0 }}
                           exit={{ opacity: 0, rotateX: 90, y: -20 }}
@@ -402,7 +408,7 @@ export function PoolScoringInterface({
                             perspective: 800,
                           }}
                         >
-                          <strong>+1 point</strong> for
+                          <strong>+{points} {points === 1 ? 'point' : 'points'}</strong> for
                           <TeamName
                             player1={picker}
                             player2={partnerAuthor}

@@ -644,15 +644,16 @@ function setupSocketHandlers(io) {
         // Check if already revealed (prevents duplicate point awards on refresh)
         const alreadyRevealed = gameState.isPoolAnswerRevealed(roomCode, answerText);
 
-        const { correctPickers, teamIds } = gameState.checkCorrectPick(roomCode, answerText);
+        const { correctPickers, teamIds, teamPoints } = gameState.checkCorrectPick(roomCode, answerText);
 
         // Check if this is an empty/no-response answer
         const isEmptyAnswer = !answerText || answerText.trim() === '';
 
         // Only award points for non-empty answers AND if not already revealed
+        // Award points per team based on number of correct picks (both teammates correct = 2 points)
         if (!isEmptyAnswer && !alreadyRevealed) {
-          for (const teamId of teamIds) {
-            gameState.updateTeamScore(roomCode, teamId, 1);
+          for (const [teamId, points] of Object.entries(teamPoints)) {
+            gameState.updateTeamScore(roomCode, teamId, points);
           }
         }
 
@@ -666,6 +667,7 @@ function setupSocketHandlers(io) {
           authors, // All authors who wrote this answer
           correctPickers,
           teamIds,
+          teamPoints,
           isEmptyAnswer,
           alreadyRevealed
         });
@@ -673,13 +675,13 @@ function setupSocketHandlers(io) {
         // Emit scoreUpdated for each team that got points (only for non-empty and not already revealed)
         if (!isEmptyAnswer && !alreadyRevealed) {
           const state = gameState.getGameState(roomCode);
-          for (const teamId of teamIds) {
+          for (const [teamId, points] of Object.entries(teamPoints)) {
             const team = state.teams.find(t => t.teamId === teamId);
             if (team) {
               io.to(roomCode).emit('scoreUpdated', {
                 teamId,
                 newScore: team.score,
-                pointsAwarded: 1
+                pointsAwarded: points
               });
             }
           }

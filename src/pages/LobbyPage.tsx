@@ -5,6 +5,7 @@ import {useSocket} from '../hooks/useSocket';
 import {usePlayerInfo} from '../hooks/usePlayerInfo';
 import {useGameContext} from '../context/GameContext';
 import {useGameError} from '../hooks/useGameError';
+import {useWakeLock} from '../hooks/useWakeLock';
 import {useSnowEffect} from '../hooks/useConfetti';
 import {useTheme} from '../hooks/useTheme';
 import {useAlert} from '../context/AlertContext';
@@ -30,9 +31,15 @@ export function LobbyPage() {
   const { error, showError } = useGameError();
   const { theme } = useTheme();
   const { confirm } = useAlert();
+  const { requestWakeLock } = useWakeLock();
 
   // Add snow effect for holiday theme
   useSnowEffect(theme === 'holiday');
+
+  // Request wake lock to prevent screen sleep while in lobby
+  useEffect(() => {
+    requestWakeLock();
+  }, [requestWakeLock]);
 
   // Socket event handlers
   useEffect(() => {
