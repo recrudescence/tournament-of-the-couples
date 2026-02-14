@@ -2,7 +2,24 @@
   "title": "lil sample game with all the question types",
   "chapters": [
     {
-      "title": "the open ended questions section!",
+      "title": "some Multiple Choice Questions to start us off!",
+      "questions": [
+        {
+          "question": "you're planning a trip together - where would you go?",
+          "variant": "multiple_choice",
+          "options": ["beach resort", "mountain cabin", "foreign city", "theme park", "cruise", "safari"],
+          "answerForBoth": false
+        },
+        {
+          "question": "what would you/your partner say is the best borough?",
+          "variant": "multiple_choice",
+          "options": ["manhattan", "brooklyn", "queens", "the bronx", "staten island"],
+          "answerForBoth": true
+        }
+      ]
+    },
+    {
+      "title": "round 1: an Open Ended Questions round!",
       "questions": [
         {
           "question": "what is your favorite movie?",
@@ -17,34 +34,12 @@
       ]
     },
     {
-      "title": "the Multiple Choice Questions",
+      "title": "next question style: Binary picks",
       "questions": [
         {
-          "question": "what's the best comfort food?",
-          "variant": "multiple_choice",
-          "options": ["Pizza", "Ice Cream", "Pasta", "Tacos"],
-          "answerForBoth": false
-        },
-        {
-          "question": "where would you both want to go on vacation?",
-          "variant": "multiple_choice",
-          "options": ["beach resort", "mountain cabin", "foreign city", "theme park", "cruise", "safari"],
-          "answerForBoth": true
-        }
-      ]
-    },
-    {
-      "title": "question style: binary picks",
-      "questions": [
-        {
-          "question": "who is more likely to be late?",
+          "question": "who is more likely to be hangry?",
           "variant": "binary",
           "answerForBoth": false
-        },
-        {
-          "question": "who's the funnier one?",
-          "variant": "binary",
-          "answerForBoth": true
         }
       ]
     },
@@ -53,7 +48,8 @@
       "questions": [
         {
           "question": "if you could instantly learn a foreign language, what language would it be?",
-          "variant": "pool_selection"
+          "variant": "pool_selection",
+          "answerForBoth": false
         }
       ]
     }
