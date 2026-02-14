@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import type {Player, QuestionCursor, ImportedQuestionSet} from '../../types/game';
+import type {ImportedQuestionSet, Player, QuestionCursor} from '../../types/game';
 import {useAlert} from '../../context/AlertContext';
 
 interface RoundControlsProps {
@@ -11,6 +11,7 @@ interface RoundControlsProps {
   importedQuestions: ImportedQuestionSet | null;
   onKickPlayer: (socketId: string, playerName: string) => void;
   onReopenAnswering: () => void;
+  onReopenPlayerAnswering: (playerName: string) => void;
   onStartScoring: () => void;
   onResetGame: () => void;
   onResetQuestion: () => void;
@@ -28,6 +29,7 @@ export function RoundControls({
   importedQuestions,
   onKickPlayer,
   onReopenAnswering,
+  onReopenPlayerAnswering,
   onStartScoring,
   onResetGame,
   onResetQuestion,
@@ -36,6 +38,7 @@ export function RoundControls({
   onSkipQuestion
 }: RoundControlsProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
+  const [reopenPlayerId, setReopenPlayerId] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const { confirm } = useAlert();
 
@@ -50,6 +53,20 @@ export function RoundControls({
     if (confirmed) {
       onKickPlayer(selectedPlayerId, player.name);
       setSelectedPlayerId('');
+    }
+  };
+
+  const handleReopenPlayer = async () => {
+    const player = players.find(p => p.socketId === reopenPlayerId);
+    if (!player) return;
+    const confirmed = await confirm({
+      message: `re-open answering for ${player.name}? their previous answer will be cleared.`,
+      variant: 'warning',
+      confirmText: 're-open',
+    });
+    if (confirmed) {
+      onReopenPlayerAnswering(player.name);
+      setReopenPlayerId('');
     }
   };
 
@@ -101,108 +118,144 @@ export function RoundControls({
         <div className="mt-3">
           {/* Question Controls - only show during active phases */}
           {isActivePhase && (
-            <div className="mb-3">
-              <p className="is-size-7 has-text-grey mb-2">Question Controls</p>
-              <div className="buttons are-small">
-                {/* Manual mode: Reset Question */}
-                {!isImportedMode && (
-                  <button
-                    className="button is-warning is-small"
-                    onClick={onResetQuestion}
-                  >
-                    Reset Question
-                  </button>
-                )}
-
-                {/* Imported mode: Restart, Previous, Skip */}
-                {isImportedMode && (
-                  <>
+            <>
+              <div className="mb-3">
+                <p className="is-size-7 has-text-grey mb-2">Question Controls</p>
+                <div className="buttons are-small">
+                  {/* Manual mode: Reset Question */}
+                  {!isImportedMode && (
                     <button
                       className="button is-warning is-small"
-                      onClick={onRestartQuestion}
+                      onClick={onResetQuestion}
                     >
-                      Restart
+                      Reset Question
                     </button>
-                    <button
-                      className="button is-info is-small is-light"
-                      onClick={onPreviousQuestion}
-                      disabled={!canGoPrevious}
-                      data-tooltip-id="tooltip"
-                      data-tooltip-content={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
-                    >
-                      ← Previous
-                    </button>
-                    <button
-                      className="button is-info is-small is-light"
-                      onClick={onSkipQuestion}
-                      disabled={!canSkip}
-                      data-tooltip-id="tooltip"
-                      data-tooltip-content={canSkip ? 'Skip to next question' : 'Already at last question'}
-                    >
-                      Skip →
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+                  )}
 
-          <div className="is-flex is-justify-content-space-between is-flex-wrap-wrap" style={{ gap: '0.5rem' }}>
-            {/* Kick player form */}
-            <div className="field has-addons mb-0">
-              <div className="control">
-                <div className="select is-small">
-                  <select
-                    value={selectedPlayerId}
-                    onChange={(e) => setSelectedPlayerId(e.target.value)}
-                  >
-                    <option value="">Kick player...</option>
-                    {players.map((player) => (
-                      <option key={player.socketId} value={player.socketId}>
-                        {player.name} {!player.connected ? '(dc)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Imported mode: Restart, Previous, Skip */}
+                  {isImportedMode && (
+                    <>
+                      <button
+                        className="button is-warning is-small"
+                        onClick={onRestartQuestion}
+                      >
+                        Restart
+                      </button>
+                      <button
+                        className="button is-info is-small is-light"
+                        onClick={onPreviousQuestion}
+                        disabled={!canGoPrevious}
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
+                      >
+                        ← Previous
+                      </button>
+                      <button
+                        className="button is-info is-small is-light"
+                        onClick={onSkipQuestion}
+                        disabled={!canSkip}
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content={canSkip ? 'Skip to next question' : 'Already at last question'}
+                      >
+                        Skip →
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="control">
+
+
+              {/* Re-open player answering form */}
+              <div className="field has-addons mb-3">
+                <div className="control">
+                  <div className="select is-small">
+                    <select
+                      value={reopenPlayerId}
+                      onChange={(e) => setReopenPlayerId(e.target.value)}
+                    >
+                      <option value="">Re-open answering for...</option>
+                      {players.map((player) => (
+                        <option key={player.socketId} value={player.socketId}>
+                          {player.name} {!player.connected ? '(dc)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="control">
+                  <button
+                    className="button is-warning is-small"
+                    onClick={handleReopenPlayer}
+                    disabled={!reopenPlayerId}
+                  >
+                    Re-open
+                  </button>
+                </div>
+              </div>
+
+              {/* Skip to scoring (answering phase only) */}
+              {phase === 'answering' && (
                 <button
-                  className="button is-danger is-small"
-                  onClick={handleKick}
-                  disabled={!selectedPlayerId}
+                  className={`button is-small is-primary ${!allAnswersIn ? 'is-light' : ''}`}
+                  onClick={handleStartScoring}
                 >
-                  Kick
+                  Skip to Scoring
+                </button>
+              )}
+
+              {/* Back to answering (scoring phase only) */}
+              {phase === 'scoring' && (
+                <button
+                  className="button is-small is-warning"
+                  onClick={onReopenAnswering}
+                >
+                  Back to Answering
+                </button>
+              )}
+            </>
+          )}
+
+          <div className="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap" style={{ gap: '0.5rem' }}>
+            <div>
+              <p className="is-size-7 has-text-grey mb-2">Game Controls</p>
+              <div className="buttons are-small">
+                {/* Kick player form */}
+                <div className="field has-addons mb-0">
+                  <div className="control">
+                    <div className="select is-small">
+                      <select
+                        value={selectedPlayerId}
+                        onChange={(e) => setSelectedPlayerId(e.target.value)}
+                      >
+                        <option value="">Kick player...</option>
+                        {players.map((player) => (
+                          <option key={player.socketId} value={player.socketId}>
+                            {player.name} {!player.connected ? '(dc)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="control">
+                    <button
+                      className="button is-danger is-small"
+                      onClick={handleKick}
+                      disabled={!selectedPlayerId}
+                    >
+                      Kick
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reset game button */}
+                <button
+                  className="button is-family-secondary is-small"
+                  onClick={onResetGame}
+                >
+                  Reset Game
                 </button>
               </div>
             </div>
-
-            {/* Skip to scoring (answering phase only) */}
-            {phase === 'answering' && (
-              <button
-                className={`button is-small is-primary ${!allAnswersIn ? 'is-light' : ''}`}
-                onClick={handleStartScoring}
-              >
-                Skip to Scoring
-              </button>
-            )}
-
-            {/* Back to answering (scoring phase only) */}
-            {phase === 'scoring' && (
-              <button
-                className="button is-small is-warning"
-                onClick={onReopenAnswering}
-              >
-                Back to Answering
-              </button>
-            )}
-
-            {/* Reset game button */}
-            <button
-              className="button is-family-secondary is-small"
-              onClick={onResetGame}
-            >
-              Reset Game
-            </button>
 
           </div>
         </div>

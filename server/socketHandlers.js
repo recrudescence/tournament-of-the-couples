@@ -902,6 +902,24 @@ function setupSocketHandlers(io) {
       }
     });
 
+    // Host reopens answering for a specific player
+    socket.on('reopenPlayerAnswering', ({ playerName }) => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        gameState.reopenPlayerAnswering(roomCode, playerName);
+        const state = gameState.getGameState(roomCode);
+        io.to(roomCode).emit('playerAnsweringReopened', { playerName, gameState: state });
+      } catch (err) {
+        console.error('Reopen player answering error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
     // Host ends the game
     socket.on('endGame', () => {
       const roomCode = socket.roomCode;

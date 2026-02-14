@@ -33,6 +33,7 @@ export interface ClientToServerEvents {
   skipPoint: (data: { teamId: string }) => void;
   nextRound: () => void;
   backToAnswering: () => void;
+  reopenPlayerAnswering: (data: { playerName: string }) => void;
   endGame: () => void;
   resetGame: () => void;
   addBots: (data: { count: number }) => void;
@@ -109,6 +110,7 @@ export interface ServerToClientEvents {
   allPicksIn: () => void;
   scoringStarted: (data: GameState) => void;
   returnedToAnswering: (data: GameState) => void;
+  playerAnsweringReopened: (data: { playerName: string; gameState: GameState }) => void;
   answerRevealed: (data: { playerName: string; responderName?: string; answer: string; responseTime: number }) => void;
   pickersRevealed: (data: { answerText: string; pickers: Player[] }) => void;
   authorRevealed: (data: { answerText: string; author: Player; authors?: Player[]; correctPickers: Player[]; teamId?: string | null; teamIds?: string[]; teamPoints?: Record<string, number>; isEmptyAnswer?: boolean }) => void;

@@ -570,6 +570,35 @@ function returnToAnswering(roomCode) {
   log('Returned to answering phase - submission tracking reset');
 }
 
+// Re-open answering for a specific player
+function reopenPlayerAnswering(roomCode, playerName) {
+  const gameState = gameStates.get(roomCode);
+  if (!gameState || !gameState.currentRound) {
+    throw new Error('No active round');
+  }
+
+  // Don't allow reopening during selecting phase (pool already released)
+  if (gameState.currentRound.status === 'selecting') {
+    throw new Error('Cannot reopen answering after pool selection has started');
+  }
+
+  // Remove from submittedInCurrentPhase
+  const idx = gameState.currentRound.submittedInCurrentPhase.indexOf(playerName);
+  if (idx === -1) {
+    throw new Error('Player has not submitted an answer');
+  }
+  gameState.currentRound.submittedInCurrentPhase.splice(idx, 1);
+
+  // Delete their answer so they start fresh
+  delete gameState.currentRound.answers[playerName];
+
+  // Make sure round is in answering status
+  gameState.currentRound.status = 'answering';
+  gameState.status = 'playing';
+
+  log(`Reopened answering for ${playerName}`);
+}
+
 // Room management functions
 function hasRoom(roomCode) {
   return gameStates.has(roomCode);
@@ -1120,6 +1149,7 @@ module.exports = {
   setCurrentRoundId,
   returnToPlaying,
   returnToAnswering,
+  reopenPlayerAnswering,
   hasRoom,
   deleteRoom,
   getRoomCodes,

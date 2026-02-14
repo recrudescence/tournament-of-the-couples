@@ -370,6 +370,14 @@ export function PlayerPage() {
         startTimer(state.currentRound?.createdAt);
       }),
 
+      on('playerAnsweringReopened', ({ playerName, gameState: state }) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+        // If this player was reopened, restart their timer
+        if (playerName === playerInfo?.name) {
+          startTimer(state.currentRound?.createdAt);
+        }
+      }),
+
       on('error', ({ message }) => {
         showError(message);
       }),

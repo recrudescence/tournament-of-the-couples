@@ -255,6 +255,10 @@ export function HostPage() {
         setPhase('answering');
       }),
 
+      on('playerAnsweringReopened', ({ gameState: state }) => {
+        dispatch({ type: 'SET_GAME_STATE', payload: state });
+      }),
+
       on('lobbyUpdate', (data) => {
         const state = (data as { gameState?: GameState }).gameState || data;
         dispatch({ type: 'SET_GAME_STATE', payload: state });
@@ -392,6 +396,10 @@ export function HostPage() {
   const handleReopenAnswering = () => {
     // Server clears submittedInCurrentPhase, which makes allAnswersIn false
     emit('backToAnswering');
+  };
+
+  const handleReopenPlayerAnswering = (playerName: string) => {
+    emit('reopenPlayerAnswering', { playerName });
   };
 
   const handleRevealAnswer = (playerName: string) => {
@@ -619,9 +627,9 @@ export function HostPage() {
               {/* All Questions Completed (Imported Mode) */}
               {phase === 'roundSetup' && allQuestionsCompleted && (
                 <div className="box has-background-success-light has-text-centered">
-                  <h2 className="title is-3 mb-4">All Questions Completed!</h2>
+                  <h2 className="title is-3 mb-4">all questions answered!</h2>
                   <p className="subtitle is-5 mb-4">
-                    You've finished all imported questions.
+                    WHO'S ON TOP???
                   </p>
                   <button
                     className="button is-primary is-large"
@@ -720,6 +728,7 @@ export function HostPage() {
                   importedQuestions={gameState?.importedQuestions ?? null}
                   onKickPlayer={handleKickPlayer}
                   onReopenAnswering={handleReopenAnswering}
+                  onReopenPlayerAnswering={handleReopenPlayerAnswering}
                   onStartScoring={handleStartScoring}
                   onResetGame={handleResetGame}
                   onResetQuestion={handleResetQuestion}
