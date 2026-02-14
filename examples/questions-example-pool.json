@@ -1,0 +1,15 @@
+{
+  "title": "lil sample game with all the question types",
+  "chapters": [
+    {
+      "title": "special variant: pool selection!",
+      "questions": [
+        {
+          "question": "if you could instantly learn a foreign language, what language would it be?",
+          "variant": "pool_selection",
+          "answerForBoth": false
+        }
+      ]
+    }
+  ]
+}

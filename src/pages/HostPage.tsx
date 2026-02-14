@@ -379,6 +379,10 @@ export function HostPage() {
     emit('startScoring');
   };
 
+  const handleStartPoolSelection = () => {
+    emit('startPoolSelection');
+  };
+
   const handleBackToAnswering = () => {
     // Just navigate back to answering view (UI only)
     // allAnswersIn will still be true since answers haven't been cleared
@@ -653,6 +657,7 @@ export function HostPage() {
                   allAnswersIn={allAnswersIn}
                   onReopenAnswering={handleReopenAnswering}
                   onStartScoring={handleStartScoring}
+                  onStartPoolSelection={handleStartPoolSelection}
                   picksSubmitted={picksSubmitted}
                   allPicksIn={allPicksIn}
                 />

@@ -19,7 +19,7 @@ import {GameTitle} from '../components/common/GameTitle';
 import {TeamScoreboard} from '../components/host/TeamScoreboard';
 import {GameState, RoundVariant, PoolAnswer} from '../types/game';
 
-type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'selecting' | 'picked' | 'scoring' | 'ended';
+type PlayerPhase = 'waiting' | 'answering' | 'submitted' | 'waitingForRelease' | 'selecting' | 'picked' | 'scoring' | 'ended';
 
 function derivePlayerPhase(gameState: GameState | null, playerName: string | undefined): PlayerPhase {
   if (!gameState) return 'waiting';
@@ -50,7 +50,12 @@ function derivePlayerPhase(gameState: GameState | null, playerName: string | und
         return hasPicked ? 'picked' : 'selecting';
       }
 
-      // Still in answering phase
+      // All answers in but host hasn't released pool yet
+      if (allAnswersIn) {
+        return 'waitingForRelease';
+      }
+
+      // Still waiting for other players to answer
       return 'submitted';
     }
 
@@ -556,6 +561,17 @@ export function PlayerPage() {
                 Waiting for other players to submit their answers...
               </p>
               <progress className="progress is-info" max="100" />
+            </div>
+          )}
+
+          {/* Pool selection: all answers in, waiting for host to release */}
+          {phase === 'waitingForRelease' && (
+            <div className="box has-text-centered">
+              <h3 className="title is-5 mb-3">All Answers In!</h3>
+              <p className="subtitle is-6 has-text-grey mb-4">
+                Waiting for host to reveal the answer pool...
+              </p>
+              <progress className="progress is-success" max="100" />
             </div>
           )}
 

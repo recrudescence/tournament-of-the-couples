@@ -490,15 +490,9 @@ function setupSocketHandlers(io) {
               }
             }
 
-            // Check if round is now complete and transition to selecting
+            // Check if round is now complete - notify host to release answers
             if (gameState.isRoundComplete(roomCode)) {
-              gameState.startSelecting(roomCode);
-              const answerPool = gameState.getAnswerPool(roomCode);
-              io.to(roomCode).emit('poolReady', {
-                answers: answerPool,
-                gameState: gameState.getGameState(roomCode)
-              });
-              botManager.scheduleBotPicks(roomCode, io);
+              io.to(roomCode).emit('allAnswersIn');
             }
           }, POOL_SELECTION_DURATION);
 
@@ -548,22 +542,14 @@ function setupSocketHandlers(io) {
 
         // Check if round is complete
         if (gameState.isRoundComplete(roomCode)) {
-          // For pool_selection, emit poolReady instead of allAnswersIn
+          // For pool_selection, just notify - host will release answers manually
           if (state.currentRound.variant === 'pool_selection') {
             // Clear auto-submit timeout since all answers are in
             if (poolSelectionTimeouts.has(roomCode)) {
               clearTimeout(poolSelectionTimeouts.get(roomCode));
               poolSelectionTimeouts.delete(roomCode);
             }
-            // Transition to selecting phase
-            gameState.startSelecting(roomCode);
-            const answerPool = gameState.getAnswerPool(roomCode);
-            io.to(roomCode).emit('poolReady', {
-              answers: answerPool,
-              gameState: gameState.getGameState(roomCode)
-            });
-            // Schedule bot picks
-            botManager.scheduleBotPicks(roomCode, io);
+            io.to(roomCode).emit('allAnswersIn');
           } else {
             gameState.completeRound(roomCode);
             io.to(roomCode).emit('allAnswersIn');
@@ -571,6 +557,49 @@ function setupSocketHandlers(io) {
         }
       } catch (err) {
         console.error('Submit answer error:', err);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    // Host starts pool selection phase (releases answers for picking)
+    socket.on('startPoolSelection', () => {
+      const roomCode = socket.roomCode;
+      if (!roomCode) {
+        socket.emit('error', { message: 'Not in a room' });
+        return;
+      }
+
+      try {
+        const state = gameState.getGameState(roomCode);
+        if (!state) {
+          socket.emit('error', { message: 'Game not found' });
+          return;
+        }
+
+        // Verify this is a pool selection round
+        if (state.currentRound?.variant !== 'pool_selection') {
+          socket.emit('error', { message: 'Not a pool selection round' });
+          return;
+        }
+
+        // Verify all answers are in
+        if (!gameState.isRoundComplete(roomCode)) {
+          socket.emit('error', { message: 'Not all answers are in yet' });
+          return;
+        }
+
+        // Transition to selecting phase
+        gameState.startSelecting(roomCode);
+        const answerPool = gameState.getAnswerPool(roomCode);
+        io.to(roomCode).emit('poolReady', {
+          answers: answerPool,
+          gameState: gameState.getGameState(roomCode)
+        });
+
+        // Schedule bot picks
+        botManager.scheduleBotPicks(roomCode, io);
+      } catch (err) {
+        console.error('Start pool selection error:', err);
         socket.emit('error', { message: err.message });
       }
     });

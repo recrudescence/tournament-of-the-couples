@@ -26,6 +26,7 @@ export interface ClientToServerEvents {
   revealPickers: (data: { answerText: string }) => void;
   revealAuthor: (data: { answerText: string }) => void;
   startScoring: () => void;
+  startPoolSelection: () => void;
   revealAnswer: (data: { playerName: string }) => void;
   awardPoint: (data: { teamId: string; points: number }) => void;
   removePoint: (data: { teamId: string; points: number }) => void;

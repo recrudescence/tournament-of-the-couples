@@ -179,15 +179,8 @@ function scheduleBotAnswers(roomCode, io) {
         if (gameState.isRoundComplete(roomCode)) {
           const state = gameState.getGameState(roomCode);
           if (state.currentRound.variant === 'pool_selection') {
-            // Transition to selecting phase
-            gameState.startSelecting(roomCode);
-            const answerPool = gameState.getAnswerPool(roomCode);
-            io.to(roomCode).emit('poolReady', {
-              answers: answerPool,
-              gameState: gameState.getGameState(roomCode)
-            });
-            // Schedule bot picks
-            scheduleBotPicks(roomCode, io);
+            // Just notify - host will release answers manually
+            io.to(roomCode).emit('allAnswersIn');
           } else {
             gameState.completeRound(roomCode);
             io.to(roomCode).emit('allAnswersIn');

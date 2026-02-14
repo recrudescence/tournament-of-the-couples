@@ -20,6 +20,7 @@ interface AnsweringPhaseProps {
   // Pool selection props
   picksSubmitted?: string[];
   allPicksIn?: boolean;
+  onStartPoolSelection?: () => void;
 }
 
 export function AnsweringPhase({
@@ -33,10 +34,14 @@ export function AnsweringPhase({
   onReopenAnswering,
   onStartScoring,
   picksSubmitted = [],
-  allPicksIn = false
+  allPicksIn = false,
+  onStartPoolSelection
 }: AnsweringPhaseProps) {
   const isPoolSelection = variant === RoundVariant.POOL_SELECTION;
-  const isSelectingPhase = isPoolSelection && allAnswersIn && !allPicksIn;
+  // Pool selection has started when round status is 'selecting'
+  const isSelectingPhase = isPoolSelection && currentRound?.status === 'selecting';
+  // Waiting for host to release answers
+  const isWaitingForRelease = isPoolSelection && allAnswersIn && currentRound?.status !== 'selecting';
   const canStartScoring = isPoolSelection ? allPicksIn : allAnswersIn;
 
   // Count-up timer for regular rounds
@@ -113,8 +118,8 @@ export function AnsweringPhase({
         </div>
       )}
 
-      {/* Pool selection: show all answers while players are picking */}
-      {isPoolSelection && allAnswersIn && currentRound?.answerPool && (() => {
+      {/* Pool selection: show all answers only after host releases them */}
+      {isSelectingPhase && currentRound?.answerPool && (() => {
         // Consolidate duplicate answers (case-insensitive) and empty responses
         const answerGroups = new Map<string, { text: string; count: number }>();
         let emptyCount = 0;
@@ -174,7 +179,7 @@ export function AnsweringPhase({
 
           // For pool selection in selecting phase, show pick status
           // Otherwise show answer status
-          const showPickStatus = isPoolSelection && allAnswersIn;
+          const showPickStatus = isPoolSelection && allAnswersIn && !isWaitingForRelease;
           const currentStatus = showPickStatus ? hasPicked : hasSubmitted;
 
           // Show green if done, grey if disconnected and not done, yellow if waiting
@@ -242,7 +247,12 @@ export function AnsweringPhase({
           ✅ All answers are in! Ready to score.
         </div>
       )}
-      {isPoolSelection && allAnswersIn && !allPicksIn && (
+      {isWaitingForRelease && (
+        <div className="notification is-success mb-4">
+          ✅ All answers are in! Release the answer pool for players to pick.
+        </div>
+      )}
+      {isSelectingPhase && !allPicksIn && (
         <div className="notification is-info mb-4 is-flex is-justify-content-center">
           waiting for players to pick their partner's answer...
         </div>
@@ -254,6 +264,15 @@ export function AnsweringPhase({
       )}
 
       {/* Action buttons */}
+      {isWaitingForRelease && onStartPoolSelection && (
+        <div className="field is-grouped is-grouped-centered">
+          <div className="control">
+            <button className="button is-primary is-large" onClick={onStartPoolSelection}>
+              Release Answers
+            </button>
+          </div>
+        </div>
+      )}
       {canStartScoring && (
         <div className="field is-grouped is-grouped-centered">
           {!isPoolSelection && (

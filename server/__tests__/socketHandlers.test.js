@@ -18,6 +18,7 @@ jest.mock('../botManager', () => ({
   addBots: jest.fn(() => []),
   removeAllBots: jest.fn(),
   scheduleBotAnswers: jest.fn(),
+  scheduleBotPicks: jest.fn(),
   cancelBotTimers: jest.fn(),
 }));
 
@@ -1168,6 +1169,112 @@ describe('socketHandlers', () => {
       )[1];
 
       randomizeHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not in a room',
+        })
+      );
+    });
+  });
+
+  describe('startPoolSelection', () => {
+    beforeEach(() => {
+      gameState.initializeGame(roomCode);
+      gameState.addPlayer(roomCode, 'host-socket', 'Host', true);
+      gameState.addPlayer(roomCode, 'socket-1', 'Alice', false);
+      gameState.addPlayer(roomCode, 'socket-2', 'Bob', false);
+      gameState.addPlayer(roomCode, 'socket-3', 'Carol', false);
+      gameState.addPlayer(roomCode, 'socket-4', 'Dave', false);
+      gameState.pairPlayers(roomCode, 'socket-1', 'socket-2');
+      gameState.pairPlayers(roomCode, 'socket-3', 'socket-4');
+      gameState.startGame(roomCode);
+      gameState.startRound(roomCode, 'Test question?', 'pool_selection');
+    });
+
+    it('should transition to selecting phase when all answers are in', () => {
+      // All players submit answers
+      gameState.submitAnswer(roomCode, 'socket-1', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'socket-2', 'Answer2', 1000);
+      gameState.submitAnswer(roomCode, 'socket-3', 'Answer3', 1000);
+      gameState.submitAnswer(roomCode, 'socket-4', 'Answer4', 1000);
+
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const startPoolSelectionHandler = socket.on.mock.calls.find(
+        call => call[0] === 'startPoolSelection'
+      )[1];
+
+      startPoolSelectionHandler();
+
+      const state = gameState.getGameState(roomCode);
+      expect(state.currentRound.status).toBe('selecting');
+      expect(io.to).toHaveBeenCalledWith(roomCode);
+      expect(io.roomEmit).toHaveBeenCalledWith('poolReady', expect.objectContaining({
+        answers: expect.any(Array),
+        gameState: expect.any(Object),
+      }));
+    });
+
+    it('should reject when not all answers are in', () => {
+      // Only some players submit
+      gameState.submitAnswer(roomCode, 'socket-1', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'socket-2', 'Answer2', 1000);
+
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const startPoolSelectionHandler = socket.on.mock.calls.find(
+        call => call[0] === 'startPoolSelection'
+      )[1];
+
+      startPoolSelectionHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not all answers are in yet',
+        })
+      );
+    });
+
+    it('should reject for non-pool_selection rounds', () => {
+      // Start a different round type
+      gameState.startRound(roomCode, 'Open ended?', 'open_ended');
+      gameState.submitAnswer(roomCode, 'socket-1', 'Answer1', 1000);
+      gameState.submitAnswer(roomCode, 'socket-2', 'Answer2', 1000);
+      gameState.submitAnswer(roomCode, 'socket-3', 'Answer3', 1000);
+      gameState.submitAnswer(roomCode, 'socket-4', 'Answer4', 1000);
+
+      socket.roomCode = roomCode;
+      socket.id = 'host-socket';
+
+      io.connectionHandler(socket);
+      const startPoolSelectionHandler = socket.on.mock.calls.find(
+        call => call[0] === 'startPoolSelection'
+      )[1];
+
+      startPoolSelectionHandler();
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          message: 'Not a pool selection round',
+        })
+      );
+    });
+
+    it('should reject when not in a room', () => {
+      io.connectionHandler(socket);
+      const startPoolSelectionHandler = socket.on.mock.calls.find(
+        call => call[0] === 'startPoolSelection'
+      )[1];
+
+      startPoolSelectionHandler();
 
       expect(socket.emit).toHaveBeenCalledWith(
         'error',
