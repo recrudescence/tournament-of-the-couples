@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { motion, useAnimationControls } from 'framer-motion';
-import { usePrevious } from '../../hooks/usePrevious';
-import { scorePulse, scorePulseTransition } from '../../styles/motion';
+import {useEffect} from 'react';
+import {motion, useAnimationControls} from 'framer-motion';
+import {usePrevious} from '../../hooks/usePrevious';
+import {scorePulse, scorePulseTransition} from '../../styles/motion';
 
 type ScoreSize = 'small' | 'medium' | 'large' | 'xlarge';
 type ScoreColor = 'auto' | 'inherit' | 'white' | 'muted';
@@ -35,7 +35,7 @@ function getColorClass(color: ScoreColor, highlighted: boolean): string {
     case 'muted': return 'has-text-grey';
     case 'auto':
     default:
-      return highlighted ? 'has-text-link' : 'has-text-grey-dark';
+      return highlighted ? 'has-text-link' : 'has-text-grey';
   }
 }
 

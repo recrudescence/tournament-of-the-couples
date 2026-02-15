@@ -1,6 +1,6 @@
 import {type Theme, useTheme} from '../../hooks/useTheme';
 
-const THEMES: Theme[] = ['holiday', 'valentines', 'halloween', 'neon', 'forest', 'hyper', 'nick', 'default'];
+const THEMES: Theme[] = ['holiday', 'valentines', 'halloween', 'neon', 'forest', 'hyper', 'nick'];
 
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
