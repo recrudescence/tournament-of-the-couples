@@ -1,50 +1,164 @@
 {
-  "title": "lil sample game with all the question types",
+  "title": "tournament of the couples 2026",
   "chapters": [
     {
-      "title": "the open ended questions chapter!",
+      "title": "round 1: Used To Be Young",
       "questions": [
         {
-          "question": "what is your favorite movie?",
-          "variant": "open_ended",
+          "question": "which of you was cooler in high school?",
+          "variant": "binary",
           "answerForBoth": false
         },
         {
-          "question": "what would you each order for dessert???",
+          "question": "what was your/your partner's favorite childhood TV show or movie?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "choose an iconic retro toy",
+          "variant": "multiple_choice",
+          "options": ["etch-a-sketch", "yo-yo", "tamagotchi", "frisbee", "slinky"],
+          "answerForBoth": false
+        },
+        {
+          "question": "list out all the broken bones or hospitalizations you/your partner has experienced",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "choose an iconic book series from childhood",
+          "variant": "multiple_choice",
+          "options": ["the hunger games", "percy jackson", "series of unfortunate events", "narnia", "eragon"],
+          "answerForBoth": true
+        },
+        {
+          "question": "which of you has the messier family?",
+          "variant": "binary",
+          "answerForBoth": false
+        }
+      ]
+    },
+    {
+      "title": "round 2: You Lookin' At Me Lookin' At You",
+      "questions": [
+        {
+          "question": "you adopt a snake. what do you call it?",
+          "variant": "pool_selection",
+          "answerForBoth": false
+        },
+        {
+          "question": "spiritually what age are you/your partner? (plus/minus 2 years)",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "name a food related pet peeve",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "which of the following is you/your partner's biggest subway nightmare?",
+          "variant": "multiple_choice",
+          "options": [
+            "empty smelly subway car",
+            "you slept way past your stop",
+            "ac broken in the summer",
+            "excessively crowded + someone's coughing",
+            "power outage indefinitely between stations"
+          ],
+          "answerForBoth": true
+        },
+        {
+          "question": "yay! you get to attend the concert of 1 DEAD artist. who do you see?",
+          "variant": "pool_selection",
+          "answerForBoth": false
+        },
+        {
+          "question": "you have plans at 7:30pm. at what time do you/your partner arrive?",
           "variant": "open_ended",
           "answerForBoth": true
         }
       ]
     },
     {
-      "title": "the Multiple Choice Questions chapter",
+      "title": "round 3: What About Us",
       "questions": [
         {
-          "question": "what's the best comfort food?",
-          "variant": "multiple_choice",
-          "options": ["Pizza", "Ice Cream", "Pasta", "Tacos"],
+          "question": "which of you has better lore?",
+          "variant": "binary",
           "answerForBoth": false
         },
         {
-          "question": "where would you both want to go on vacation?",
-          "variant": "multiple_choice",
-          "options": ["beach resort", "mountain cabin", "foreign city", "theme park", "cruise", "safari"],
+          "question": "fill in the blank: I am extremely opinionated about _____",
+          "variant": "pool_selection",
+          "answerForBoth": false
+        },
+        {
+          "question": "which of you has better music taste?",
+          "variant": "binary",
+          "answerForBoth": false
+        },
+        {
+          "question": "who or what is you/your partner's biggest nemesis?",
+          "variant": "open_ended",
+          "answerForBoth": true
+        },
+        {
+          "question": "who is you/your partner's current celebrity crush?",
+          "variant": "pool_selection",
+          "answerForBoth": false
+        },
+        {
+          "question": "which of you has better/cooler friends?",
+          "variant": "binary",
+          "answerForBoth": false
+        },
+        {
+          "question": "how do you each know that the other person is mad at you?",
+          "variant": "open_ended",
           "answerForBoth": true
         }
       ]
     },
     {
-      "title": "question style: binary chapter",
+      "title": "round 4: ✧･ﾟ: *✧･ﾟ: * murder series *:･ﾟ✧ *:･ﾟ✧ ",
       "questions": [
         {
-          "question": "who is more likely to be late?",
+          "question": "which of you is more likely to kill?",
           "variant": "binary",
           "answerForBoth": false
         },
         {
-          "question": "who's the funnier one?",
-          "variant": "binary",
+          "question": "each of you has killed someone (intentionally). what was your weapon/method?",
+          "variant": "multiple_choice",
+          "options": [
+            "a good old stabby stab",
+            "pillow over the mouth in sleep",
+            "poison over many months",
+            "a shove down the stairs",
+            "a sharp icicle (it melts so there's no evidence!)"
+          ],
           "answerForBoth": true
+        },
+        {
+          "question": "how do you react upon learning your partner has killed someone?",
+          "variant": "multiple_choice",
+          "options": [
+            "hear them out, what was their reasoning?",
+            "immediately jump into problem solving mode/getting rid of the body",
+            "\"911? I'd like to report a murder\"",
+            "break up"
+          ],
+          "answerForBoth": true
+        },
+        {
+          "question": "you're both captured while on the run for murder, but one of you has the chance to escape. what happens?",
+          "variant": "multiple_choice",
+          "options": [
+            "the person who can get out should leave while they have the chance!",
+            "they'll never keep us apart (we both go to the slammer)"
+          ],
+          "answerForBoth": false
         }
       ]
     }
