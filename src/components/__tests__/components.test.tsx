@@ -289,6 +289,10 @@ describe('Component Smoke Tests', () => {
         { socketId: 'socket2', name: 'Bob', connected: true, partnerId: 'socket1', teamId: 'team1', avatar: { color: '#0000ff', emoji: '🎉' } }
       ];
 
+      const mockTeams = [
+        { teamId: 'team1', player1Id: 'socket1', player2Id: 'socket2', score: 0 }
+      ];
+
       const mockRound: CurrentRound = {
         roundNumber: 1,
         roundId: 'round1',
@@ -307,6 +311,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="What is your favorite color?"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={1}
             allAnswersIn={false}
@@ -323,6 +328,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={1}
             allAnswersIn={false}
@@ -331,7 +337,7 @@ describe('Component Smoke Tests', () => {
           />
         );
 
-        expect(screen.getByText('✅ Submitted')).toBeInTheDocument();
+        expect(screen.getByText('✅')).toBeInTheDocument();
         // Non-submitted players show typing dots animation (no text)
         const dots = document.querySelectorAll('.typing-dot');
         expect(dots.length).toBeGreaterThan(0);
@@ -353,6 +359,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={playersWithDisconnected}
+            teams={mockTeams}
             currentRound={roundWithNoSubmissions}
             submittedCount={0}
             allAnswersIn={false}
@@ -361,7 +368,7 @@ describe('Component Smoke Tests', () => {
           />
         );
 
-        expect(screen.getByText('📱 Phone screen off')).toBeInTheDocument();
+        expect(screen.getByText('📱')).toBeInTheDocument();
       });
 
       it('shows both submitted and disconnected status together', () => {
@@ -374,6 +381,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={playersWithDisconnected}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={1}
             allAnswersIn={false}
@@ -383,7 +391,7 @@ describe('Component Smoke Tests', () => {
         );
 
         // Alice submitted then disconnected - should show both states
-        expect(screen.getByText('✅ Submitted · 📱 Phone screen off')).toBeInTheDocument();
+        expect(screen.getByText('✅ 📱')).toBeInTheDocument();
       });
 
       it('shows answer count when not all submitted', () => {
@@ -391,6 +399,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={1}
             allAnswersIn={false}
@@ -407,6 +416,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={2}
             allAnswersIn={true}
@@ -426,6 +436,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={2}
             allAnswersIn={true}
@@ -444,6 +455,7 @@ describe('Component Smoke Tests', () => {
           <AnsweringPhase
             question="Test question"
             players={mockPlayers}
+            teams={mockTeams}
             currentRound={mockRound}
             submittedCount={2}
             allAnswersIn={true}

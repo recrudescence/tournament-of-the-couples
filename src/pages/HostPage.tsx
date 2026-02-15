@@ -660,6 +660,7 @@ export function HostPage() {
                   variant={gameState.currentRound.variant}
                   options={gameState.currentRound.options ?? undefined}
                   players={gameState.players}
+                  teams={gameState.teams}
                   currentRound={gameState.currentRound}
                   submittedCount={submittedCount}
                   allAnswersIn={allAnswersIn}
