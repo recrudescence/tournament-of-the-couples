@@ -168,8 +168,22 @@ export function AnsweringPhase({
       <h3 className="subtitle is-5 mb-3">
         {isSelectingPhase ? 'Pick Status' : 'Answer Status'}
       </h3>
-      <div className="mb-4" style={{ perspective: 800 }}>
-        {players.map((player) => {
+      <div className="columns is-multiline mb-4" style={{ perspective: 800 }}>
+        {[...players].sort((a, b) => {
+          // Sort waiting players to top
+          const showPickStatus = isPoolSelection && allAnswersIn && !isWaitingForRelease;
+          const getStatus = (p: Player) => {
+            if (showPickStatus) return picksSubmitted.includes(p.name);
+            if (!currentRound) return false;
+            return currentRound.status === 'complete' || currentRound.status === 'selecting'
+              ? p.name in currentRound.answers
+              : currentRound.submittedInCurrentPhase.includes(p.name);
+          };
+          const aStatus = getStatus(a);
+          const bStatus = getStatus(b);
+          if (aStatus === bStatus) return 0;
+          return aStatus ? 1 : -1; // waiting (false) comes first
+        }).map((player) => {
           const hasSubmitted = currentRound
             ? currentRound.status === 'complete' || currentRound.status === 'selecting'
               ? player.name in currentRound.answers
@@ -200,31 +214,33 @@ export function AnsweringPhase({
           const statusText = statusParts.length > 0 ? statusParts.join(' · ') : null;
 
           return (
-            <AnimatePresence mode="popLayout" key={player.socketId}>
-              <motion.div
-                key={`${player.socketId}-${hasSubmitted}-${hasPicked}`}
-                className={`box mb-2 p-3 ${statusColor}`}
-                initial={{ rotateX: -90, opacity: 0 }}
-                animate={{ rotateX: 0, opacity: 1 }}
-                transition={springDefault}
-              >
-                <div className="is-flex is-align-items-center is-justify-content-space-between">
-                  <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                    <PlayerAvatar avatar={player.avatar} size="small" />
-                    <span className="has-text-weight-semibold">{player.name}</span>
-                  </div>
-                  {statusText ? (
-                    <span>{statusText}</span>
-                  ) : (
-                    <div className="typing-indicator">
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
+            <div className="column is-half" key={player.socketId}>
+              <AnimatePresence mode="popLayout">
+                <motion.div
+                  key={`${player.socketId}-${hasSubmitted}-${hasPicked}`}
+                  className={`box p-3 ${statusColor}`}
+                  initial={{ rotateX: -90, opacity: 0 }}
+                  animate={{ rotateX: 0, opacity: 1 }}
+                  transition={springDefault}
+                >
+                  <div className="is-flex is-align-items-center is-justify-content-space-between">
+                    <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
+                      <PlayerAvatar avatar={player.avatar} size="small" />
+                      <span className="has-text-weight-semibold">{player.name}</span>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                    {statusText ? (
+                      <span>{statusText}</span>
+                    ) : (
+                      <div className="typing-indicator">
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           );
         })}
       </div>
