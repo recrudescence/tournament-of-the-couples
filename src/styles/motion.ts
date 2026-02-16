@@ -1,4 +1,5 @@
-import type { Transition, Variants } from 'framer-motion';
+import type React from 'react';
+import type {Transition, Variants} from 'framer-motion';
 
 // ============================================================================
 // TRANSITIONS - Reusable spring/timing configurations
@@ -151,6 +152,52 @@ export const modalCard: Variants = {
   hidden: { scale: 0.3, rotateX: -20, y: -100, opacity: 0 },
   visible: { scale: 1, rotateX: 0, rotateZ: 0, y: 0, opacity: 1 },
   exit: { scale: 0.5, rotateX: 20, y: 100, opacity: 0 },
+};
+
+/** Card-stack navigation variants — slides cards left/right with rotation */
+export type NavDirection = 'next' | 'prev' | null;
+
+export function scoringCardVariants(direction: NavDirection) {
+  const xOffset = 400;
+  const rotateZ = 8;
+
+  if (!direction) {
+    // Initial open — 3D pop entrance (uses custom prop for random tilt)
+    return {
+      initial: (tilt: { rotateX: number; rotateZ: number }) => ({
+        scale: 0.3, rotateX: tilt.rotateX, rotateZ: tilt.rotateZ, y: -100, opacity: 0,
+      }),
+      animate: { scale: 1, rotateX: 0, rotateZ: 0, x: 0, y: 0, opacity: 1 },
+      exit: { scale: 0.5, rotateX: 20, y: 100, opacity: 0 },
+    };
+  }
+
+  const enterX = direction === 'next' ? xOffset : -xOffset;
+  const enterRotate = direction === 'next' ? rotateZ : -rotateZ;
+  return {
+    initial: () => ({ x: enterX, rotateZ: enterRotate, scale: 0.85, opacity: 0 }),
+    animate: { scale: 1, rotateZ: 0, x: 0, y: 0, opacity: 1 },
+    exit: { scale: 0.5, rotateX: 20, y: 100, opacity: 0 },
+  };
+}
+
+/** Nav arrow base style — circular floating button */
+export const navArrowStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  zIndex: 50,
+  width: 48,
+  height: 48,
+  borderRadius: '50%',
+  border: 'none',
+  background: 'rgba(255,255,255,0.85)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  fontSize: '1.4rem',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 // ============================================================================

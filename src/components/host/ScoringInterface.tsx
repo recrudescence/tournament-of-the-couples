@@ -3,6 +3,7 @@ import {type CurrentRound, type Player, type Team} from '../../types/game';
 import {findPlayerBySocketId} from '../../utils/playerUtils';
 import {TeamName} from '../common/TeamName';
 import {Question} from '../common/Question.tsx';
+import {type NavDirection} from '../../styles/motion';
 import {ScoringModal} from './ScoringModal';
 import {fireScoringBurst} from '../../hooks/useConfetti';
 import {formatResponseTime} from '../../utils/formatUtils';
@@ -174,7 +175,8 @@ export function ScoringInterface({
   onReopenTeamScoring,
   onFinishRound
 }: ScoringInterfaceProps) {
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [selectedSortedIndex, setSelectedSortedIndex] = useState<number | null>(null);
+  const [navDirection, setNavDirection] = useState<NavDirection>(null);
   const [recentlyScored, setRecentlyScored] = useState<string | null>(null);
   const scoreTagRefs = useRef<Record<string, HTMLSpanElement | null>>({});
 
@@ -185,27 +187,42 @@ export function ScoringInterface({
   }, [teams, currentRound, players]);
 
   // Get selected team data
-  const selectedTeamData = useMemo(() => {
-    if (!selectedTeamId) return null;
-    return teamsSortedByResponseTime.find(t => t.team.teamId === selectedTeamId) ?? null;
-  }, [selectedTeamId, teamsSortedByResponseTime]);
+  const selectedTeamData = selectedSortedIndex !== null
+    ? teamsSortedByResponseTime[selectedSortedIndex] ?? null
+    : null;
 
-  const handleOpenModal = useCallback((teamId: string) => {
-    setSelectedTeamId(teamId);
+  const handleOpenModal = useCallback((sortedIndex: number) => {
+    setNavDirection(null);
+    setSelectedSortedIndex(sortedIndex);
   }, []);
 
   const handleCloseModal = useCallback(() => {
-    setSelectedTeamId(null);
+    setSelectedSortedIndex(null);
+    setNavDirection(null);
   }, []);
 
-  const handleReopenScoring = useCallback((teamId: string, originalIndex: number) => {
+  const handleReopenScoring = useCallback((teamId: string, originalIndex: number, sortedIndex: number) => {
     onReopenTeamScoring(teamId, originalIndex);
-    setSelectedTeamId(teamId);
+    setNavDirection(null);
+    setSelectedSortedIndex(sortedIndex);
   }, [onReopenTeamScoring]);
+
+  const handlePrev = useCallback(() => {
+    setNavDirection('prev');
+    setSelectedSortedIndex(prev => prev !== null && prev > 0 ? prev - 1 : prev);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setNavDirection('next');
+    setSelectedSortedIndex(prev =>
+      prev !== null && prev < teamsSortedByResponseTime.length - 1 ? prev + 1 : prev
+    );
+  }, [teamsSortedByResponseTime.length]);
 
   const handleAwardPoints = useCallback((teamId: string, originalIndex: number, points: number) => {
     // Close modal first
-    setSelectedTeamId(null);
+    setSelectedSortedIndex(null);
+    setNavDirection(null);
 
     // Track which team was just scored for animation
     setRecentlyScored(teamId);
@@ -236,7 +253,7 @@ export function ScoringInterface({
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
       <div className="mb-4">
-        {teamsSortedByResponseTime.map((teamData) => {
+        {teamsSortedByResponseTime.map((teamData, sortedIndex) => {
           const { team, originalIndex } = teamData;
           const isScored = team.teamId in teamPointsAwarded;
           const points = teamPointsAwarded[team.teamId] ?? 0;
@@ -250,8 +267,8 @@ export function ScoringInterface({
               points={points}
               isRecentlyScored={isRecentlyScored}
               scoreTagRef={(el) => { scoreTagRefs.current[team.teamId] = el; }}
-              onOpenModal={() => handleOpenModal(team.teamId)}
-              onReopenScoring={() => handleReopenScoring(team.teamId, originalIndex)}
+              onOpenModal={() => handleOpenModal(sortedIndex)}
+              onReopenScoring={() => handleReopenScoring(team.teamId, originalIndex, sortedIndex)}
             />
           );
         })}
@@ -265,12 +282,16 @@ export function ScoringInterface({
       {/* Scoring Modal */}
       {selectedTeamData && currentRound && (
         <ScoringModal
+          key={selectedTeamData.team.teamId}
           team={selectedTeamData.team}
           player1={selectedTeamData.player1}
           player2={selectedTeamData.player2}
           currentRound={currentRound}
           totalResponseTime={selectedTeamData.totalResponseTime}
-          isFastestTeam={teamsSortedByResponseTime[0]?.team.teamId === selectedTeamData.team.teamId}
+          isFastestTeam={selectedSortedIndex === 0}
+          navDirection={navDirection}
+          hasPrev={selectedSortedIndex! > 0}
+          hasNext={selectedSortedIndex! < teamsSortedByResponseTime.length - 1}
           sortedPlayers={[
             { player: selectedTeamData.player1, time: selectedTeamData.player1Time },
             { player: selectedTeamData.player2, time: selectedTeamData.player2Time }
@@ -279,6 +300,8 @@ export function ScoringInterface({
           revealedResponseTimes={revealedResponseTimes}
           onRevealAnswer={onRevealAnswer}
           onAwardPoints={(points) => handleAwardPoints(selectedTeamData.team.teamId, selectedTeamData.originalIndex, points)}
+          onPrev={handlePrev}
+          onNext={handleNext}
           onClose={handleCloseModal}
         />
       )}

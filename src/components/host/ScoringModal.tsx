@@ -6,11 +6,13 @@ import {BothPlayersScoring} from './BothPlayersScoring';
 import {SinglePlayerScoring} from './SinglePlayerScoring';
 import {formatResponseTime} from '../../utils/formatUtils';
 import {
-  fadeIn,
   liftHover,
   liftTap,
   modalBackdrop,
+  navArrowStyle,
+  type NavDirection,
   popInSpin,
+  scoringCardVariants,
   slideInLeft,
   slideInUpDeep,
   springBouncy,
@@ -33,8 +35,13 @@ interface ScoringModalProps {
   sortedPlayers: PlayerWithTime[];
   revealedAnswers: Set<string>;
   revealedResponseTimes: Record<string, number>;
+  navDirection: NavDirection;
+  hasPrev: boolean;
+  hasNext: boolean;
   onRevealAnswer: (playerName: string) => void;
   onAwardPoints: (points: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
   onClose: () => void;
 }
 
@@ -47,27 +54,36 @@ export function ScoringModal({
                                sortedPlayers,
                                revealedAnswers,
                                revealedResponseTimes,
+                               navDirection,
+                               hasPrev,
+                               hasNext,
                                onRevealAnswer,
                                onAwardPoints,
+                               onPrev,
+                               onNext,
                                onClose
                              }: ScoringModalProps) {
   const [isExiting, setIsExiting] = useState(false);
-  // Random tilt for playful entrance
+  // Random tilt for playful entrance (only used when navDirection is null)
   const [initialTilt] = useState(() => ({
     rotateZ: (Math.random() - 0.5) * 8,
     rotateX: -20 + Math.random() * 10,
   }));
 
-  // Handle escape key
+  // Handle keyboard navigation
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleClose();
+      } else if (e.key === 'ArrowLeft' && hasPrev) {
+        onPrev();
+      } else if (e.key === 'ArrowRight' && hasNext) {
+        onNext();
       }
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [hasPrev, hasNext]);
 
   const handleClose = () => {
     setIsExiting(true);
@@ -86,13 +102,10 @@ export function ScoringModal({
   };
 
   // Calculate if all answers are revealed for showing total time
-  // For answerForBoth: keys are "responder:subject" (e.g., "Bob:Alice", "Alice:Alice")
-  // For single player: keys are just player names
   const allRevealed = (() => {
     if (!player1?.name || !player2?.name) return false;
 
     if (currentRound.answerForBoth) {
-      // All 4 keys must be revealed
       return (
         revealedAnswers.has(`${player2.name}:${player1.name}`) &&
         revealedAnswers.has(`${player1.name}:${player1.name}`) &&
@@ -102,6 +115,9 @@ export function ScoringModal({
     }
     return revealedAnswers.has(player1.name) && revealedAnswers.has(player2.name);
   })();
+
+  const isNavigating = navDirection !== null;
+  const cardVariants = scoringCardVariants(navDirection);
 
   return (
     <AnimatePresence onExitComplete={handleExitComplete}>
@@ -118,27 +134,50 @@ export function ScoringModal({
             onClick={handleClose}
           />
 
-          {/* Modal Card - 3D flip entrance */}
+          {/* Modal Card */}
           <motion.div
             className="modal-card modal-card-3d"
-            initial={{
-              scale: 0.3,
-              rotateX: initialTilt.rotateX,
-              rotateZ: initialTilt.rotateZ,
-              y: -100,
-              opacity: 0,
-            }}
-            animate={{ scale: 1, rotateX: 0, rotateZ: 0, y: 0, opacity: 1 }}
-            exit={{ scale: 0.5, rotateX: 20, y: 100, opacity: 0 }}
+            style={{ position: 'relative', overflow: 'visible' }}
+            custom={initialTilt}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={cardVariants}
             transition={springDefault}
           >
+            {/* Nav arrows — positioned relative to modal card */}
+            {hasPrev && (
+              <motion.button
+                style={{ ...navArrowStyle, left: -60 }}
+                onClick={onPrev}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.15, background: 'rgba(255,255,255,1)', transition: springStiff }}
+                whileTap={{ scale: 0.9, transition: springStiff }}
+              >
+                ‹
+              </motion.button>
+            )}
+            {hasNext && (
+              <motion.button
+                style={{ ...navArrowStyle, right: -60 }}
+                onClick={onNext}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.15, background: 'rgba(255,255,255,1)', transition: springStiff }}
+                whileTap={{ scale: 0.9, transition: springStiff }}
+              >
+                ›
+              </motion.button>
+            )}
+
             <header className="modal-card-head" style={{ position: 'relative' }}>
               <motion.div
                 className="modal-card-title is-flex is-align-items-center gap-sm is-size-3"
                 variants={slideInLeft}
-                initial="hidden"
+                initial={isNavigating ? false : 'hidden'}
                 animate="visible"
-                transition={{ ...springDefault, delay: 0.15 }}
+                transition={{ ...springDefault, delay: isNavigating ? 0 : 0.15 }}
               >
                 <TeamName player1={player1} player2={player2} size="large" />
               </motion.div>
@@ -162,7 +201,6 @@ export function ScoringModal({
 
             <motion.section
               className="modal-card-body"
-              variants={fadeIn}
               initial="hidden"
               animate="visible"
               transition={{ delay: 0.1 }}
