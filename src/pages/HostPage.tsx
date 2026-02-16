@@ -417,6 +417,16 @@ export function HostPage() {
     setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: points }));
   };
 
+  const handleScoreAllZero = () => {
+    const teams = gameState?.teams ?? [];
+    for (const team of teams) {
+      if (!(team.teamId in teamPointsAwarded)) {
+        emit('skipPoint', { teamId: team.teamId });
+        setTeamPointsAwarded((prev) => ({ ...prev, [team.teamId]: 0 }));
+      }
+    }
+  };
+
   const handleFinishRound = () => {
     emit('nextRound');
     // In imported mode, also advance to next question
@@ -703,6 +713,7 @@ export function HostPage() {
                   onRestartQuestion={handleRestartQuestion}
                   onPreviousQuestion={handlePreviousQuestion}
                   onSkipQuestion={handleSkipQuestion}
+                  onScoreAllZero={handleScoreAllZero}
                 />
               </div>
             </div>

@@ -22,6 +22,7 @@ interface RoundControlsProps {
   onRestartQuestion: () => void;
   onPreviousQuestion: () => void;
   onSkipQuestion: () => void;
+  onScoreAllZero: () => void;
 }
 
 // =============================================================================
@@ -260,7 +261,8 @@ export function RoundControls({
   onResetQuestion,
   onRestartQuestion,
   onPreviousQuestion,
-  onSkipQuestion
+  onSkipQuestion,
+  onScoreAllZero
 }: RoundControlsProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [reopenPlayerId, setReopenPlayerId] = useState('');
@@ -354,14 +356,22 @@ export function RoundControls({
                 </button>
               )}
 
-              {/* Back to answering (scoring phase only) */}
+              {/* Scoring phase controls */}
               {phase === 'scoring' && (
-                <button
-                  className="button is-small is-warning"
-                  onClick={onReopenAnswering}
-                >
-                  Back to Answering
-                </button>
+                <div className="buttons are-small">
+                  <button
+                    className="button is-small is-warning"
+                    onClick={onReopenAnswering}
+                  >
+                    Back to Answering
+                  </button>
+                  <button
+                    className="button is-small is-light"
+                    onClick={onScoreAllZero}
+                  >
+                    Score rest 0
+                  </button>
+                </div>
               )}
             </>
           )}

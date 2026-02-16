@@ -149,15 +149,6 @@ function TeamRow({
   );
 }
 
-function FinishRoundButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
-  return (
-    <div className="has-text-centered mt-6 mb-2">
-      <button className="button is-primary is-large" onClick={onClick} disabled={disabled}>
-        Finish Round
-      </button>
-    </div>
-  );
-}
 
 // =============================================================================
 // Main Component
@@ -247,6 +238,8 @@ export function ScoringInterface({
     }
   }, [onAwardPoints]);
 
+  const hasUnscoredTeams = teams.some(t => !(t.teamId in teamPointsAwarded));
+
   return (
     <div className="box">
       <Question question={currentRound?.question} />
@@ -274,10 +267,11 @@ export function ScoringInterface({
         })}
       </div>
 
-      <FinishRoundButton
-        onClick={onFinishRound}
-        disabled={teams.some(t => !(t.teamId in teamPointsAwarded))}
-      />
+      <div className="has-text-centered mt-6 mb-2">
+        <button className="button is-primary is-large" onClick={onFinishRound} disabled={hasUnscoredTeams}>
+          Finish Round
+        </button>
+      </div>
 
       {/* Scoring Modal */}
       {selectedTeamData && currentRound && (
