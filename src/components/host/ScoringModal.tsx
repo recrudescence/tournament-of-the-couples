@@ -6,17 +6,16 @@ import {BothPlayersScoring} from './BothPlayersScoring';
 import {SinglePlayerScoring} from './SinglePlayerScoring';
 import {formatResponseTime} from '../../utils/formatUtils';
 import {
-  modalBackdrop,
-  slideInLeft,
   fadeIn,
-  popInSpin,
-  slideInUpDeep,
-  springDefault,
-  springBouncy,
-  springStiff,
-  staggerDelay,
   liftHover,
   liftTap,
+  modalBackdrop,
+  popInSpin,
+  slideInLeft,
+  slideInUpDeep,
+  springBouncy,
+  springDefault,
+  springStiff,
 } from '../../styles/motion';
 
 interface PlayerWithTime {
@@ -30,6 +29,7 @@ interface ScoringModalProps {
   player2: Player | undefined;
   currentRound: CurrentRound;
   totalResponseTime: number;
+  isFastestTeam: boolean;
   sortedPlayers: PlayerWithTime[];
   revealedAnswers: Set<string>;
   revealedResponseTimes: Record<string, number>;
@@ -43,6 +43,7 @@ export function ScoringModal({
                                player2,
                                currentRound,
                                totalResponseTime,
+                               isFastestTeam,
                                sortedPlayers,
                                revealedAnswers,
                                revealedResponseTimes,
@@ -144,7 +145,7 @@ export function ScoringModal({
               <AnimatePresence>
                 {allRevealed && totalResponseTime < Infinity && (
                   <motion.span
-                    className="tag is-info is-large mr-5"
+                    className="tag is-secondary is-large mr-5"
                     style={{ transform: 'translateX(-50%)' }}
                     variants={popInSpin}
                     initial="hidden"
@@ -189,11 +190,13 @@ export function ScoringModal({
               {[
                 { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
                 { points: 1, label: 'one point ⭐', className: 'is-success' },
-                { points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' },
-                ...(currentRound.answerForBoth
+                ...(isFastestTeam
+                  ? [{ points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' }]
+                  : []),
+                ...(isFastestTeam && currentRound.answerForBoth
                   ? [{ points: 4, label: '🏆 FOUR!!! 🏆', className: 'is-danger' }]
                   : []),
-              ].map(({ points, label, className }, index) => (
+              ].map(({ points, label, className }) => (
                 <motion.button
                   key={points}
                   className={`button is-large ${className}`}
@@ -201,7 +204,7 @@ export function ScoringModal({
                   variants={slideInUpDeep}
                   initial="hidden"
                   animate="visible"
-                  transition={{ ...springStiff, delay: staggerDelay(index, 0.2, 0.08) }}
+                  transition={springStiff}
                   whileHover={liftHover}
                   whileTap={liftTap}
                 >

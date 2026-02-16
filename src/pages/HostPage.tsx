@@ -50,7 +50,7 @@ export function HostPage() {
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [roundNumber, setRoundNumber] = useState(1);
-  const [showFinishBtn, setShowFinishBtn] = useState(false);
+  const [setShowFinishBtn] = useState(false);
   const [teamPointsAwarded, setTeamPointsAwarded] = useState<Record<string, number>>({});
   const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
 
@@ -474,7 +474,7 @@ export function HostPage() {
       return updated;
     });
 
-    // Clear revealed answers and response times for this team's players
+    // Pre-reveal answers for this team so the modal opens with answers visible
     const team = gameState?.teams.find(t => t.teamId === teamId);
     if (team && gameState?.players) {
       const player1 = findPlayerBySocketId(gameState.players, team.player1Id);
@@ -483,32 +483,15 @@ export function HostPage() {
 
       const newRevealedAnswers = new Set(revealedAnswers);
       if (player1 && player2 && isDualMode) {
-        // Dual mode: clear all 4 composite keys
-        newRevealedAnswers.delete(`${player1.name}:${player1.name}`);
-        newRevealedAnswers.delete(`${player1.name}:${player2.name}`);
-        newRevealedAnswers.delete(`${player2.name}:${player1.name}`);
-        newRevealedAnswers.delete(`${player2.name}:${player2.name}`);
+        newRevealedAnswers.add(`${player1.name}:${player1.name}`);
+        newRevealedAnswers.add(`${player1.name}:${player2.name}`);
+        newRevealedAnswers.add(`${player2.name}:${player1.name}`);
+        newRevealedAnswers.add(`${player2.name}:${player2.name}`);
       } else {
-        // Single mode: clear by player name
-        if (player1) newRevealedAnswers.delete(player1.name);
-        if (player2) newRevealedAnswers.delete(player2.name);
+        if (player1) newRevealedAnswers.add(player1.name);
+        if (player2) newRevealedAnswers.add(player2.name);
       }
       setRevealedAnswers(newRevealedAnswers);
-
-      // Clear response times for these players (keyed by composite or simple name)
-      setRevealedResponseTimes((prev) => {
-        const updated = { ...prev };
-        if (player1 && player2 && isDualMode) {
-          delete updated[`${player1.name}:${player1.name}`];
-          delete updated[`${player1.name}:${player2.name}`];
-          delete updated[`${player2.name}:${player1.name}`];
-          delete updated[`${player2.name}:${player2.name}`];
-        } else {
-          if (player1) delete updated[player1.name];
-          if (player2) delete updated[player2.name];
-        }
-        return updated;
-      });
     }
 
     setShowFinishBtn(false);
@@ -692,7 +675,6 @@ export function HostPage() {
                     teamPointsAwarded={teamPointsAwarded}
                     revealedAnswers={revealedAnswers}
                     revealedResponseTimes={revealedResponseTimes}
-                    showFinishBtn={showFinishBtn}
                     onBackToAnswering={handleBackToAnswering}
                     onRevealAnswer={handleRevealAnswer}
                     onAwardPoints={handleAwardPoints}

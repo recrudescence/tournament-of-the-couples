@@ -18,7 +18,6 @@ interface ScoringInterfaceProps {
   teamPointsAwarded: Record<string, number>;
   revealedAnswers: Set<string>;
   revealedResponseTimes: Record<string, number>;
-  showFinishBtn: boolean;
   onBackToAnswering: () => void;
   onRevealAnswer: (playerName: string) => void;
   onAwardPoints: (teamId: string, teamIndex: number, points: number) => void;
@@ -80,7 +79,7 @@ function getScoreTagClassName(points: number, isRecentlyScored: boolean): string
   if (points > 1) {
     classes.push('is-warning');
   } else if (points > 0) {
-    classes.push('is-success');
+    classes.push('is-primary');
   } else {
     classes.push('is-light');
   }
@@ -116,7 +115,11 @@ function TeamRow({
   const { totalResponseTime, player1, player2 } = teamData;
 
   return (
-    <div className="box mb-3">
+    <div
+      className="box mb-3 is-clickable"
+      onClick={isScored ? onReopenScoring : onOpenModal}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="is-flex is-justify-content-space-between is-align-items-center">
         <div className="is-flex is-align-items-center gap-sm">
           <TeamName player1={player1} player2={player2} size="large" />
@@ -124,14 +127,6 @@ function TeamRow({
         <div className="is-flex is-align-items-center gap-sm">
           {isScored ? (
             <>
-              <button
-                className="button is-light is-small"
-                onClick={onReopenScoring}
-                data-tooltip-id="tooltip"
-                data-tooltip-content="Re-score"
-              >
-                ↪️
-              </button>
               {totalResponseTime < Infinity && (
                 <span className="tag is-family-secondary is-medium">
                   ⏱️ {formatResponseTime(totalResponseTime)}
@@ -145,12 +140,7 @@ function TeamRow({
               </span>
             </>
           ) : (
-            <button
-              className="button is-link"
-              onClick={onOpenModal}
-            >
-              Score
-            </button>
+            <span className="tag is-link is-medium">Score</span>
           )}
         </div>
       </div>
@@ -158,10 +148,10 @@ function TeamRow({
   );
 }
 
-function FinishRoundButton({ onClick }: { onClick: () => void }) {
+function FinishRoundButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
   return (
-    <div className="has-text-centered mt-4">
-      <button className="button is-primary is-large" onClick={onClick}>
+    <div className="has-text-centered mt-6 mb-2">
+      <button className="button is-primary is-large" onClick={onClick} disabled={disabled}>
         Finish Round
       </button>
     </div>
@@ -179,7 +169,6 @@ export function ScoringInterface({
   teamPointsAwarded,
   revealedAnswers,
   revealedResponseTimes,
-  showFinishBtn,
   onRevealAnswer,
   onAwardPoints,
   onReopenTeamScoring,
@@ -268,7 +257,10 @@ export function ScoringInterface({
         })}
       </div>
 
-      {showFinishBtn && <FinishRoundButton onClick={onFinishRound} />}
+      <FinishRoundButton
+        onClick={onFinishRound}
+        disabled={teams.some(t => !(t.teamId in teamPointsAwarded))}
+      />
 
       {/* Scoring Modal */}
       {selectedTeamData && currentRound && (
@@ -278,6 +270,7 @@ export function ScoringInterface({
           player2={selectedTeamData.player2}
           currentRound={currentRound}
           totalResponseTime={selectedTeamData.totalResponseTime}
+          isFastestTeam={teamsSortedByResponseTime[0]?.team.teamId === selectedTeamData.team.teamId}
           sortedPlayers={[
             { player: selectedTeamData.player1, time: selectedTeamData.player1Time },
             { player: selectedTeamData.player2, time: selectedTeamData.player2Time }

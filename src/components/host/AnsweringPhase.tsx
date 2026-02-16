@@ -499,6 +499,23 @@ export function AnsweringPhase({
         <AnswerPoolDisplay poolItems={poolItems} />
       )}
 
+      <StatusNotifications
+        allAnswersIn={allAnswersIn}
+        isPoolSelection={isPoolSelection}
+        isWaitingForRelease={isWaitingForRelease}
+        isSelectingPhase={isSelectingPhase}
+        allPicksIn={allPicksIn}
+      />
+
+      <ActionButtons
+        isWaitingForRelease={isWaitingForRelease}
+        canStartScoring={canStartScoring}
+        isPoolSelection={isPoolSelection}
+        onStartPoolSelection={onStartPoolSelection}
+        onReopenAnswering={onReopenAnswering}
+        onStartScoring={onStartScoring}
+      />
+
       <h3 className="subtitle is-5 mb-3">
         {isSelectingPhase ? 'Pick Status' : 'Answer Status'}
       </h3>
@@ -519,23 +536,6 @@ export function AnsweringPhase({
       {isSelectingPhase && (
         <ProgressCounter current={picksSubmitted.length} total={players.length} label="picks submitted" />
       )}
-
-      <StatusNotifications
-        allAnswersIn={allAnswersIn}
-        isPoolSelection={isPoolSelection}
-        isWaitingForRelease={isWaitingForRelease}
-        isSelectingPhase={isSelectingPhase}
-        allPicksIn={allPicksIn}
-      />
-
-      <ActionButtons
-        isWaitingForRelease={isWaitingForRelease}
-        canStartScoring={canStartScoring}
-        isPoolSelection={isPoolSelection}
-        onStartPoolSelection={onStartPoolSelection}
-        onReopenAnswering={onReopenAnswering}
-        onStartScoring={onStartScoring}
-      />
     </div>
   );
 }
