@@ -2,6 +2,10 @@ import {PlayerAvatar} from '../common/PlayerAvatar';
 import {PlayerIdentity, RoundVariant} from '../../types/game';
 import {formatResponseTime} from '../../utils/formatUtils';
 
+// =============================================================================
+// Types
+// =============================================================================
+
 interface AnswerSubmissionFormProps {
   roundNumber: number;
   question: string;
@@ -24,6 +28,239 @@ interface AnswerSubmissionFormProps {
   isExpired?: boolean;
 }
 
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function getTimerStyles(countdown: number | undefined, isExpired: boolean | undefined) {
+  const isCountdownMode = countdown !== undefined;
+  const isUrgent = isCountdownMode && countdown <= 10000; // <= 10 seconds
+  const isWarning = isCountdownMode && countdown <= 20000 && countdown > 10000; // 10-20 seconds
+  const timerColor = isExpired ? 'is-danger' : isUrgent ? 'is-danger' : isWarning ? 'is-warning' : 'is-info';
+  const timerClass = isUrgent && !isExpired ? 'countdown-urgent' : isWarning ? 'countdown-warning' : '';
+
+  return { timerColor, timerClass, isCountdownMode };
+}
+
+function isOpenEndedVariant(variant: string): boolean {
+  return variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION;
+}
+
+// =============================================================================
+// Sub-components
+// =============================================================================
+
+function TimerDisplay({
+  roundNumber,
+  timerValue,
+  timerColor,
+  timerClass,
+  isCountdownMode
+}: {
+  roundNumber: number;
+  timerValue: number;
+  timerColor: string;
+  timerClass: string;
+  isCountdownMode: boolean;
+}) {
+  return (
+    <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
+      <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
+      <div className={`tag is-mono ${timerColor} is-large ${timerClass}`}>
+        {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
+      </div>
+    </div>
+  );
+}
+
+function QuestionHeader({ question }: { question: string }) {
+  return (
+    <div className="notification is-primary is-light mb-4">
+      <p className="is-size-5 has-text-weight-semibold">{question}</p>
+    </div>
+  );
+}
+
+function OpenEndedInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  label,
+  rows = 3
+}: {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  label?: string;
+  rows?: number;
+}) {
+  return (
+    <div className="field">
+      {label && <label className="label" htmlFor={id}>{label}</label>}
+      <div className="control">
+        <textarea
+          id={id}
+          className="textarea"
+          rows={rows}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+        />
+      </div>
+    </div>
+  );
+}
+
+function OptionRadioList({
+  name,
+  options,
+  selectedValue,
+  onChange
+}: {
+  name: string;
+  options: string[];
+  selectedValue: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="field">
+      <div className="control">
+        {options.map((option, index) => (
+          <label
+            key={index}
+            className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${selectedValue === option ? 'is-primary' : 'is-light'}`}
+          >
+            <input
+              type="radio"
+              id={`${name}-${index}`}
+              name={name}
+              value={option}
+              checked={selectedValue === option}
+              onChange={(e) => onChange(e.target.value)}
+              required
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DualAnswerSection({
+  variant,
+  options,
+  player,
+  partner,
+  dualAnswers,
+  onDualAnswerChange
+}: {
+  variant: string;
+  options: string[] | null;
+  player: PlayerIdentity;
+  partner: PlayerIdentity;
+  dualAnswers: { self: string; partner: string };
+  onDualAnswerChange: (key: 'self' | 'partner', value: string) => void;
+}) {
+  const isOpenEnded = isOpenEndedVariant(variant);
+
+  return (
+    <div className="dual-answer-sections">
+      {/* Answer for self */}
+      <div className="box has-background-light mb-4">
+        <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center gap-sm">
+          {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
+          You would say:
+        </h3>
+        {isOpenEnded ? (
+          <OpenEndedInput
+            value={dualAnswers.self}
+            onChange={(value) => onDualAnswerChange('self', value)}
+            placeholder="Your answer goes here!"
+            rows={2}
+          />
+        ) : options && (
+          <OptionRadioList
+            name="answer-self"
+            options={options}
+            selectedValue={dualAnswers.self}
+            onChange={(value) => onDualAnswerChange('self', value)}
+          />
+        )}
+      </div>
+
+      {/* Answer for partner */}
+      <div className="box has-background-light mb-4">
+        <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center gap-sm">
+          {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
+          {partner.name} would say:
+        </h3>
+        {isOpenEnded ? (
+          <OpenEndedInput
+            value={dualAnswers.partner}
+            onChange={(value) => onDualAnswerChange('partner', value)}
+            placeholder={`Meanwhile, ${partner.name} would say...`}
+            rows={2}
+          />
+        ) : options && (
+          <OptionRadioList
+            name="answer-partner"
+            options={options}
+            selectedValue={dualAnswers.partner}
+            onChange={(value) => onDualAnswerChange('partner', value)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SingleAnswerSection({
+  variant,
+  options,
+  answer,
+  selectedOption,
+  onAnswerChange,
+  onOptionChange
+}: {
+  variant: string;
+  options: string[] | null;
+  answer: string;
+  selectedOption: string;
+  onAnswerChange: (value: string) => void;
+  onOptionChange: (value: string) => void;
+}) {
+  const isOpenEnded = isOpenEndedVariant(variant);
+
+  if (isOpenEnded) {
+    return (
+      <OpenEndedInput
+        id="answerInput"
+        value={answer}
+        onChange={onAnswerChange}
+        placeholder="Type your answer here..."
+        label="Your Answer:"
+      />
+    );
+  }
+
+  return options ? (
+    <OptionRadioList
+      name="answer-option"
+      options={options}
+      selectedValue={selectedOption}
+      onChange={onOptionChange}
+    />
+  ) : null;
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
 export function AnswerSubmissionForm({
   roundNumber,
   question,
@@ -43,157 +280,42 @@ export function AnswerSubmissionForm({
   countdown,
   isExpired
 }: AnswerSubmissionFormProps) {
-  const isCountdownMode = countdown !== undefined;
-  const timerValue = isCountdownMode ? countdown : responseTime;
-  const isUrgent = isCountdownMode && countdown <= 10000; // <= 10 seconds
-  const isWarning = isCountdownMode && countdown <= 20000 && countdown > 10000; // 10-20 seconds
-  const timerColor = isExpired ? 'is-danger' : isUrgent ? 'is-danger' : isWarning ? 'is-warning' : 'is-info';
-  const timerClass = isUrgent && !isExpired ? 'countdown-urgent' : isWarning ? 'countdown-warning' : '';
+  const { timerColor, timerClass, isCountdownMode } = getTimerStyles(countdown, isExpired);
+  const timerValue = isCountdownMode ? countdown! : responseTime;
 
   return (
     <div className="box">
-      <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
-        <h2 className="subtitle is-4 mb-0">Question {roundNumber}</h2>
-        <div className={`tag is-mono ${timerColor} is-large ${timerClass}`}>
-          {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
-        </div>
-      </div>
+      <TimerDisplay
+        roundNumber={roundNumber}
+        timerValue={timerValue}
+        timerColor={timerColor}
+        timerClass={timerClass}
+        isCountdownMode={isCountdownMode}
+      />
 
-      <div className="notification is-primary is-light mb-4">
-        <p className="is-size-5 has-text-weight-semibold">{question}</p>
-      </div>
+      <QuestionHeader question={question} />
 
       <form onSubmit={onSubmit}>
         {answerForBoth ? (
-          // Dual answer mode: answer for both players
-          <div className="dual-answer-sections">
-            {/* Answer for self */}
-            <div className="box has-background-light mb-4">
-              <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                {player.avatar && <PlayerAvatar avatar={player.avatar} size="small" />}
-                You would say:
-              </h3>
-              {(variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
-                <div className="field">
-                  <div className="control">
-                    <textarea
-                      className="textarea"
-                      rows={2}
-                      placeholder={`Your answer goes here!`}
-                      value={dualAnswers.self}
-                      onChange={(e) => onDualAnswerChange('self', e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="field">
-                  <div className="control">
-                    {options?.map((option, index) => (
-                      <label
-                        key={index}
-                        className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${dualAnswers.self === option ? 'is-primary' : 'is-light'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="answer-self"
-                          value={option}
-                          checked={dualAnswers.self === option}
-                          onChange={(e) => onDualAnswerChange('self', e.target.value)}
-                          required
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Answer for partner */}
-            <div className="box has-background-light mb-4">
-              <h3 className="subtitle is-5 mb-3 is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                {partner.avatar && <PlayerAvatar avatar={partner.avatar} size="small" />}
-                {partner.name} would say:
-              </h3>
-              {(variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
-                <div className="field">
-                  <div className="control">
-                    <textarea
-                      className="textarea"
-                      rows={2}
-                      placeholder={`Meanwhile, ${partner.name} would say...`}
-                      value={dualAnswers.partner}
-                      onChange={(e) => onDualAnswerChange('partner', e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="field">
-                  <div className="control">
-                    {options?.map((option, index) => (
-                      <label
-                        key={index}
-                        className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${dualAnswers.partner === option ? 'is-primary' : 'is-light'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="answer-partner"
-                          value={option}
-                          checked={dualAnswers.partner === option}
-                          onChange={(e) => onDualAnswerChange('partner', e.target.value)}
-                          required
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <DualAnswerSection
+            variant={variant}
+            options={options}
+            player={player}
+            partner={partner}
+            dualAnswers={dualAnswers}
+            onDualAnswerChange={onDualAnswerChange}
+          />
         ) : (
-          // Single answer mode
-          (variant === 'open_ended' || variant === RoundVariant.POOL_SELECTION) ? (
-            <div className="field">
-              <label className="label" htmlFor="answerInput">Your Answer:</label>
-              <div className="control">
-                <textarea
-                  id="answerInput"
-                  className="textarea"
-                  rows={3}
-                  placeholder="Type your answer here..."
-                  value={answer}
-                  onChange={(e) => onAnswerChange(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="field">
-              <div className="control">
-                {options?.map((option, index) => (
-                  <label
-                    key={index}
-                    className={`button is-fullwidth is-justify-content-start mb-2 answer-option-label ${selectedOption === option ? 'is-primary' : 'is-light'}`}
-                  >
-                    <input
-                      type="radio"
-                      id={`option-${index}`}
-                      name="answer-option"
-                      value={option}
-                      checked={selectedOption === option}
-                      onChange={(e) => onOptionChange(e.target.value)}
-                      required
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )
+          <SingleAnswerSection
+            variant={variant}
+            options={options}
+            answer={answer}
+            selectedOption={selectedOption}
+            onAnswerChange={onAnswerChange}
+            onOptionChange={onOptionChange}
+          />
         )}
+
         <button type="submit" className="button is-primary is-fullwidth is-large">
           Submit Answer
         </button>

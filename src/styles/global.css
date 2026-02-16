@@ -599,6 +599,22 @@ input[type="radio"] {
   border-color: hsl(141, 53%, 33%);
 }
 
+/* ============================================================================
+   SPACING UTILITIES - Consistent gap/spacing classes
+   ============================================================================ */
+
+.gap-sm {
+  gap: 0.5rem;
+}
+
+.gap-md {
+  gap: 0.75rem;
+}
+
+.gap-lg {
+  gap: 1rem;
+}
+
 .gap-2 {
   gap: 0.5rem;
 }
@@ -647,4 +663,123 @@ input[type="radio"] {
 
 [data-theme="halloween"] .app-tooltip .react-tooltip-arrow {
   border-color: #4A3A6E !important;
+}
+
+/* ============================================================================
+   MODAL UTILITIES - 3D perspective and transform styles
+   ============================================================================ */
+
+.modal-card-3d {
+  perspective: 1500px;
+  transform-style: preserve-3d;
+}
+
+/* ============================================================================
+   PICKER STICKERS - Pool scoring sticker positioning
+   ============================================================================ */
+
+.picker-stickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.picker-sticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  border: 2px solid hsl(0, 0%, 80%);
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.picker-sticker.is-correct {
+  border-color: hsl(141, 53%, 53%);
+  background: hsl(141, 53%, 95%);
+}
+
+.picker-sticker.is-incorrect {
+  border-color: hsl(348, 100%, 61%);
+  background: hsl(348, 100%, 95%);
+}
+
+/* Halloween theme overrides */
+[data-theme="halloween"] .picker-sticker {
+  border-color: #666;
+  background: #1A1A2E;
+}
+
+[data-theme="halloween"] .picker-sticker.is-correct {
+  border-color: #8B00FF;
+  background: rgba(139, 0, 255, 0.2);
+}
+
+[data-theme="halloween"] .picker-sticker.is-incorrect {
+  border-color: #FF6B6B;
+  background: rgba(255, 107, 107, 0.2);
+}
+
+/* ============================================================================
+   TEAM BUBBLE - iMessage-style player bubbles in TeamCard
+   ============================================================================ */
+
+.team-bubble {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  border-radius: 2rem;
+  background-color: var(--partner-bubble-bg, white);
+  border: 2px solid var(--partner-bubble-border, transparent);
+  position: relative;
+}
+
+.team-bubble--large {
+  padding: 0.75rem 1rem 0.75rem 0.75rem;
+}
+
+.team-bubble--current {
+  background-color: var(--player-bubble-bg, hsl(217, 71%, 95%));
+  border-color: var(--theme-primary, hsl(217, 71%, 53%));
+}
+
+.team-bubble--left {
+  padding-right: 0.75rem;
+  padding-left: 0.5rem;
+  margin-right: -0.25rem;
+  z-index: 1;
+}
+
+.team-bubble--left.team-bubble--large {
+  padding-right: 1rem;
+  padding-left: 0.75rem;
+}
+
+.team-bubble--right {
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  margin-left: -0.25rem;
+  z-index: 2;
+}
+
+.team-bubble--right.team-bubble--large {
+  padding-left: 1rem;
+  padding-right: 0.75rem;
+}
+
+/* ============================================================================
+   BLUR REVEAL - Question reveal blur effect
+   ============================================================================ */
+
+.blur-reveal {
+  transition: filter 0.3s ease;
+}
+
+.blur-reveal--blurred {
+  filter: blur(8px);
+  user-select: none;
 }

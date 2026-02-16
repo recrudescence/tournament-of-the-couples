@@ -5,6 +5,26 @@
 }
 
 /* ======================
+   PLACE BADGE VARIABLES (shared across themes)
+   ====================== */
+:root {
+  /* Gold - 1st place */
+  --badge-gold-gradient: linear-gradient(135deg, #ffd700 0%, #ffec80 50%, #ffd700 100%);
+  --badge-gold-shadow: rgba(255, 215, 0, 0.6);
+  --badge-gold-text: #8B6914;
+
+  /* Silver - 2nd place */
+  --badge-silver-gradient: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 50%, #c0c0c0 100%);
+  --badge-silver-shadow: rgba(192, 192, 192, 0.6);
+  --badge-silver-text: #5a5a5a;
+
+  /* Bronze - 3rd place */
+  --badge-bronze-gradient: linear-gradient(135deg, #cd7f32 0%, #daa06d 50%, #cd7f32 100%);
+  --badge-bronze-shadow: rgba(205, 127, 50, 0.5);
+  --badge-bronze-text: #5c3a21;
+}
+
+/* ======================
    DEFAULT THEME
    ====================== */
 [data-theme="default"] {

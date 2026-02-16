@@ -119,8 +119,7 @@ export function ScoringModal({
 
           {/* Modal Card - 3D flip entrance */}
           <motion.div
-            className="modal-card"
-            style={{ perspective: 1500, transformStyle: 'preserve-3d' }}
+            className="modal-card modal-card-3d"
             initial={{
               scale: 0.3,
               rotateX: initialTilt.rotateX,
@@ -134,8 +133,7 @@ export function ScoringModal({
           >
             <header className="modal-card-head" style={{ position: 'relative' }}>
               <motion.div
-                className="modal-card-title is-flex is-align-items-center"
-                style={{ gap: '0.5rem', fontSize: '2rem' }}
+                className="modal-card-title is-flex is-align-items-center gap-sm is-size-3"
                 variants={slideInLeft}
                 initial="hidden"
                 animate="visible"
@@ -187,7 +185,7 @@ export function ScoringModal({
               )}
             </motion.section>
 
-            <footer className="modal-card-foot is-justify-content-center" style={{ gap: '0.5rem' }}>
+            <footer className="modal-card-foot is-justify-content-center gap-sm">
               {[
                 { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
                 { points: 1, label: 'one point ⭐', className: 'is-success' },

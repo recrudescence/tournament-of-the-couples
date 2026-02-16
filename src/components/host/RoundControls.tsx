@@ -2,6 +2,10 @@ import {useState} from 'react';
 import type {ImportedQuestionSet, Player, QuestionCursor} from '../../types/game';
 import {useAlert} from '../../context/AlertContext';
 
+// =============================================================================
+// Types
+// =============================================================================
+
 interface RoundControlsProps {
   players: Player[];
   phase: 'roundSetup' | 'reveal' | 'answering' | 'scoring';
@@ -19,6 +23,227 @@ interface RoundControlsProps {
   onPreviousQuestion: () => void;
   onSkipQuestion: () => void;
 }
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function canGoPreviousQuestion(
+  isImportedMode: boolean,
+  questionCursor: QuestionCursor | null
+): boolean {
+  return isImportedMode && questionCursor !== null && (
+    questionCursor.chapterIndex > 0 || questionCursor.questionIndex > 0
+  );
+}
+
+function canSkipQuestion(
+  isImportedMode: boolean,
+  importedQuestions: ImportedQuestionSet | null,
+  questionCursor: QuestionCursor | null
+): boolean {
+  if (!isImportedMode || !importedQuestions || !questionCursor) return false;
+
+  const chapters = importedQuestions.chapters;
+  const currentChapter = chapters[questionCursor.chapterIndex];
+  if (!currentChapter) return false;
+
+  const isLastChapter = questionCursor.chapterIndex === chapters.length - 1;
+  const isLastQuestionInChapter = questionCursor.questionIndex === currentChapter.questions.length - 1;
+  return !(isLastChapter && isLastQuestionInChapter);
+}
+
+// =============================================================================
+// Sub-components
+// =============================================================================
+
+function CollapsibleHeader({
+  isExpanded,
+  onToggle
+}: {
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      className="button is-ghost is-fullwidth p-0 is-flex is-justify-content-space-between"
+      onClick={onToggle}
+      style={{ height: 'auto' }}
+    >
+      <span className="has-text-weight-semibold">Host Controls</span>
+      <span>{isExpanded ? '▲' : '▼'}</span>
+    </button>
+  );
+}
+
+function QuestionControlButtons({
+  isImportedMode,
+  canGoPrevious,
+  canSkip,
+  onResetQuestion,
+  onRestartQuestion,
+  onPreviousQuestion,
+  onSkipQuestion
+}: {
+  isImportedMode: boolean;
+  canGoPrevious: boolean;
+  canSkip: boolean;
+  onResetQuestion: () => void;
+  onRestartQuestion: () => void;
+  onPreviousQuestion: () => void;
+  onSkipQuestion: () => void;
+}) {
+  return (
+    <div className="mb-3">
+      <p className="is-size-7 has-text-grey mb-2">Question Controls</p>
+      <div className="buttons are-small">
+        {/* Manual mode: Reset Question */}
+        {!isImportedMode && (
+          <button
+            className="button is-warning is-small"
+            onClick={onResetQuestion}
+          >
+            Reset Question
+          </button>
+        )}
+
+        {/* Imported mode: Restart, Previous, Skip */}
+        {isImportedMode && (
+          <>
+            <button
+              className="button is-warning is-small"
+              onClick={onRestartQuestion}
+            >
+              Restart
+            </button>
+            <button
+              className="button is-info is-small is-light"
+              onClick={onPreviousQuestion}
+              disabled={!canGoPrevious}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
+            >
+              ← Previous
+            </button>
+            <button
+              className="button is-info is-small is-light"
+              onClick={onSkipQuestion}
+              disabled={!canSkip}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={canSkip ? 'Skip to next question' : 'Already at last question'}
+            >
+              Skip →
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReopenPlayerForm({
+  players,
+  reopenPlayerId,
+  setReopenPlayerId,
+  onReopenPlayer
+}: {
+  players: Player[];
+  reopenPlayerId: string;
+  setReopenPlayerId: (id: string) => void;
+  onReopenPlayer: () => void;
+}) {
+  return (
+    <div className="field has-addons mb-3">
+      <div className="control">
+        <div className="select is-small">
+          <select
+            value={reopenPlayerId}
+            onChange={(e) => setReopenPlayerId(e.target.value)}
+          >
+            <option value="">Re-open answering for...</option>
+            {players.map((player) => (
+              <option key={player.socketId} value={player.socketId}>
+                {player.name} {!player.connected ? '(dc)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="control">
+        <button
+          className="button is-warning is-small"
+          onClick={onReopenPlayer}
+          disabled={!reopenPlayerId}
+        >
+          Re-open
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GameControlSection({
+  players,
+  selectedPlayerId,
+  setSelectedPlayerId,
+  onKick,
+  onResetGame
+}: {
+  players: Player[];
+  selectedPlayerId: string;
+  setSelectedPlayerId: (id: string) => void;
+  onKick: () => void;
+  onResetGame: () => void;
+}) {
+  return (
+    <div className="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap gap-sm">
+      <div>
+        <p className="is-size-7 has-text-grey mb-2">Game Controls</p>
+        <div className="buttons are-small">
+          {/* Kick player form */}
+          <div className="field has-addons mb-0">
+            <div className="control">
+              <div className="select is-small">
+                <select
+                  value={selectedPlayerId}
+                  onChange={(e) => setSelectedPlayerId(e.target.value)}
+                >
+                  <option value="">Kick player...</option>
+                  {players.map((player) => (
+                    <option key={player.socketId} value={player.socketId}>
+                      {player.name} {!player.connected ? '(dc)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="control">
+              <button
+                className="button is-danger is-small"
+                onClick={onKick}
+                disabled={!selectedPlayerId}
+              >
+                Kick
+              </button>
+            </div>
+          </div>
+
+          {/* Reset game button */}
+          <button
+            className="button is-family-secondary is-small"
+            onClick={onResetGame}
+          >
+            Reset Game
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
 
 export function RoundControls({
   players,
@@ -85,113 +310,39 @@ export function RoundControls({
     }
   };
 
-  // Check if we can go to previous question (not at first question)
-  const canGoPrevious = isImportedMode && questionCursor && (
-    questionCursor.chapterIndex > 0 || questionCursor.questionIndex > 0
-  );
-
-  // Check if we can skip to next question (not at last question)
-  const canSkip = isImportedMode && importedQuestions && questionCursor && (() => {
-    const chapters = importedQuestions.chapters;
-    const currentChapter = chapters[questionCursor.chapterIndex];
-    if (!currentChapter) return false;
-    const isLastChapter = questionCursor.chapterIndex === chapters.length - 1;
-    const isLastQuestionInChapter = questionCursor.questionIndex === currentChapter.questions.length - 1;
-    return !(isLastChapter && isLastQuestionInChapter);
-  })();
-
-  // Determine if we're in an active round phase (where question controls make sense)
+  const canGoPrevious = canGoPreviousQuestion(isImportedMode, questionCursor);
+  const canSkip = canSkipQuestion(isImportedMode, importedQuestions, questionCursor);
   const isActivePhase = phase === 'reveal' || phase === 'answering' || phase === 'scoring';
 
   return (
     <div className="box has-background-light">
-      <button
-        className="button is-ghost is-fullwidth p-0 is-flex is-justify-content-space-between"
-        onClick={() => setIsExpanded(!isExpanded)}
-        style={{ height: 'auto' }}
-      >
-        <span className="has-text-weight-semibold">Host Controls</span>
-        <span>{isExpanded ? '▲' : '▼'}</span>
-      </button>
+      <CollapsibleHeader
+        isExpanded={isExpanded}
+        onToggle={() => setIsExpanded(!isExpanded)}
+      />
 
       {isExpanded && (
         <div className="mt-3">
           {/* Question Controls - only show during active phases */}
           {isActivePhase && (
             <>
-              <div className="mb-3">
-                <p className="is-size-7 has-text-grey mb-2">Question Controls</p>
-                <div className="buttons are-small">
-                  {/* Manual mode: Reset Question */}
-                  {!isImportedMode && (
-                    <button
-                      className="button is-warning is-small"
-                      onClick={onResetQuestion}
-                    >
-                      Reset Question
-                    </button>
-                  )}
-
-                  {/* Imported mode: Restart, Previous, Skip */}
-                  {isImportedMode && (
-                    <>
-                      <button
-                        className="button is-warning is-small"
-                        onClick={onRestartQuestion}
-                      >
-                        Restart
-                      </button>
-                      <button
-                        className="button is-info is-small is-light"
-                        onClick={onPreviousQuestion}
-                        disabled={!canGoPrevious}
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={canGoPrevious ? 'Go to previous question' : 'Already at first question'}
-                      >
-                        ← Previous
-                      </button>
-                      <button
-                        className="button is-info is-small is-light"
-                        onClick={onSkipQuestion}
-                        disabled={!canSkip}
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={canSkip ? 'Skip to next question' : 'Already at last question'}
-                      >
-                        Skip →
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
+              <QuestionControlButtons
+                isImportedMode={isImportedMode}
+                canGoPrevious={canGoPrevious}
+                canSkip={canSkip}
+                onResetQuestion={onResetQuestion}
+                onRestartQuestion={onRestartQuestion}
+                onPreviousQuestion={onPreviousQuestion}
+                onSkipQuestion={onSkipQuestion}
+              />
 
               {/* Re-open player answering form */}
-              <div className="field has-addons mb-3">
-                <div className="control">
-                  <div className="select is-small">
-                    <select
-                      value={reopenPlayerId}
-                      onChange={(e) => setReopenPlayerId(e.target.value)}
-                    >
-                      <option value="">Re-open answering for...</option>
-                      {players.map((player) => (
-                        <option key={player.socketId} value={player.socketId}>
-                          {player.name} {!player.connected ? '(dc)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="control">
-                  <button
-                    className="button is-warning is-small"
-                    onClick={handleReopenPlayer}
-                    disabled={!reopenPlayerId}
-                  >
-                    Re-open
-                  </button>
-                </div>
-              </div>
+              <ReopenPlayerForm
+                players={players}
+                reopenPlayerId={reopenPlayerId}
+                setReopenPlayerId={setReopenPlayerId}
+                onReopenPlayer={handleReopenPlayer}
+              />
 
               {/* Skip to scoring (answering phase only) */}
               {phase === 'answering' && (
@@ -215,49 +366,13 @@ export function RoundControls({
             </>
           )}
 
-          <div className="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap" style={{ gap: '0.5rem' }}>
-            <div>
-              <p className="is-size-7 has-text-grey mb-2">Game Controls</p>
-              <div className="buttons are-small">
-                {/* Kick player form */}
-                <div className="field has-addons mb-0">
-                  <div className="control">
-                    <div className="select is-small">
-                      <select
-                        value={selectedPlayerId}
-                        onChange={(e) => setSelectedPlayerId(e.target.value)}
-                      >
-                        <option value="">Kick player...</option>
-                        {players.map((player) => (
-                          <option key={player.socketId} value={player.socketId}>
-                            {player.name} {!player.connected ? '(dc)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="control">
-                    <button
-                      className="button is-danger is-small"
-                      onClick={handleKick}
-                      disabled={!selectedPlayerId}
-                    >
-                      Kick
-                    </button>
-                  </div>
-                </div>
-
-                {/* Reset game button */}
-                <button
-                  className="button is-family-secondary is-small"
-                  onClick={onResetGame}
-                >
-                  Reset Game
-                </button>
-              </div>
-            </div>
-
-          </div>
+          <GameControlSection
+            players={players}
+            selectedPlayerId={selectedPlayerId}
+            setSelectedPlayerId={setSelectedPlayerId}
+            onKick={handleKick}
+            onResetGame={onResetGame}
+          />
         </div>
       )}
     </div>

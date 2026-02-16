@@ -7,6 +7,10 @@ import {ScoringModal} from './ScoringModal';
 import {fireScoringBurst} from '../../hooks/useConfetti';
 import {formatResponseTime} from '../../utils/formatUtils';
 
+// =============================================================================
+// Types
+// =============================================================================
+
 interface ScoringInterfaceProps {
   teams: Team[];
   players: Player[];
@@ -22,7 +26,151 @@ interface ScoringInterfaceProps {
   onFinishRound: () => void;
 }
 
+interface TeamSortedData {
+  team: Team;
+  originalIndex: number;
+  totalResponseTime: number;
+  player1Time: number;
+  player2Time: number;
+  player1: Player | undefined;
+  player2: Player | undefined;
+}
+
+// =============================================================================
+// Constants
+// =============================================================================
+
 const SCORE_TAG_POP_MS = 400;
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function buildSortedTeamData(
+  teams: Team[],
+  players: Player[],
+  currentRound: CurrentRound
+): TeamSortedData[] {
+  return teams.map((team, originalIndex) => {
+    const player1 = findPlayerBySocketId(players, team.player1Id);
+    const player2 = findPlayerBySocketId(players, team.player2Id);
+
+    const player1Answer = player1 ? currentRound.answers[player1.name] : null;
+    const player2Answer = player2 ? currentRound.answers[player2.name] : null;
+
+    const player1Time = player1Answer?.responseTime ?? Infinity;
+    const player2Time = player2Answer?.responseTime ?? Infinity;
+    const totalResponseTime = player1Time + player2Time;
+
+    return {
+      team,
+      originalIndex,
+      totalResponseTime,
+      player1Time,
+      player2Time,
+      player1,
+      player2
+    };
+  }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
+}
+
+function getScoreTagClassName(points: number, isRecentlyScored: boolean): string {
+  const classes = ['tag', 'is-medium'];
+
+  if (points > 1) {
+    classes.push('is-warning');
+  } else if (points > 0) {
+    classes.push('is-success');
+  } else {
+    classes.push('is-light');
+  }
+
+  if (isRecentlyScored) {
+    classes.push('score-tag-pop');
+  }
+
+  return classes.join(' ');
+}
+
+// =============================================================================
+// Sub-components
+// =============================================================================
+
+function TeamRow({
+  teamData,
+  isScored,
+  points,
+  isRecentlyScored,
+  scoreTagRef,
+  onOpenModal,
+  onReopenScoring
+}: {
+  teamData: TeamSortedData;
+  isScored: boolean;
+  points: number;
+  isRecentlyScored: boolean;
+  scoreTagRef: (el: HTMLSpanElement | null) => void;
+  onOpenModal: () => void;
+  onReopenScoring: () => void;
+}) {
+  const { totalResponseTime, player1, player2 } = teamData;
+
+  return (
+    <div className="box mb-3">
+      <div className="is-flex is-justify-content-space-between is-align-items-center">
+        <div className="is-flex is-align-items-center gap-sm">
+          <TeamName player1={player1} player2={player2} size="large" />
+        </div>
+        <div className="is-flex is-align-items-center gap-sm">
+          {isScored ? (
+            <>
+              <button
+                className="button is-light is-small"
+                onClick={onReopenScoring}
+                data-tooltip-id="tooltip"
+                data-tooltip-content="Re-score"
+              >
+                ↪️
+              </button>
+              {totalResponseTime < Infinity && (
+                <span className="tag is-family-secondary is-medium">
+                  ⏱️ {formatResponseTime(totalResponseTime)}
+                </span>
+              )}
+              <span
+                ref={scoreTagRef}
+                className={getScoreTagClassName(points, isRecentlyScored)}
+              >
+                {points > 0 ? `+${points} pts` : '0 pts'}
+              </span>
+            </>
+          ) : (
+            <button
+              className="button is-link"
+              onClick={onOpenModal}
+            >
+              Score
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinishRoundButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="has-text-centered mt-4">
+      <button className="button is-primary is-large" onClick={onClick}>
+        Finish Round
+      </button>
+    </div>
+  );
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
 
 export function ScoringInterface({
   teams,
@@ -44,28 +192,7 @@ export function ScoringInterface({
   // Sort teams by total response time (ascending) for scoring display
   const teamsSortedByResponseTime = useMemo(() => {
     if (!teams || !currentRound) return [];
-
-    return teams.map((team, originalIndex) => {
-      const player1 = findPlayerBySocketId(players, team.player1Id);
-      const player2 = findPlayerBySocketId(players, team.player2Id);
-
-      const player1Answer = player1 ? currentRound.answers[player1.name] : null;
-      const player2Answer = player2 ? currentRound.answers[player2.name] : null;
-
-      const player1Time = player1Answer?.responseTime ?? Infinity;
-      const player2Time = player2Answer?.responseTime ?? Infinity;
-      const totalResponseTime = player1Time + player2Time;
-
-      return {
-        team,
-        originalIndex,
-        totalResponseTime,
-        player1Time,
-        player2Time,
-        player1,
-        player2
-      };
-    }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
+    return buildSortedTeamData(teams, players, currentRound);
   }, [teams, currentRound, players]);
 
   // Get selected team data
@@ -116,69 +243,32 @@ export function ScoringInterface({
 
   return (
     <div className="box">
-      <Question question={currentRound?.question}/>
+      <Question question={currentRound?.question} />
       <h2 className="subtitle is-4 mb-4">Review Team Answers</h2>
 
       <div className="mb-4">
-        {teamsSortedByResponseTime.map(({ team, originalIndex, totalResponseTime, player1, player2 }) => {
+        {teamsSortedByResponseTime.map((teamData) => {
+          const { team, originalIndex } = teamData;
           const isScored = team.teamId in teamPointsAwarded;
           const points = teamPointsAwarded[team.teamId] ?? 0;
           const isRecentlyScored = recentlyScored === team.teamId;
 
           return (
-            <div
+            <TeamRow
               key={team.teamId}
-              className="box mb-3"
-            >
-              <div className="is-flex is-justify-content-space-between is-align-items-center">
-                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                  <TeamName player1={player1} player2={player2} size='large' />
-                </div>
-                <div className="is-flex is-align-items-center" style={{ gap: '0.5rem' }}>
-                  {isScored ? (
-                    <>
-                      <button
-                        className="button is-light is-small"
-                        onClick={() => handleReopenScoring(team.teamId, originalIndex)}
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content="Re-score"
-                      >
-                        ↪️
-                      </button>
-                      {totalResponseTime < Infinity && (
-                        <span className="tag is-family-secondary is-medium">
-                          ⏱️ {formatResponseTime(totalResponseTime)}
-                        </span>
-                      )}
-                      <span
-                        ref={el => { scoreTagRefs.current[team.teamId] = el; }}
-                        className={`tag is-medium ${points > 0 ? (points > 1 ? 'is-warning' : 'is-success') : 'is-light'} ${isRecentlyScored ? 'score-tag-pop' : ''}`}
-                      >
-                        {points > 0 ? `+${points} pts` : '0 pts'}
-                      </span>
-                    </>
-                  ) : (
-                    <button
-                      className="button is-link"
-                      onClick={() => handleOpenModal(team.teamId)}
-                    >
-                      Score
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+              teamData={teamData}
+              isScored={isScored}
+              points={points}
+              isRecentlyScored={isRecentlyScored}
+              scoreTagRef={(el) => { scoreTagRefs.current[team.teamId] = el; }}
+              onOpenModal={() => handleOpenModal(team.teamId)}
+              onReopenScoring={() => handleReopenScoring(team.teamId, originalIndex)}
+            />
           );
         })}
       </div>
 
-      {showFinishBtn && (
-        <div className="has-text-centered mt-4">
-          <button className="button is-primary is-large" onClick={onFinishRound}>
-            Finish Round
-          </button>
-        </div>
-      )}
+      {showFinishBtn && <FinishRoundButton onClick={onFinishRound} />}
 
       {/* Scoring Modal */}
       {selectedTeamData && currentRound && (

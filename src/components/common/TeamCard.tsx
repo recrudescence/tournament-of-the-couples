@@ -3,7 +3,11 @@ import {motion} from 'framer-motion';
 import type {Player} from '../../types/game';
 import {usePrevious} from '../../hooks/usePrevious';
 import {PlayerAvatar} from './PlayerAvatar';
-import {bubbleFloat, bubbleFloatTransition, fadeIn, nervousHover,} from '../../styles/motion';
+import {bubbleFloat, bubbleFloatTransition, fadeIn, nervousHover} from '../../styles/motion';
+
+// =============================================================================
+// Types
+// =============================================================================
 
 type BubbleSize = 'normal' | 'large';
 
@@ -20,6 +24,141 @@ interface TeamCardProps {
   onKick: (socketId: string, playerName: string) => void;
   onRandomizeAvatar?: () => void;
 }
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function getBubbleClassName(
+  isCurrent: boolean,
+  isLarge: boolean,
+  side: 'left' | 'right'
+): string {
+  const classes = ['team-bubble', `team-bubble--${side}`];
+
+  if (isLarge) classes.push('team-bubble--large');
+  if (isCurrent) classes.push('team-bubble--current');
+  if (isLarge) classes.push('gap-md');
+  else classes.push('gap-sm');
+
+  return classes.join(' ');
+}
+
+// =============================================================================
+// Sub-components
+// =============================================================================
+
+function PlayerBubble({
+  player,
+  side,
+  isLarge,
+  isCurrent,
+  isBumping,
+  canRandomize,
+  onAvatarClick
+}: {
+  player: Player;
+  side: 'left' | 'right';
+  isLarge: boolean;
+  isCurrent: boolean;
+  isBumping: boolean;
+  canRandomize: boolean;
+  onAvatarClick: () => void;
+}) {
+  const avatarElement = (
+    <PlayerAvatar
+      avatar={player.avatar}
+      size={isLarge ? 'large' : 'medium'}
+      isBumping={isBumping}
+      onClick={canRandomize ? onAvatarClick : undefined}
+      title={canRandomize ? 'Tap to randomize' : undefined}
+    />
+  );
+
+  const textSizeClass = isLarge ? 'is-size-6' : 'is-size-7';
+  const nameElement = (
+    <span className={`has-text-weight-semibold ${textSizeClass} ${isCurrent ? 'has-text-primary' : ''}`}>
+      {player.name}
+      {player.isBot && ' \u{1F916}'}
+      {isCurrent && <span className="has-text-grey-light"> (you)</span>}
+    </span>
+  );
+
+  return (
+    <div className={getBubbleClassName(isCurrent, isLarge, side)}>
+      {side === 'left' ? (
+        <>
+          {avatarElement}
+          {nameElement}
+        </>
+      ) : (
+        <>
+          {nameElement}
+          {avatarElement}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ActionButtons({
+  canUnpair,
+  isHost,
+  leftPlayer,
+  rightPlayer,
+  onUnpair,
+  onKick
+}: {
+  canUnpair: boolean;
+  isHost: boolean;
+  leftPlayer: Player;
+  rightPlayer: Player;
+  onUnpair: () => void;
+  onKick: (socketId: string, playerName: string) => void;
+}) {
+  if (!canUnpair && !isHost) return null;
+
+  return (
+    <motion.div
+      className="mt-2 is-flex is-justify-content-center is-align-items-center gap-sm"
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+      transition={{ delay: 0.3 }}
+    >
+      {canUnpair && (
+        <motion.button
+          className="button is-small is-danger is-light"
+          onClick={onUnpair}
+          whileHover={nervousHover}
+          whileTap={{ scale: 0.9 }}
+        >
+          {"Break up </3"}
+        </motion.button>
+      )}
+      {isHost && (
+        <>
+          <button
+            className="button is-small is-danger is-outlined"
+            onClick={() => onKick(leftPlayer.socketId, leftPlayer.name)}
+          >
+            Kick {leftPlayer.name}
+          </button>
+          <button
+            className="button is-small is-danger is-outlined"
+            onClick={() => onKick(rightPlayer.socketId, rightPlayer.name)}
+          >
+            Kick {rightPlayer.name}
+          </button>
+        </>
+      )}
+    </motion.div>
+  );
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
 
 export function TeamCard({
   player1,
@@ -78,67 +217,8 @@ export function TeamCard({
     }
   };
 
-  const bubbleStyle = (player: Player, side: 'left' | 'right'): React.CSSProperties => {
-    const isCurrent = player.name === currentPlayerName;
-    const paddingLeft = isLarge ? '0.75rem 1rem 0.75rem 0.75rem' : '0.5rem 0.75rem 0.5rem 0.5rem';
-    const paddingRight = isLarge ? '0.75rem 0.75rem 0.75rem 1rem' : '0.5rem 0.5rem 0.5rem 0.75rem';
-    return {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: isLarge ? '0.75rem' : '0.5rem',
-      padding: side === 'left' ? paddingLeft : paddingRight,
-      borderRadius: '2rem',
-      backgroundColor: isCurrent ? 'var(--player-bubble-bg, hsl(217, 71%, 95%))' : 'var(--partner-bubble-bg, white)',
-      border: isCurrent ? '2px solid var(--theme-primary, hsl(217, 71%, 53%))' : '2px solid var(--partner-bubble-border, transparent)',
-      // Overlap: negative margin pulls bubbles together
-      marginRight: side === 'left' ? '-0.25rem' : 0,
-      marginLeft: side === 'right' ? '-0.25rem' : 0,
-      position: 'relative' as const,
-      zIndex: side === 'left' ? 1 : 2,
-    };
-  };
-
-  const renderBubble = (player: Player, side: 'left' | 'right') => {
-    const isCurrent = player.name === currentPlayerName;
-    const canRandomize = isCurrent && onRandomizeAvatar;
-    const isThisPlayerBumping = bumpingPlayer === player.socketId;
-
-    // Arrange content based on side (avatar on outside, name on inside)
-    const avatarElement = (
-      <PlayerAvatar
-        avatar={player.avatar}
-        size={isLarge ? 'large' : 'medium'}
-        isBumping={isThisPlayerBumping}
-        onClick={canRandomize ? () => handleAvatarClick(player.socketId) : undefined}
-        title={canRandomize ? 'Tap to randomize' : undefined}
-      />
-    );
-
-    const textSizeClass = isLarge ? 'is-size-6' : 'is-size-7';
-    const nameElement = (
-      <span className={`has-text-weight-semibold ${textSizeClass} ${isCurrent ? 'has-text-primary' : ''}`}>
-        {player.name}
-        {player.isBot && ' \u{1F916}'}
-        {isCurrent && <span className="has-text-grey-light"> (you)</span>}
-      </span>
-    );
-
-    return (
-      <div style={bubbleStyle(player, side)}>
-        {side === 'left' ? (
-          <>
-            {avatarElement}
-            {nameElement}
-          </>
-        ) : (
-          <>
-            {nameElement}
-            {avatarElement}
-          </>
-        )}
-      </div>
-    );
-  };
+  const isLeftCurrent = leftPlayer.name === currentPlayerName;
+  const isRightCurrent = rightPlayer.name === currentPlayerName;
 
   return (
     <motion.div
@@ -150,52 +230,39 @@ export function TeamCard({
     >
       {/* Floating container for the paired bubbles */}
       <motion.div
-        style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
-        animate={bubbleFloat(index + 10)} // offset index for different float pattern
+        className="is-inline-flex is-align-items-center"
+        style={{ position: 'relative' }}
+        animate={bubbleFloat(index + 10)}
         transition={bubbleFloatTransition(index + 10)}
       >
-        {renderBubble(leftPlayer, 'left')}
-        {renderBubble(rightPlayer, 'right')}
+        <PlayerBubble
+          player={leftPlayer}
+          side="left"
+          isLarge={isLarge}
+          isCurrent={isLeftCurrent}
+          isBumping={bumpingPlayer === leftPlayer.socketId}
+          canRandomize={isLeftCurrent && !!onRandomizeAvatar}
+          onAvatarClick={() => handleAvatarClick(leftPlayer.socketId)}
+        />
+        <PlayerBubble
+          player={rightPlayer}
+          side="right"
+          isLarge={isLarge}
+          isCurrent={isRightCurrent}
+          isBumping={bumpingPlayer === rightPlayer.socketId}
+          canRandomize={isRightCurrent && !!onRandomizeAvatar}
+          onAvatarClick={() => handleAvatarClick(rightPlayer.socketId)}
+        />
       </motion.div>
 
-      {/* Action buttons below the bubbles - centered */}
-      {(canUnpair || isHost) && (
-        <motion.div
-          className="mt-2 is-flex is-justify-content-center is-align-items-center"
-          style={{ gap: '0.5rem' }}
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.3 }}
-        >
-          {canUnpair && (
-            <motion.button
-              className="button is-small is-danger is-light"
-              onClick={onUnpair}
-              whileHover={nervousHover}
-              whileTap={{ scale: 0.9 }}
-            >
-              {"Break up </3"}
-            </motion.button>
-          )}
-          {isHost && (
-            <>
-              <button
-                className="button is-small is-danger is-outlined"
-                onClick={() => onKick(leftPlayer.socketId, leftPlayer.name)}
-              >
-                Kick {leftPlayer.name}
-              </button>
-              <button
-                className="button is-small is-danger is-outlined"
-                onClick={() => onKick(rightPlayer.socketId, rightPlayer.name)}
-              >
-                Kick {rightPlayer.name}
-              </button>
-            </>
-          )}
-        </motion.div>
-      )}
+      <ActionButtons
+        canUnpair={canUnpair}
+        isHost={isHost}
+        leftPlayer={leftPlayer}
+        rightPlayer={rightPlayer}
+        onUnpair={onUnpair}
+        onKick={onKick}
+      />
     </motion.div>
   );
 }

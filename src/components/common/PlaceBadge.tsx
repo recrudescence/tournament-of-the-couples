@@ -21,23 +21,23 @@ const placeConfig = {
   1: {
     emoji: '🥇',
     label: '1st',
-    bgGradient: 'linear-gradient(135deg, #ffd700 0%, #ffec80 50%, #ffd700 100%)',
-    shadowColor: 'rgba(255, 215, 0, 0.6)',
-    textColor: '#8B6914',
+    bgGradient: 'var(--badge-gold-gradient)',
+    shadowColor: 'var(--badge-gold-shadow)',
+    textColor: 'var(--badge-gold-text)',
   },
   2: {
     emoji: '🥈',
     label: '2nd',
-    bgGradient: 'linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 50%, #c0c0c0 100%)',
-    shadowColor: 'rgba(192, 192, 192, 0.6)',
-    textColor: '#5a5a5a',
+    bgGradient: 'var(--badge-silver-gradient)',
+    shadowColor: 'var(--badge-silver-shadow)',
+    textColor: 'var(--badge-silver-text)',
   },
   3: {
     emoji: '🥉',
     label: '3rd',
-    bgGradient: 'linear-gradient(135deg, #cd7f32 0%, #daa06d 50%, #cd7f32 100%)',
-    shadowColor: 'rgba(205, 127, 50, 0.5)',
-    textColor: '#5c3a21',
+    bgGradient: 'var(--badge-bronze-gradient)',
+    shadowColor: 'var(--badge-bronze-shadow)',
+    textColor: 'var(--badge-bronze-text)',
   },
 } as const;
 
