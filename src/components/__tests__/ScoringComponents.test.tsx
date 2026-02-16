@@ -1,10 +1,10 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BothPlayersScoring } from '../host/BothPlayersScoring';
-import { SinglePlayerScoring } from '../host/SinglePlayerScoring';
-import { ScoringInterface } from '../host/ScoringInterface';
-import type { Player, CurrentRound } from '../../types/game';
-import { RoundVariant, RoundStatus } from '../../types/game';
+import {act, fireEvent, render, screen} from '@testing-library/react';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {BothPlayersScoring} from '../host/BothPlayersScoring';
+import {SinglePlayerScoring} from '../host/SinglePlayerScoring';
+import {ScoringInterface} from '../host/ScoringInterface';
+import type {CurrentRound, Player} from '../../types/game';
+import {RoundStatus, RoundVariant} from '../../types/game';
 
 const mockAvatar = { color: '#ff0000', emoji: '😀' };
 
@@ -425,11 +425,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -447,11 +445,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -469,11 +465,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -497,11 +491,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={onAwardPoints}
@@ -529,11 +521,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={onAwardPoints}
@@ -561,11 +551,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={onAwardPoints}
@@ -592,11 +580,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={1}
         teamPointsAwarded={{ 'team1': 1 }}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -614,11 +600,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={1}
         teamPointsAwarded={{ 'team1': 0 }}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -630,28 +614,6 @@ describe('ScoringInterface', () => {
     expect(screen.getByText('0 pts')).toBeInTheDocument();
   });
 
-  it('shows Finish Round button when showFinishBtn is true', () => {
-    render(
-      <ScoringInterface
-        teams={[mockTeam]}
-        players={mockPlayers}
-        currentRound={mockRound}
-        currentTeamIndex={1}
-        teamPointsAwarded={{ 'team1': 1 }}
-        revealedAnswers={new Set()}
-        revealedResponseTimes={{}}
-        showFinishBtn={true}
-        onBackToAnswering={vi.fn()}
-        onRevealAnswer={vi.fn()}
-        onAwardPoints={vi.fn()}
-        onReopenTeamScoring={vi.fn()}
-        onFinishRound={vi.fn()}
-      />
-    );
-
-    expect(screen.getByRole('button', { name: 'Finish Round' })).toBeInTheDocument();
-  });
-
   it('calls onFinishRound when Finish Round is clicked', () => {
     const onFinishRound = vi.fn();
     render(
@@ -659,11 +621,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={1}
         teamPointsAwarded={{ 'team1': 1 }}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={true}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -682,11 +642,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set(['Alice', 'Bob'])}
         revealedResponseTimes={{ 'Alice': 3000, 'Bob': 5000 }}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -707,11 +665,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={1}
         teamPointsAwarded={{ 'team1': 1 }}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -730,11 +686,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={1}
         teamPointsAwarded={{ 'team1': 1 }}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -762,11 +716,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={dualRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}
@@ -788,11 +740,9 @@ describe('ScoringInterface', () => {
         teams={[mockTeam]}
         players={mockPlayers}
         currentRound={mockRound}
-        currentTeamIndex={0}
         teamPointsAwarded={{}}
         revealedAnswers={new Set()}
         revealedResponseTimes={{}}
-        showFinishBtn={false}
         onBackToAnswering={vi.fn()}
         onRevealAnswer={vi.fn()}
         onAwardPoints={vi.fn()}

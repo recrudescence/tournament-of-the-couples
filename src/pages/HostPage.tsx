@@ -50,7 +50,6 @@ export function HostPage() {
 
   const [phase, setPhase] = useState<HostPhase>('roundSetup');
   const [roundNumber, setRoundNumber] = useState(1);
-  const [setShowFinishBtn] = useState(false);
   const [teamPointsAwarded, setTeamPointsAwarded] = useState<Record<string, number>>({});
   const [revealedResponseTimes, setRevealedResponseTimes] = useState<Record<string, number>>({});
 
@@ -238,7 +237,6 @@ export function HostPage() {
       on('readyForNextRound', (state) => {
         dispatch({ type: 'SET_GAME_STATE', payload: state });
         setRoundNumber(prev => prev + 1);
-        setShowFinishBtn(false);
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
         // In imported mode, we'll wait for cursorAdvanced event to set phase to 'reveal'
@@ -305,7 +303,6 @@ export function HostPage() {
         setRevealedAuthors({});
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
-        setShowFinishBtn(false);
         setPhase('roundSetup');
       }),
 
@@ -319,7 +316,6 @@ export function HostPage() {
         setRevealedAuthors({});
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
-        setShowFinishBtn(false);
         // Go back to reveal phase with current question data
         if (cursorData) {
           setCurrentImportedQuestion({
@@ -345,7 +341,6 @@ export function HostPage() {
         setRevealedAuthors({});
         setTeamPointsAwarded({});
         setRevealedResponseTimes({});
-        setShowFinishBtn(false);
         // Go to reveal phase with new cursor data
         if (cursorData) {
           setCurrentImportedQuestion({
@@ -377,7 +372,6 @@ export function HostPage() {
     setRevealedAnswers(new Set());
     setTeamPointsAwarded({});
     setRevealedResponseTimes({});
-    setShowFinishBtn(false);
     setPhase('scoring');
     // Notify server/players that scoring has begun
     emit('startScoring');
@@ -421,13 +415,6 @@ export function HostPage() {
       emit('skipPoint', { teamId });
     }
     setTeamPointsAwarded((prev) => ({ ...prev, [teamId]: points }));
-
-    // Show finish button when all teams have been scored
-    // State update is async, so count current + 1 (unless re-scoring same team)
-    const scoredCount = Object.keys(teamPointsAwarded).length + (teamId in teamPointsAwarded ? 0 : 1);
-    if (scoredCount >= (gameState?.teams.length || 0)) {
-      setShowFinishBtn(true);
-    }
   };
 
   const handleFinishRound = () => {
@@ -493,8 +480,6 @@ export function HostPage() {
       }
       setRevealedAnswers(newRevealedAnswers);
     }
-
-    setShowFinishBtn(false);
   };
 
   const handleEndGame = async () => {
