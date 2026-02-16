@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import {useEffect} from 'react';
 import confetti from 'canvas-confetti';
 
 // Confetti animation constants
@@ -88,7 +88,7 @@ export function fireScoringBurst(originX: number, originY: number, points: numbe
     particleCount: 25 + (points * 10),
     startVelocity: 30,
     spread: 70,
-    angle: 30, // Fire to the right
+    angle: 90, // Fire to the right
     origin: { x: originX, y: originY },
     colors,
     ticks: 100,

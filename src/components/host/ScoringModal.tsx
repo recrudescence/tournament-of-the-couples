@@ -17,6 +17,7 @@ import {
   slideInUpDeep,
   springBouncy,
   springDefault,
+  springGentle,
   springStiff,
 } from '../../styles/motion';
 
@@ -143,7 +144,7 @@ export function ScoringModal({
             animate="animate"
             exit="exit"
             variants={cardVariants}
-            transition={springDefault}
+            transition={springGentle}
           >
             {/* Nav arrows — positioned relative to modal card */}
             {hasPrev && (
