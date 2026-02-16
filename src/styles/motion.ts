@@ -29,6 +29,12 @@ export const springGentle: Transition = {
   damping: 20,
 };
 
+export const springSlow: Transition = {
+  type: 'spring',
+  stiffness: 120,
+  damping: 20,
+};
+
 // ============================================================================
 // VARIANTS - Named animation states (use with initial/animate props)
 // ============================================================================

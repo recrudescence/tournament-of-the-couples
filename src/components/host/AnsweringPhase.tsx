@@ -1,11 +1,11 @@
 import {useEffect, useMemo} from 'react';
-import {AnimatePresence, motion} from 'framer-motion';
+import {AnimatePresence, LayoutGroup, motion} from 'framer-motion';
 import {type CurrentRound, type Player, RoundVariant, type Team} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {useTimer} from '../../hooks/useTimer';
 import {useCountdown} from '../../hooks/useCountdown';
 import {formatResponseTime} from '../../utils/formatUtils';
-import {springDefault} from '../../styles/motion';
+import {springDefault, springSlow} from '../../styles/motion';
 
 // =============================================================================
 // Types
@@ -40,6 +40,7 @@ interface TeamWithPlayers {
   player1Status: PlayerStatus;
   player2Status: PlayerStatus;
   teamComplete: boolean; // Both players done
+  totalResponseTime: number; // Sum of both players' response times (Infinity if missing)
 }
 
 // =============================================================================
@@ -79,6 +80,9 @@ function buildTeamsWithPlayers(
     const player1Status = getPlayerStatus(player1, currentRound, picksSubmitted, showPickStatus);
     const player2Status = getPlayerStatus(player2, currentRound, picksSubmitted, showPickStatus);
 
+    const p1Time = currentRound?.answers[player1.name]?.responseTime ?? Infinity;
+    const p2Time = currentRound?.answers[player2.name]?.responseTime ?? Infinity;
+
     return {
       team,
       player1,
@@ -86,6 +90,7 @@ function buildTeamsWithPlayers(
       player1Status,
       player2Status,
       teamComplete: player1Status.isComplete && player2Status.isComplete,
+      totalResponseTime: p1Time + p2Time,
     };
   }).filter((t): t is TeamWithPlayers => t !== null);
 }
@@ -93,8 +98,10 @@ function buildTeamsWithPlayers(
 function sortTeamsByStatus(teams: TeamWithPlayers[]): TeamWithPlayers[] {
   return [...teams].sort((a, b) => {
     // Teams still waiting (not complete) come first
-    if (a.teamComplete === b.teamComplete) return 0;
-    return a.teamComplete ? 1 : -1;
+    if (a.teamComplete !== b.teamComplete) return a.teamComplete ? 1 : -1;
+    // Among completed teams, faster response time first
+    if (a.teamComplete) return a.totalResponseTime - b.totalResponseTime;
+    return 0;
   });
 }
 
@@ -267,7 +274,7 @@ function TeamStatusRow({
   const { player1, player2, player1Status, player2Status } = teamData;
 
   return (
-    <div className="columns is-mobile mb-2" style={{ perspective: 800 }}>
+    <div className="columns is-mobile is-variable is-1 mb-4" style={{ perspective: 800 }}>
       <div className="column is-half">
         <PlayerStatusCard player={player1} status={player1Status} showPickStatus={showPickStatus} />
       </div>
@@ -309,16 +316,16 @@ function StatusNotifications({
 }) {
   if (allAnswersIn && !isPoolSelection) {
     return (
-      <div className="notification is-success mb-4">
-        ✅ All answers are in! Ready to score.
+      <div className="notification is-success-light mb-4">
+        ✅ all answers are in! ready to score.
       </div>
     );
   }
 
   if (isWaitingForRelease) {
     return (
-      <div className="notification is-success mb-4">
-        ✅ All answers are in! Release the answer pool for players to pick.
+      <div className="notification is-success-light mb-4">
+        ✅ all answers are in! response pool is ready for picking
       </div>
     );
   }
@@ -520,15 +527,18 @@ export function AnsweringPhase({
         {isSelectingPhase ? 'Pick Status' : 'Answer Status'}
       </h3>
 
-      <div className="mb-4">
-        {sortedTeams.map(teamData => (
-          <TeamStatusRow
-            key={teamData.team.teamId}
-            teamData={teamData}
-            showPickStatus={showPickStatus}
-          />
-        ))}
-      </div>
+      <LayoutGroup>
+        <div className="mb-4">
+          {sortedTeams.map(teamData => (
+            <motion.div key={teamData.team.teamId} layout transition={springSlow}>
+              <TeamStatusRow
+                teamData={teamData}
+                showPickStatus={showPickStatus}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </LayoutGroup>
 
       {!allAnswersIn && (
         <ProgressCounter current={submittedCount} total={players.length} label="answers submitted" />
