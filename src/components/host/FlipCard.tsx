@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
-import { flipCard, springDefault } from '../../styles/motion';
+import {motion} from 'framer-motion';
+import type {ReactNode} from 'react';
+import {flipCard, springDefault} from '../../styles/motion';
 
 interface FlipCardProps {
   isRevealed: boolean;
@@ -25,12 +25,12 @@ export function FlipCard({
   // When revealed, back face becomes relative so content can expand the container
   // Front face is hidden completely to avoid layout interference
   return (
-    <div style={{ perspective: 1000, minHeight: isRevealed ? undefined : minHeight }}>
+    <div style={{ perspective: 1000, minHeight }}>
       <motion.div
         style={{
           position: 'relative',
           width: '100%',
-          minHeight: isRevealed ? undefined : minHeight,
+          minHeight,
           transformStyle: 'preserve-3d',
         }}
         variants={flipCard}
@@ -40,11 +40,11 @@ export function FlipCard({
       >
         {/* Front face - Reveal button */}
         <div
-          className="box"
+          className="box mb-0"
           style={{
             position: isRevealed ? 'absolute' : 'relative',
             width: '100%',
-            minHeight: isRevealed ? undefined : minHeight,
+            minHeight,
             backfaceVisibility: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -59,14 +59,17 @@ export function FlipCard({
 
         {/* Back face - Answer content */}
         <div
-          className="box"
+          className="box mb-0"
           style={{
             position: isRevealed ? 'relative' : 'absolute',
             width: '100%',
             top: isRevealed ? undefined : 0,
-            minHeight: isRevealed ? undefined : minHeight,
+            minHeight,
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
           }}
         >
           {back}

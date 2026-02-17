@@ -81,11 +81,11 @@ export const flipInRight: Variants = {
   visible: { opacity: 1, rotateY: 0 },
 };
 
-/** Pop in with spin (for badges, emojis) */
+/** Pop in with spin (for badges, tags) */
 export const popInSpin: Variants = {
-  hidden: { scale: 0, rotate: -180, y: -50 },
+  hidden: { scale: 0, rotate: -45, y: -20 },
   visible: { scale: 1, rotate: 0, y: 0 },
-  exit: { scale: 0, y: -30 },
+  exit: { scale: 0, y: -15 },
 };
 
 /** Card entrance - tilts up from below */

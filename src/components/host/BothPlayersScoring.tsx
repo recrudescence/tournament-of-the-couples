@@ -1,17 +1,8 @@
 import {motion} from 'framer-motion';
 import type {CurrentRound, Player} from '../../types/game';
 import {PlayerAvatar} from '../common/PlayerAvatar';
-import {formatResponseTime} from '../../utils/formatUtils';
-import {FlipCard} from './FlipCard';
-import {
-  buttonHover,
-  buttonTap,
-  slideInLeft,
-  slideInRight,
-  slideInUp,
-  springDefault,
-  staggerDelay
-} from '../../styles/motion';
+import {AnswerRevealCard} from './AnswerRevealCard';
+import {slideInLeft, slideInRight, slideInUp, springDefault, staggerDelay} from '../../styles/motion';
 
 // Helper to parse dual answer JSON
 function parseDualAnswer(text: string): Record<string, string> | null {
@@ -65,10 +56,8 @@ export function BothPlayersScoring({
     {
       subject: player1,
       partner: player2,
-      // Partner's answer about this player
       partnerAnswerKey: `${player2.name}:${player1.name}`,
       partnerAnswerText: player2Parsed?.[player1.name] ?? '(no answer)',
-      // Player's own answer about themselves
       selfAnswerKey: `${player1.name}:${player1.name}`,
       selfAnswerText: player1Parsed?.[player1.name] ?? '(no answer)',
     },
@@ -85,8 +74,6 @@ export function BothPlayersScoring({
   return (
     <div className="both-players-scoring">
       {playerSections.map(({ subject, partner, partnerAnswerKey, partnerAnswerText, selfAnswerKey, selfAnswerText }, sectionIndex) => {
-        const partnerRevealed = revealedAnswers.has(partnerAnswerKey);
-        const selfRevealed = revealedAnswers.has(selfAnswerKey);
         const partnerResponseTime = currentRound.answers[partner.name]?.responseTime;
         const baseDelay = staggerDelay(sectionIndex, 0, 0.15);
 
@@ -116,34 +103,14 @@ export function BothPlayersScoring({
                 animate="visible"
                 transition={{ ...springDefault, delay: baseDelay + 0.1 }}
               >
-                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem', minHeight: '4em' }}>
-                  <PlayerAvatar avatar={partner.avatar} size="small" />
-                  <span className="is-size-5 has-text-grey">{partner.name} said that {subject.name} would write...</span>
-                </div>
-                <FlipCard
-                  isRevealed={partnerRevealed}
-                  onReveal={() => onRevealAnswer(partnerAnswerKey)}
-                  front={
-                    <div className="has-text-centered">
-                      <motion.button
-                        className="button is-link is-medium"
-                        whileHover={buttonHover}
-                        whileTap={buttonTap}
-                      >
-                        Reveal
-                      </motion.button>
-                    </div>
-                  }
-                  back={
-                    <div className="is-light is-size-3 py-2 px-3 mb-0" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-                      <strong>{partnerAnswerText}</strong>
-                      {partnerResponseTime !== undefined && partnerResponseTime >= 0 && (
-                        <span className="has-text-grey ml-2 is-size-5">
-                          (took {formatResponseTime(partnerResponseTime)})
-                        </span>
-                      )}
-                    </div>
-                  }
+                <AnswerRevealCard
+                  player={partner}
+                  label={`${partner.name} said that ${subject.name} would write...`}
+                  answerText={partnerAnswerText}
+                  revealKey={partnerAnswerKey}
+                  isRevealed={revealedAnswers.has(partnerAnswerKey)}
+                  onReveal={onRevealAnswer}
+                  responseTime={partnerResponseTime}
                 />
               </motion.div>
 
@@ -155,29 +122,13 @@ export function BothPlayersScoring({
                 animate="visible"
                 transition={{ ...springDefault, delay: baseDelay + 0.15 }}
               >
-                <div className="is-flex is-align-items-center mb-2" style={{ gap: '0.25rem', minHeight: '4em' }}>
-                  <PlayerAvatar avatar={subject.avatar} size="small" />
-                  <span className="is-size-5 has-text-grey">{subject.name} actually said...</span>
-                </div>
-                <FlipCard
-                  isRevealed={selfRevealed}
-                  onReveal={() => onRevealAnswer(selfAnswerKey)}
-                  front={
-                    <div className="has-text-centered">
-                      <motion.button
-                        className="button is-link is-medium"
-                        whileHover={buttonHover}
-                        whileTap={buttonTap}
-                      >
-                        Reveal
-                      </motion.button>
-                    </div>
-                  }
-                  back={
-                    <div className="is-light is-size-3 py-2 px-3 mb-0" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-                      <strong>{selfAnswerText}</strong>
-                    </div>
-                  }
+                <AnswerRevealCard
+                  player={subject}
+                  label={`${subject.name} actually said...`}
+                  answerText={selfAnswerText}
+                  revealKey={selfAnswerKey}
+                  isRevealed={revealedAnswers.has(selfAnswerKey)}
+                  onReveal={onRevealAnswer}
                 />
               </motion.div>
             </div>

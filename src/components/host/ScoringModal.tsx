@@ -17,7 +17,6 @@ import {
   scoringCardVariants,
   slideInLeft,
   slideInUpDeep,
-  springBouncy,
   springDefault,
   springGentle,
   springStiff,
@@ -189,7 +188,7 @@ export function ScoringModal({
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    transition={springBouncy}
+                    transition={springStiff}
                   >
                     ⏱️ {formatResponseTime(totalResponseTime)}
                   </motion.span>
@@ -201,7 +200,7 @@ export function ScoringModal({
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    transition={springBouncy}
+                    transition={springStiff}
                   >
                     {awardedPoints > 0 ? `+${awardedPoints} pts` : '0 pts'}
                   </motion.span>
