@@ -1,7 +1,8 @@
-import {useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {PlayerAvatar} from '../common/PlayerAvatar';
+import {PlayerPill} from '../common/PlayerPill';
 import {TeamName} from '../common/TeamName';
 import {buttonHover, buttonTap, springBouncy} from '../../styles/motion';
 import type {CurrentRound, Player} from '../../types/game';
@@ -201,66 +202,58 @@ function AnswerPoolGrid({
   );
 }
 
-function PickerStickers({
-  pickers,
-  correctPickers,
-  authorRevealed,
-  isEmpty
+const GLOW_GREEN = '0 0 0 3px hsl(141, 53%, 53%), 0 0 12px hsl(141, 53%, 53%)';
+
+function StickerPile({
+  players,
+  glowIds,
+  side,
+  onConfetti,
 }: {
-  pickers: Player[];
-  correctPickers: Player[];
-  authorRevealed: boolean;
-  isEmpty: boolean;
+  players: Player[];
+  glowIds: Set<string>;
+  side: 'left' | 'right';
+  onConfetti?: (socketId: string) => void;
 }) {
   return (
-    <div className="picker-stickers" style={{ position: 'absolute', bottom: '-1.5rem', right: '0.5rem', perspective: 800 }}>
-      {pickers.map((picker, idx) => {
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '-1.2rem',
+        [side]: '0.5rem',
+        display: 'flex',
+        perspective: 800,
+      }}
+    >
+      {players.map((player, idx) => {
         const rotation = (idx % 2 === 0 ? -1 : 1) * (5 + idx * 3);
-        const isCorrect = authorRevealed && correctPickers.some(cp => cp.socketId === picker.socketId);
+        const isGlowing = glowIds.has(player.socketId);
 
         return (
           <motion.div
-            key={`${picker.socketId}-${isCorrect}`}
+            key={`${player.socketId}-${isGlowing}`}
             initial={{ opacity: 0, scale: 0, y: -30, rotate: rotation * 2 }}
             animate={{
               opacity: 1,
-              scale: isCorrect ? 1.1 : 1,
+              scale: isGlowing ? 1.1 : 1,
               y: 0,
               rotate: rotation,
             }}
             transition={{ ...springBouncy, delay: idx * 0.08 }}
             style={{
               marginLeft: idx > 0 ? '-0.75rem' : 0,
-              zIndex: isCorrect ? 10 : pickers.length - idx,
+              zIndex: isGlowing ? 10 : players.length - idx,
               borderRadius: '50%',
-              boxShadow: isCorrect ? '0 0 0 3px hsl(141, 53%, 53%), 0 0 12px hsl(141, 53%, 53%)' : undefined,
+              boxShadow: isGlowing ? GLOW_GREEN : undefined,
             }}
             data-tooltip-id="tooltip"
-            data-tooltip-content={picker.name + (isCorrect ? ' ✓' : '')}
+            data-tooltip-content={player.name + (isGlowing ? ' ✓' : '')}
+            data-picker-id={player.socketId}
             onAnimationComplete={() => {
-              // Fire confetti for correct picks, but not for empty/no-response answers
-              if (isCorrect && !isEmpty) {
-                const el = document.querySelector(`[data-picker-id="${picker.socketId}"]`);
-                if (el) {
-                  const rect = el.getBoundingClientRect();
-                  const x = (rect.left + rect.width / 2) / window.innerWidth;
-                  const y = (rect.top + rect.height / 2) / window.innerHeight;
-                  confetti({
-                    particleCount: 40,
-                    startVelocity: 20,
-                    spread: 360,
-                    origin: { x, y },
-                    colors: ['#48c774', '#3ec46d', '#00d1b2', '#FFD700'],
-                    ticks: 80,
-                    gravity: 0.8,
-                    scalar: 0.9,
-                  });
-                }
-              }
+              if (isGlowing && onConfetti) onConfetti(player.socketId);
             }}
-            data-picker-id={picker.socketId}
           >
-            <PlayerAvatar avatar={picker.avatar} size="medium" />
+            <PlayerAvatar avatar={player.avatar} size="medium" />
           </motion.div>
         );
       })}
@@ -268,30 +261,44 @@ function PickerStickers({
   );
 }
 
-function AuthorDisplay({
-  authors,
-  isEmpty
+function PillList({
+  label,
+  players,
+  glowIds,
 }: {
-  authors: Player[];
-  isEmpty: boolean;
+  label: string;
+  players: Player[];
+  glowIds?: Set<string>;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, rotateY: -90 }}
-      animate={{ opacity: 1, rotateY: 0 }}
-      transition={springBouncy}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       className="has-text-centered"
     >
-      <div className="title is-4 mt-3 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap gap-md">
-        {!isEmpty && 'Written by:'}
-        {authors.map((author, idx) => (
-          <span key={author.socketId} className="is-flex is-align-items-center gap-sm">
-            <PlayerAvatar avatar={author.avatar} size="large" />
-            {author.name}
-            {idx < authors.length - 1 && (
-              <span>{isEmpty ? ',' : '&'}</span>
-            )}
-          </span>
+      <motion.div
+        className="is-size-7 mb-1 has-text-grey"
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {label}
+      </motion.div>
+      <div className="is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap gap-sm">
+        {players.map((player, idx) => (
+          <motion.div
+            key={player.socketId}
+            initial={{ opacity: 0, scale: 0.5, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ ...springBouncy, delay: idx * 0.1 }}
+          >
+            <PlayerPill
+              player={player}
+              size="small"
+              style={glowIds?.has(player.socketId) ? { boxShadow: GLOW_GREEN } : undefined}
+            />
+          </motion.div>
         ))}
       </div>
     </motion.div>
@@ -373,6 +380,35 @@ function AnswerDetailModal({
   const answerDisplayText = !answerData.text || answerData.text.trim() === '' ? '(no response)' : answerData.text;
   const isEmptyDisplay = !answerData.text || answerData.text.trim() === '';
 
+  // IDs that get a glow when author is revealed (correct pickers + matched authors)
+  const correctPickerIds = new Set(answerData.correctPickers.map(p => p.socketId));
+  const glowPickers = answerData.authorRevealed ? correctPickerIds : new Set<string>();
+  // Only glow authors whose teammate is a correct picker
+  const correctPickerTeamIds = new Set(answerData.correctPickers.map(p => p.teamId));
+  const glowAuthors = answerData.authorRevealed
+    ? new Set(answerData.authors.filter(a => correctPickerTeamIds.has(a.teamId)).map(a => a.socketId))
+    : new Set<string>();
+
+  const fireConfetti = (socketId: string) => {
+    if (answerData.isEmpty) return;
+    const el = document.querySelector(`[data-picker-id="${socketId}"]`);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+      confetti({
+        particleCount: 40,
+        startVelocity: 20,
+        spread: 360,
+        origin: { x, y },
+        colors: ['#48c774', '#3ec46d', '#00d1b2', '#FFD700'],
+        ticks: 80,
+        gravity: 0.8,
+        scalar: 0.9,
+      });
+    }
+  };
+
   return (
     <motion.div
       className="modal is-active"
@@ -395,13 +431,13 @@ function AnswerDetailModal({
         transition={springBouncy}
         style={{ maxWidth: '500px' }}
       >
-        <div className="box">
+        <div className="box" style={{ backgroundColor: 'hsl(0, 0%, 97%)' }}>
           {/* Question */}
           <QuestionDisplay question={question} />
 
-          {/* Answer box with picker stickers */}
-          <div className="mb-5" style={{ position: 'relative', minHeight: '8rem' }}>
-            <div className="box has-background-white-ter has-text-centered py-5" style={{ position: 'relative' }}>
+          {/* Answer box with sticker piles */}
+          <div className="mb-4" style={{ position: 'relative' }}>
+            <div className="box has-background-white-ter has-text-centered py-5 px-6" style={{ position: 'relative' }}>
               <h3
                 className={`title is-4 mb-0 ${isEmptyDisplay ? 'has-text-grey-light' : ''}`}
                 style={{ whiteSpace: 'pre-wrap', ...(isEmptyDisplay ? { fontStyle: 'italic' } : {}) }}
@@ -409,48 +445,99 @@ function AnswerDetailModal({
                 "{answerDisplayText}"
               </h3>
 
-              {/* Picker stickers - positioned at bottom right of box */}
+              {/* Picker stickers - left side */}
               {answerData.pickersRevealed && answerData.pickers.length > 0 && (
-                <PickerStickers
-                  pickers={answerData.pickers}
-                  correctPickers={answerData.correctPickers}
-                  authorRevealed={answerData.authorRevealed}
-                  isEmpty={answerData.isEmpty}
+                <StickerPile
+                  players={answerData.pickers}
+                  glowIds={glowPickers}
+                  side="left"
+                  onConfetti={fireConfetti}
+                />
+              )}
+
+              {/* Author stickers - right side */}
+              {answerData.authorRevealed && (
+                <StickerPile
+                  players={answerData.authors}
+                  glowIds={glowAuthors}
+                  side="right"
                 />
               )}
             </div>
-
-            {/* Reveal pickers button or "no pickers" message */}
-            {answerData.pickCount === 0 ? (
-              <p className="has-text-grey has-text-centered mt-3">No one picked this answer</p>
-            ) : !answerData.pickersRevealed && (
-              <motion.button
-                className="button is-info is-fullwidth is-medium mt-3"
-                onClick={() => onRevealPickers(answerData.text)}
-                whileHover={buttonHover}
-                whileTap={buttonTap}
-              >
-                <span className="icon"><i className="fas fa-users" /></span>
-                <span>Reveal Pickers ({answerData.pickCount})</span>
-              </motion.button>
-            )}
           </div>
 
-          {/* Author Section */}
-          <div className="mb-4" style={{ perspective: 800 }}>
-            {!answerData.authorRevealed ? (
-              <motion.button
-                className="button is-warning is-fullwidth is-medium"
-                onClick={() => onRevealAuthor(answerData.text)}
-                whileHover={buttonHover}
-                whileTap={buttonTap}
-              >
-                <span className="icon"><i className="fas fa-user-secret" /></span>
-                <span>Reveal Author</span>
-              </motion.button>
-            ) : (
-              <AuthorDisplay authors={answerData.authors} isEmpty={answerData.isEmpty} />
-            )}
+          {/* Action buttons / revealed info */}
+          <div className="is-flex is-flex-direction-column" style={{ gap: '0.75rem' }}>
+            {/* Pickers section */}
+            <AnimatePresence mode="wait">
+              {answerData.pickCount === 0 ? (
+                <motion.p
+                  key="no-pickers"
+                  className="has-text-grey has-text-centered py-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  No one picked this answer
+                </motion.p>
+              ) : !answerData.pickersRevealed ? (
+                <motion.button
+                  key="reveal-pickers"
+                  className="button is-info is-fullwidth is-medium"
+                  onClick={() => onRevealPickers(answerData.text)}
+                  whileHover={buttonHover}
+                  whileTap={buttonTap}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, padding: 0, overflow: 'hidden', transition: { duration: 0.2 } }}
+                >
+                  <span className="icon"><i className="fas fa-users" /></span>
+                  <span>Reveal Pickers ({answerData.pickCount})</span>
+                </motion.button>
+              ) : (
+                <motion.div
+                  key="pickers-display"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <PillList label="Picked by:" players={answerData.pickers} glowIds={glowPickers} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Author section */}
+            <AnimatePresence mode="wait">
+              {!answerData.authorRevealed ? (
+                <motion.button
+                  key="reveal-author"
+                  className="button is-warning is-fullwidth is-medium"
+                  onClick={() => onRevealAuthor(answerData.text)}
+                  whileHover={buttonHover}
+                  whileTap={buttonTap}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, padding: 0, overflow: 'hidden', transition: { duration: 0.2 } }}
+                >
+                  <span className="icon"><i className="fas fa-user-secret" /></span>
+                  <span>Reveal Author</span>
+                </motion.button>
+              ) : !answerData.isEmpty ? (
+                <motion.div
+                  key="author-display"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <PillList label="Written by:" players={answerData.authors} glowIds={glowAuthors} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
 

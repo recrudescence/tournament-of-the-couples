@@ -3,6 +3,7 @@ import {motion} from 'framer-motion';
 import type {Player} from '../../types/game';
 import {usePrevious} from '../../hooks/usePrevious';
 import {PlayerAvatar} from './PlayerAvatar';
+import {pillStyle} from './PlayerPill';
 import {
   bubbleFloat,
   bubbleFloatTransition,
@@ -61,19 +62,7 @@ export function PlayerCard({
     }
   };
 
-  // Pill bubble style - scales based on size prop
   const isLarge = size === 'large';
-  const bubbleStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: isLarge ? '0.75rem' : '0.5rem',
-    padding: isLarge ? '0.75rem 1.25rem 0.75rem 0.75rem' : '0.5rem 1rem 0.5rem 0.5rem',
-    borderRadius: '2rem',
-    backgroundColor: isCurrentPlayer ? 'var(--player-bubble-bg, hsl(217, 71%, 95%))' : 'var(--partner-bubble-bg, white)',
-    cursor: canPair ? 'pointer' : 'default',
-    border: isCurrentPlayer ? '2px solid var(--theme-primary, hsl(217, 71%, 53%))' : '2px solid var(--partner-bubble-border, transparent)',
-    fontSize: isLarge ? '1.1rem' : undefined,
-  };
 
   return (
     <motion.div
@@ -85,7 +74,7 @@ export function PlayerCard({
       transition={{ duration: 0.2 }}
     >
       <motion.div
-        style={bubbleStyle}
+        style={{ ...pillStyle({ size, highlight: isCurrentPlayer }), cursor: canPair ? 'pointer' : 'default' }}
         animate={bubbleFloat(index)}
         transition={bubbleFloatTransition(index)}
         whileHover={canPair ? bubbleHover : undefined}
