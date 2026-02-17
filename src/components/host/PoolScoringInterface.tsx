@@ -1,10 +1,11 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {PlayerPill} from '../common/PlayerPill';
 import {TeamName} from '../common/TeamName';
-import {buttonHover, buttonTap, springBouncy} from '../../styles/motion';
+import type {NavDirection} from '../../styles/motion';
+import {buttonHover, buttonTap, scoringCardVariants, springBouncy, springStiff} from '../../styles/motion';
 import type {CurrentRound, Player} from '../../types/game';
 
 // =============================================================================
@@ -142,7 +143,7 @@ function buildPoolItems(
 
 function QuestionDisplay({ question }: { question: string }) {
   return (
-    <div className="notification is-primary is-light mb-4">
+    <div className="notification is-primary is-light">
       <p className="is-size-5 has-text-weight-semibold has-text-centered">{question}</p>
     </div>
   );
@@ -278,7 +279,7 @@ function PillList({
       className="has-text-centered"
     >
       <motion.div
-        className="is-size-7 mb-1 has-text-grey"
+        className="is-size-7 mb-3 mt-3 has-text-grey"
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
@@ -367,12 +368,22 @@ function PointsBadges({
 function AnswerDetailModal({
   answerData,
   question,
+  navDirection,
+  hasPrev,
+  hasNext,
+  onPrev,
+  onNext,
   onRevealPickers,
   onRevealAuthor,
   onClose
 }: {
   answerData: PoolItem;
   question: string;
+  navDirection: NavDirection;
+  hasPrev: boolean;
+  hasNext: boolean;
+  onPrev: () => void;
+  onNext: () => void;
   onRevealPickers: (text: string) => void;
   onRevealAuthor: (text: string) => void;
   onClose: () => void;
@@ -409,6 +420,27 @@ function AnswerDetailModal({
     }
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'ArrowLeft' && hasPrev) {
+        onPrev();
+      } else if (e.key === 'ArrowRight' && hasNext) {
+        onNext();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [hasPrev, hasNext]);
+
+  const cardVariants = scoringCardVariants(navDirection);
+  const [initialTilt] = useState(() => ({
+    rotateX: -20 + Math.random() * 10,
+    rotateZ: (Math.random() - 0.5) * 8,
+  }));
+
   return (
     <motion.div
       className="modal is-active"
@@ -424,20 +456,24 @@ function AnswerDetailModal({
         exit={{ opacity: 0 }}
       />
       <motion.div
-        className="modal-content"
-        initial={{ scale: 0.8, opacity: 0, y: 50 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.8, opacity: 0, y: 50 }}
-        transition={springBouncy}
-        style={{ maxWidth: '500px' }}
+        className="modal-card"
+        key={answerData.key}
+        custom={initialTilt}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={cardVariants}
+        transition={springStiff}
+        style={{ maxWidth: '600px', overflow: 'visible' }}
       >
-        <div className="box" style={{ backgroundColor: 'hsl(0, 0%, 97%)' }}>
-          {/* Question */}
+        <header className="modal-card-head has-background-white">
           <QuestionDisplay question={question} />
+        </header>
 
+        <section className="modal-card-body has-background-light">
           {/* Answer box with sticker piles */}
           <div className="mb-4" style={{ position: 'relative' }}>
-            <div className="box has-background-white-ter has-text-centered py-5 px-6" style={{ position: 'relative' }}>
+            <div className="box has-background-white has-text-centered py-5 px-6" style={{ position: 'relative' }}>
               <h3
                 className={`title is-4 mb-0 ${isEmptyDisplay ? 'has-text-grey-light' : ''}`}
                 style={{ whiteSpace: 'pre-wrap', ...(isEmptyDisplay ? { fontStyle: 'italic' } : {}) }}
@@ -469,7 +505,7 @@ function AnswerDetailModal({
           {/* Action buttons / revealed info */}
           <div className="is-flex is-flex-direction-column" style={{ gap: '0.75rem' }}>
             {/* Pickers section */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {answerData.pickCount === 0 ? (
                 <motion.p
                   key="no-pickers"
@@ -498,11 +534,10 @@ function AnswerDetailModal({
               ) : (
                 <motion.div
                   key="pickers-display"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                  animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+                  exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
                   transition={{ duration: 0.2 }}
-                  style={{ overflow: 'hidden' }}
                 >
                   <PillList label="Picked by:" players={answerData.pickers} glowIds={glowPickers} />
                 </motion.div>
@@ -510,7 +545,7 @@ function AnswerDetailModal({
             </AnimatePresence>
 
             {/* Author section */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {!answerData.authorRevealed ? (
                 <motion.button
                   key="reveal-author"
@@ -528,36 +563,53 @@ function AnswerDetailModal({
               ) : !answerData.isEmpty ? (
                 <motion.div
                   key="author-display"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                  animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+                  exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
                   transition={{ duration: 0.2 }}
-                  style={{ overflow: 'hidden' }}
                 >
                   <PillList label="Written by:" players={answerData.authors} glowIds={glowAuthors} />
                 </motion.div>
               ) : null}
             </AnimatePresence>
           </div>
-        </div>
 
-        {/* Floating badge(s) for correct pickers */}
-        <AnimatePresence>
-          {answerData.authorRevealed && (
-            <PointsBadges
-              teamPoints={answerData.teamPoints}
-              correctPickers={answerData.correctPickers}
-              authors={answerData.authors}
-              isEmpty={answerData.isEmpty}
-            />
-          )}
-        </AnimatePresence>
+        </section>
+
+        <footer className="modal-card-foot is-justify-content-space-between has-background-white">
+          <motion.button
+            className="button is-medium"
+            onClick={onPrev}
+            disabled={!hasPrev}
+            style={{ visibility: hasPrev ? 'visible' : 'hidden' }}
+            whileHover={buttonHover}
+            whileTap={buttonTap}
+          >
+            ← Prev
+          </motion.button>
+          <motion.button
+            className="button is-medium is-primary"
+            onClick={hasNext ? onNext : onClose}
+            style={{ visibility: hasNext ? 'visible' : 'hidden' }}
+            whileHover={buttonHover}
+            whileTap={buttonTap}
+          >
+            Next →
+          </motion.button>
+        </footer>
       </motion.div>
-      <button
-        className="modal-close is-large"
-        aria-label="close"
-        onClick={onClose}
-      />
+
+      {/* Floating points badges below modal */}
+      <AnimatePresence>
+        {answerData.authorRevealed && (
+          <PointsBadges
+            teamPoints={answerData.teamPoints}
+            correctPickers={answerData.correctPickers}
+            authors={answerData.authors}
+            isEmpty={answerData.isEmpty}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -575,7 +627,8 @@ export function PoolScoringInterface({
   revealedPickers,
   revealedAuthors,
 }: PoolScoringInterfaceProps) {
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [navDirection, setNavDirection] = useState<NavDirection>(null);
 
   // Build consolidated answer data (group by normalized text)
   const poolItems = useMemo(() => {
@@ -587,18 +640,33 @@ export function PoolScoringInterface({
     );
   }, [currentRound.answers, currentRound.picks, revealedPickers, revealedAuthors]);
 
-  const selectedAnswerData = poolItems.find(a => a.key === selectedKey);
+  const selectedAnswerData = selectedIndex !== null ? poolItems[selectedIndex] ?? null : null;
   const allRevealed = poolItems.every(a => a.authorRevealed);
   const revealedCount = poolItems.filter(a => a.authorRevealed).length;
   const totalCount = poolItems.length;
 
-  const handleBubbleClick = (key: string) => {
-    setSelectedKey(key);
-  };
+  const handleBubbleClick = useCallback((key: string) => {
+    const index = poolItems.findIndex(item => item.key === key);
+    if (index !== -1) {
+      setNavDirection(null);
+      setSelectedIndex(index);
+    }
+  }, [poolItems]);
 
-  const closeModal = () => {
-    setSelectedKey(null);
-  };
+  const handlePrev = useCallback(() => {
+    setNavDirection('prev');
+    setSelectedIndex(prev => prev !== null && prev > 0 ? prev - 1 : prev);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setNavDirection('next');
+    setSelectedIndex(prev => prev !== null && prev < poolItems.length - 1 ? prev + 1 : prev);
+  }, [poolItems.length]);
+
+  const closeModal = useCallback(() => {
+    setSelectedIndex(null);
+    setNavDirection(null);
+  }, []);
 
   return (
     <div className="pool-scoring box">
@@ -628,10 +696,16 @@ export function PoolScoringInterface({
 
       {/* Answer Modal */}
       <AnimatePresence>
-        {selectedKey && selectedAnswerData && (
+        {selectedIndex !== null && selectedAnswerData && (
           <AnswerDetailModal
+            key={selectedAnswerData.key}
             answerData={selectedAnswerData}
             question={question}
+            navDirection={navDirection}
+            hasPrev={selectedIndex > 0}
+            hasNext={selectedIndex < poolItems.length - 1}
+            onPrev={handlePrev}
+            onNext={handleNext}
             onRevealPickers={onRevealPickers}
             onRevealAuthor={onRevealAuthor}
             onClose={closeModal}
