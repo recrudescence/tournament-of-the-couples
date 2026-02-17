@@ -433,6 +433,7 @@ export function HostPage() {
     if (isImportedMode) {
       emit('advanceCursor');
     }
+    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' }), 100);
   };
 
   const handleRevealNext = () => {
