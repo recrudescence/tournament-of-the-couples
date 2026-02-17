@@ -1,11 +1,10 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {type CurrentRound, type Player, type Team} from '../../types/game';
 import {findPlayerBySocketId} from '../../utils/playerUtils';
 import {TeamName} from '../common/TeamName';
 import {Question} from '../common/Question.tsx';
 import {type NavDirection} from '../../styles/motion';
 import {ScoringModal} from './ScoringModal';
-import {fireScoringBurst} from '../../hooks/useConfetti';
 import {formatResponseTime} from '../../utils/formatUtils';
 
 // =============================================================================
@@ -35,12 +34,6 @@ interface TeamSortedData {
   player1: Player | undefined;
   player2: Player | undefined;
 }
-
-// =============================================================================
-// Constants
-// =============================================================================
-
-const SCORE_TAG_POP_MS = 400;
 
 // =============================================================================
 // Helper Functions
@@ -74,22 +67,9 @@ function buildSortedTeamData(
   }).sort((a, b) => a.totalResponseTime - b.totalResponseTime);
 }
 
-function getScoreTagClassName(points: number, isRecentlyScored: boolean): string {
-  const classes = ['tag', 'is-medium'];
-
-  if (points > 1) {
-    classes.push('is-warning');
-  } else if (points > 0) {
-    classes.push('is-primary');
-  } else {
-    classes.push('is-light');
-  }
-
-  if (isRecentlyScored) {
-    classes.push('score-tag-pop');
-  }
-
-  return classes.join(' ');
+function getScoreTagClassName(points: number): string {
+  const color = points > 1 ? 'is-warning' : points > 0 ? 'is-primary' : 'is-light';
+  return `tag is-medium ${color}`;
 }
 
 // =============================================================================
@@ -100,25 +80,19 @@ function TeamRow({
   teamData,
   isScored,
   points,
-  isRecentlyScored,
-  scoreTagRef,
-  onOpenModal,
-  onReopenScoring
+  onOpenModal
 }: {
   teamData: TeamSortedData;
   isScored: boolean;
   points: number;
-  isRecentlyScored: boolean;
-  scoreTagRef: (el: HTMLSpanElement | null) => void;
   onOpenModal: () => void;
-  onReopenScoring: () => void;
 }) {
   const { totalResponseTime, player1, player2 } = teamData;
 
   return (
     <div
       className="box mb-3 is-clickable"
-      onClick={isScored ? onReopenScoring : onOpenModal}
+      onClick={onOpenModal}
       style={{ cursor: 'pointer' }}
     >
       <div className="is-flex is-justify-content-space-between is-align-items-center">
@@ -133,10 +107,7 @@ function TeamRow({
                   ⏱️ {formatResponseTime(totalResponseTime)}
                 </span>
               )}
-              <span
-                ref={scoreTagRef}
-                className={getScoreTagClassName(points, isRecentlyScored)}
-              >
+              <span className={getScoreTagClassName(points)}>
                 {points > 0 ? `+${points} pts` : '0 pts'}
               </span>
             </>
@@ -168,8 +139,6 @@ export function ScoringInterface({
 }: ScoringInterfaceProps) {
   const [selectedSortedIndex, setSelectedSortedIndex] = useState<number | null>(null);
   const [navDirection, setNavDirection] = useState<NavDirection>(null);
-  const [recentlyScored, setRecentlyScored] = useState<string | null>(null);
-  const scoreTagRefs = useRef<Record<string, HTMLSpanElement | null>>({});
 
   // Sort teams by total response time (ascending) for scoring display
   const teamsSortedByResponseTime = useMemo(() => {
@@ -192,12 +161,6 @@ export function ScoringInterface({
     setNavDirection(null);
   }, []);
 
-  const handleReopenScoring = useCallback((teamId: string, originalIndex: number, sortedIndex: number) => {
-    onReopenTeamScoring(teamId, originalIndex);
-    setNavDirection(null);
-    setSelectedSortedIndex(sortedIndex);
-  }, [onReopenTeamScoring]);
-
   const handlePrev = useCallback(() => {
     setNavDirection('prev');
     setSelectedSortedIndex(prev => prev !== null && prev > 0 ? prev - 1 : prev);
@@ -211,32 +174,13 @@ export function ScoringInterface({
   }, [teamsSortedByResponseTime.length]);
 
   const handleAwardPoints = useCallback((teamId: string, originalIndex: number, points: number) => {
-    // Close modal first
-    setSelectedSortedIndex(null);
-    setNavDirection(null);
-
-    // Track which team was just scored for animation
-    setRecentlyScored(teamId);
-
-    // Award points (this updates parent state)
+    // Award points (this updates parent state) — modal stays open
     onAwardPoints(teamId, originalIndex, points);
-
-    // Fire confetti after tag pop animation completes (only for points > 0)
-    if (points > 0) {
-      setTimeout(() => {
-        const tagEl = scoreTagRefs.current[teamId];
-        if (tagEl) {
-          const rect = tagEl.getBoundingClientRect();
-          const originX = rect.right / window.innerWidth;
-          const originY = rect.top / window.innerHeight + (rect.height / 2 / window.innerHeight);
-          fireScoringBurst(originX, originY, points);
-        }
-        setRecentlyScored(null);
-      }, SCORE_TAG_POP_MS);
-    } else {
-      setTimeout(() => setRecentlyScored(null), SCORE_TAG_POP_MS);
-    }
   }, [onAwardPoints]);
+
+  const handleRescore = useCallback((teamId: string, originalIndex: number) => {
+    onReopenTeamScoring(teamId, originalIndex);
+  }, [onReopenTeamScoring]);
 
   const hasUnscoredTeams = teams.some(t => !(t.teamId in teamPointsAwarded));
 
@@ -247,10 +191,9 @@ export function ScoringInterface({
 
       <div className="mb-4">
         {teamsSortedByResponseTime.map((teamData, sortedIndex) => {
-          const { team, originalIndex } = teamData;
+          const { team } = teamData;
           const isScored = team.teamId in teamPointsAwarded;
           const points = teamPointsAwarded[team.teamId] ?? 0;
-          const isRecentlyScored = recentlyScored === team.teamId;
 
           return (
             <TeamRow
@@ -258,10 +201,7 @@ export function ScoringInterface({
               teamData={teamData}
               isScored={isScored}
               points={points}
-              isRecentlyScored={isRecentlyScored}
-              scoreTagRef={(el) => { scoreTagRefs.current[team.teamId] = el; }}
               onOpenModal={() => handleOpenModal(sortedIndex)}
-              onReopenScoring={() => handleReopenScoring(team.teamId, originalIndex, sortedIndex)}
             />
           );
         })}
@@ -283,6 +223,8 @@ export function ScoringInterface({
           currentRound={currentRound}
           totalResponseTime={selectedTeamData.totalResponseTime}
           isFastestTeam={selectedSortedIndex === 0}
+          isScored={selectedTeamData.team.teamId in teamPointsAwarded}
+          scoredPoints={teamPointsAwarded[selectedTeamData.team.teamId] ?? 0}
           navDirection={navDirection}
           hasPrev={selectedSortedIndex! > 0}
           hasNext={selectedSortedIndex! < teamsSortedByResponseTime.length - 1}
@@ -294,6 +236,7 @@ export function ScoringInterface({
           revealedResponseTimes={revealedResponseTimes}
           onRevealAnswer={onRevealAnswer}
           onAwardPoints={(points) => handleAwardPoints(selectedTeamData.team.teamId, selectedTeamData.originalIndex, points)}
+          onRescore={() => handleRescore(selectedTeamData.team.teamId, selectedTeamData.originalIndex)}
           onPrev={handlePrev}
           onNext={handleNext}
           onClose={handleCloseModal}

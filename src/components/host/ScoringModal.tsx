@@ -1,15 +1,17 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {type CurrentRound, type Player, type Team} from '../../types/game';
 import {TeamName} from '../common/TeamName';
 import {BothPlayersScoring} from './BothPlayersScoring';
 import {SinglePlayerScoring} from './SinglePlayerScoring';
 import {formatResponseTime} from '../../utils/formatUtils';
+import {fireScoringBurst} from '../../hooks/useConfetti';
 import {
+  buttonHover,
+  buttonTap,
   liftHover,
   liftTap,
   modalBackdrop,
-  navArrowStyle,
   type NavDirection,
   popInSpin,
   scoringCardVariants,
@@ -33,6 +35,8 @@ interface ScoringModalProps {
   currentRound: CurrentRound;
   totalResponseTime: number;
   isFastestTeam: boolean;
+  isScored: boolean;
+  scoredPoints: number;
   sortedPlayers: PlayerWithTime[];
   revealedAnswers: Set<string>;
   revealedResponseTimes: Record<string, number>;
@@ -41,6 +45,7 @@ interface ScoringModalProps {
   hasNext: boolean;
   onRevealAnswer: (playerName: string) => void;
   onAwardPoints: (points: number) => void;
+  onRescore: () => void;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
@@ -52,6 +57,8 @@ export function ScoringModal({
                                currentRound,
                                totalResponseTime,
                                isFastestTeam,
+                               isScored,
+                               scoredPoints,
                                sortedPlayers,
                                revealedAnswers,
                                revealedResponseTimes,
@@ -60,11 +67,15 @@ export function ScoringModal({
                                hasNext,
                                onRevealAnswer,
                                onAwardPoints,
+                               onRescore,
                                onPrev,
                                onNext,
                                onClose
                              }: ScoringModalProps) {
   const [isExiting, setIsExiting] = useState(false);
+  const [showPointButtons, setShowPointButtons] = useState(!isScored);
+  const [awardedPoints, setAwardedPoints] = useState<number | null>(isScored ? scoredPoints : null);
+  const footerRef = useRef<HTMLElement>(null);
   // Random tilt for playful entrance (only used when navDirection is null)
   const [initialTilt] = useState(() => ({
     rotateZ: (Math.random() - 0.5) * 8,
@@ -91,9 +102,23 @@ export function ScoringModal({
   };
 
   const handleAwardPoints = (points: number) => {
-    setIsExiting(true);
-    // Store points to pass after animation
-    setTimeout(() => onAwardPoints(points), 250);
+    onAwardPoints(points);
+    setAwardedPoints(points);
+    setShowPointButtons(false);
+
+    // Fire confetti from footer area (only for points > 0)
+    if (points > 0 && footerRef.current) {
+      const rect = footerRef.current.getBoundingClientRect();
+      const originX = (rect.left + rect.width / 2) / window.innerWidth;
+      const originY = rect.top / window.innerHeight;
+      fireScoringBurst(originX, originY, points);
+    }
+  };
+
+  const handleRescore = () => {
+    onRescore();
+    setAwardedPoints(null);
+    setShowPointButtons(true);
   };
 
   const handleExitComplete = () => {
@@ -138,7 +163,7 @@ export function ScoringModal({
           {/* Modal Card */}
           <motion.div
             className="modal-card modal-card-3d"
-            style={{ position: 'relative', overflow: 'visible' }}
+            style={{ position: 'relative', overflow: 'visible', minHeight: '60%' }}
             custom={initialTilt}
             initial="initial"
             animate="animate"
@@ -146,32 +171,6 @@ export function ScoringModal({
             variants={cardVariants}
             transition={springGentle}
           >
-            {/* Nav arrows — positioned relative to modal card */}
-            {hasPrev && (
-              <motion.button
-                style={{ ...navArrowStyle, left: -60 }}
-                onClick={onPrev}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.15, background: 'rgba(255,255,255,1)', transition: springStiff }}
-                whileTap={{ scale: 0.9, transition: springStiff }}
-              >
-                ‹
-              </motion.button>
-            )}
-            {hasNext && (
-              <motion.button
-                style={{ ...navArrowStyle, right: -60 }}
-                onClick={onNext}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.15, background: 'rgba(255,255,255,1)', transition: springStiff }}
-                whileTap={{ scale: 0.9, transition: springStiff }}
-              >
-                ›
-              </motion.button>
-            )}
-
             <header className="modal-card-head" style={{ position: 'relative' }}>
               <motion.div
                 className="modal-card-title is-flex is-align-items-center gap-sm is-size-3"
@@ -186,7 +185,6 @@ export function ScoringModal({
                 {allRevealed && totalResponseTime < Infinity && (
                   <motion.span
                     className="tag is-secondary is-large mr-5"
-                    style={{ transform: 'translateX(-50%)' }}
                     variants={popInSpin}
                     initial="hidden"
                     animate="visible"
@@ -194,6 +192,18 @@ export function ScoringModal({
                     transition={springBouncy}
                   >
                     ⏱️ {formatResponseTime(totalResponseTime)}
+                  </motion.span>
+                )}
+                {awardedPoints !== null && (
+                  <motion.span
+                    className={`tag is-large ${awardedPoints > 0 ? 'is-success' : 'is-light'} mr-5`}
+                    variants={popInSpin}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={springBouncy}
+                  >
+                    {awardedPoints > 0 ? `+${awardedPoints} pts` : '0 pts'}
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -225,31 +235,86 @@ export function ScoringModal({
               )}
             </motion.section>
 
-            <footer className="modal-card-foot is-justify-content-center gap-sm">
-              {[
-                { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
-                { points: 1, label: 'one point ⭐', className: 'is-success' },
-                ...(isFastestTeam
-                  ? [{ points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' }]
-                  : []),
-                ...(isFastestTeam && currentRound.answerForBoth
-                  ? [{ points: 4, label: '🏆 FOUR!!! 🏆', className: 'is-danger' }]
-                  : []),
-              ].map(({ points, label, className }) => (
-                <motion.button
-                  key={points}
-                  className={`button is-large ${className}`}
-                  onClick={() => handleAwardPoints(points)}
-                  variants={slideInUpDeep}
-                  initial="hidden"
-                  animate="visible"
-                  transition={springStiff}
-                  whileHover={liftHover}
-                  whileTap={liftTap}
-                >
-                  {label}
-                </motion.button>
-              ))}
+            <footer ref={footerRef} className="modal-card-foot" style={{ flexWrap: 'wrap', justifyContent: 'space-between', gap: '0.5rem' }}>
+              {/* Prev */}
+              <motion.button
+                className="button is-medium"
+                onClick={onPrev}
+                disabled={!hasPrev}
+                style={{ visibility: hasPrev ? 'visible' : 'hidden' }}
+                whileHover={buttonHover}
+                whileTap={buttonTap}
+              >
+                ← Prev
+              </motion.button>
+
+              {/* Center: point buttons or re-score */}
+              <AnimatePresence mode="wait">
+                {showPointButtons ? (
+                  <motion.div
+                    key="point-buttons"
+                    className="is-flex is-justify-content-center gap-sm"
+                    style={{ flexWrap: 'wrap' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={springStiff}
+                  >
+                    {[
+                      { points: 0, label: 'zero pts 😔', className: 'is-family-secondary' },
+                      { points: 1, label: 'one point ⭐', className: 'is-success' },
+                      ...(isFastestTeam
+                        ? [{ points: 2, label: '🌟 two! ptz! 🌟', className: 'is-warning' }]
+                        : []),
+                      ...(isFastestTeam && currentRound.answerForBoth
+                        ? [{ points: 4, label: '🏆 FOUR!!! 🏆', className: 'is-danger' }]
+                        : []),
+                    ].map(({ points, label, className }) => (
+                      <motion.button
+                        key={points}
+                        className={`button is-medium ${className}`}
+                        onClick={() => handleAwardPoints(points)}
+                        variants={slideInUpDeep}
+                        initial="hidden"
+                        animate="visible"
+                        transition={springStiff}
+                        whileHover={liftHover}
+                        whileTap={liftTap}
+                      >
+                        {label}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="rescore-button"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={springStiff}
+                  >
+                    <motion.button
+                      className="button is-medium is-light"
+                      onClick={handleRescore}
+                      whileHover={buttonHover}
+                      whileTap={buttonTap}
+                    >
+                      Re-score
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Next */}
+              <motion.button
+                className="button is-medium is-primary"
+                onClick={hasNext ? onNext : handleClose}
+                style={{ visibility: hasNext ? 'visible' : 'hidden' }}
+                whileHover={buttonHover}
+                whileTap={buttonTap}
+              >
+                Next →
+              </motion.button>
             </footer>
           </motion.div>
         </div>
