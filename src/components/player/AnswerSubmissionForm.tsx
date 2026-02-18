@@ -1,6 +1,9 @@
+import {useEffect, useRef, useState} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
 import {PlayerAvatar} from '../common/PlayerAvatar';
 import {PlayerIdentity, RoundVariant} from '../../types/game';
 import {formatResponseTime} from '../../utils/formatUtils';
+import {springDefault} from '../../styles/motion';
 
 // =============================================================================
 // Types
@@ -55,21 +58,49 @@ function TimerDisplay({
   timerValue,
   timerColor,
   timerClass,
-  isCountdownMode
+  isCountdownMode,
+  timerRef
 }: {
   roundNumber: number;
   timerValue: number;
   timerColor: string;
   timerClass: string;
   isCountdownMode: boolean;
+  timerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="is-flex is-justify-content-space-between is-align-items-center mb-4">
+    <div ref={timerRef} className="is-flex is-justify-content-space-between is-align-items-center mb-4">
       <h2 className="subtitle is-4 mb-0">Round {roundNumber}</h2>
       <div className={`tag is-mono ${timerColor} is-large ${timerClass}`}>
         {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
       </div>
     </div>
+  );
+}
+
+function FloatingTimer({
+  timerValue,
+  timerColor,
+  timerClass,
+  isCountdownMode
+}: {
+  timerValue: number;
+  timerColor: string;
+  timerClass: string;
+  isCountdownMode: boolean;
+}) {
+  return (
+    <motion.div
+      className="floating-timer"
+      initial={{ opacity: 0, y: -20, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.8 }}
+      transition={springDefault}
+    >
+      <div className={`tag is-mono ${timerColor} is-medium ${timerClass}`}>
+        {formatResponseTime(timerValue, isCountdownMode ? 0 : 2)}
+      </div>
+    </motion.div>
   );
 }
 
@@ -283,14 +314,40 @@ export function AnswerSubmissionForm({
   const { timerColor, timerClass, isCountdownMode } = getTimerStyles(countdown, isExpired);
   const timerValue = isCountdownMode ? countdown! : responseTime;
 
+  const timerRef = useRef<HTMLDivElement>(null);
+  const [timerVisible, setTimerVisible] = useState(true);
+
+  useEffect(() => {
+    const el = timerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => setTimerVisible(entries[0]?.isIntersecting ?? true),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="box">
+      <AnimatePresence>
+        {!timerVisible && (
+          <FloatingTimer
+            timerValue={timerValue}
+            timerColor={timerColor}
+            timerClass={timerClass}
+            isCountdownMode={isCountdownMode}
+          />
+        )}
+      </AnimatePresence>
+
       <TimerDisplay
         roundNumber={roundNumber}
         timerValue={timerValue}
         timerColor={timerColor}
         timerClass={timerClass}
         isCountdownMode={isCountdownMode}
+        timerRef={timerRef}
       />
 
       <QuestionHeader question={question} />
