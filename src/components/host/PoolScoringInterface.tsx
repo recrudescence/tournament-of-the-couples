@@ -576,7 +576,7 @@ function AnswerDetailModal({
 
         </section>
 
-        <footer className="modal-card-foot is-justify-content-space-between has-background-white">
+        <footer className="modal-card-foot is-justify-content-space-between has-background-white p-4">
           <motion.button
             className="button is-medium"
             onClick={onPrev}

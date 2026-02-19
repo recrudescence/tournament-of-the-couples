@@ -70,6 +70,7 @@ export function HostPage() {
   const submittedCount = gameState?.currentRound?.submittedInCurrentPhase.length ?? 0;
   const allAnswersIn = phase === 'answering' && playerCount > 0 && submittedCount >= playerCount;
   const isImportedMode = Boolean(gameState?.importedQuestions);
+  const cursor = gameState?.questionCursor;
 
   // Pool selection derived values
   const picksSubmitted = gameState?.currentRound?.picksSubmitted ?? [];
@@ -684,12 +685,13 @@ export function HostPage() {
             </div>
 
             {/* Sidebar: Scoreboard (DOM second, visually left on desktop via order) */}
-            <div className="column is-4-desktop host-sidebar">
+            <div className="column is-5-desktop host-sidebar">
               <HostHeader
                 hostName={gameState?.host.name ?? '-'}
                 hostAvatar={gameState?.host.avatar}
-                roundNumber={roundNumber}
+                roundNumber={cursor?.questionNumber ?? roundNumber}
                 gameStatus={gameStatus}
+                totalQuestions={cursor?.totalQuestions ?? null}
               />
               <div className="host-sidebar-sticky">
                 <TeamScoreboard

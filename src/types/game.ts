@@ -128,4 +128,6 @@ export interface ImportedQuestionSet {
 export interface QuestionCursor {
   chapterIndex: number;
   questionIndex: number;
+  questionNumber: number;
+  totalQuestions: number;
 }

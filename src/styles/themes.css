@@ -80,7 +80,7 @@
 [data-theme="valentines"] {
   --theme-primary: #E91E63;
   --theme-primary-dark: #C2185B;
-  --theme-success: #EC407A;
+  --theme-success: #BA68C8;
   --theme-info: #F48FB1;
   --theme-accent: #FF4081;
   --theme-bg: #FFF0F5;
@@ -95,9 +95,9 @@
   --bulma-primary-h: 340deg;
   --bulma-primary-s: 82%;
   --bulma-primary-l: 52%;
-  --bulma-success-h: 340deg;
-  --bulma-success-s: 82%;
-  --bulma-success-l: 59%;
+  --bulma-success-h: 291deg;
+  --bulma-success-s: 47%;
+  --bulma-success-l: 60%;
   --bulma-info-h: 340deg;
   --bulma-info-s: 82%;
   --bulma-info-l: 76%;

@@ -8,6 +8,7 @@ interface HostHeaderProps {
   hostAvatar?: PlayerAvatarType | null;
   roundNumber: number;
   gameStatus: string;
+  totalQuestions?: number | null;
 }
 
 const ROUND_COLORS = ["is-primary", "is-success", "is-info", "is-link", "is-warning"];
@@ -25,37 +26,37 @@ function getStatusColor(status: string): string {
   return "is-light";
 }
 
-export function HostHeader({hostName, hostAvatar, roundNumber, gameStatus}: HostHeaderProps) {
+export function HostHeader({hostName, hostAvatar, roundNumber, gameStatus, totalQuestions}: HostHeaderProps) {
   return (
     <div className="box">
       <div className="columns is-mobile has-text-centered is-vcentered">
         <div className="column">
-          <p className="heading">Host</p>
+          <p className="heading mb-2">Host</p>
           <div className="is-flex is-justify-content-center is-align-items-center" style={{ gap: '0.25rem' }}>
             <PlayerAvatar avatar={hostAvatar} size="small" />
             <span className="title is-6 has-text-primary mb-0">{hostName}</span>
           </div>
         </div>
         <div className="column">
-          <p className="heading">Question</p>
+          <p className="heading mb-2">Question</p>
           <div style={{ perspective: 200 }}>
             <AnimatePresence mode="wait">
               <motion.span
                 key={roundNumber}
-                className={`tag is-rounded is-medium has-text-weight-bold ${getRoundColor(roundNumber)}`}
+                className={`tag is-rounded is-medium has-text-weight-bold ${getRoundColor(roundNumber)} has-text-white`}
                 variants={flipInLeft}
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0, rotateY: 90 }}
                 transition={springBouncy}
               >
-                {roundNumber}
+                {roundNumber}{totalQuestions ? ` of ${totalQuestions}` : ''}
               </motion.span>
             </AnimatePresence>
           </div>
         </div>
         <div className="column">
-          <p className="heading">Status</p>
+          <p className="heading mb-2">Status</p>
           <AnimatePresence mode="wait">
             <motion.span
               key={gameStatus}

@@ -52,21 +52,22 @@ function getQuestionTypeLabel(variant: RoundVariant): string {
 // Sub-components
 // =============================================================================
 
-function QuestionTypeTag({ variant }: { variant: RoundVariant }) {
+function QuestionTypeTags({ variant, answerForBoth }: { variant: RoundVariant; answerForBoth?: boolean }) {
   const label = getQuestionTypeLabel(variant);
   if (!label) return null;
 
   return (
     <motion.div
-      className="has-text-centered"
+      className="has-text-centered is-flex is-justify-content-center is-align-items-center gap-sm"
       variants={captionEntrance}
       initial="hidden"
       animate="visible"
       transition={springDefault}
     >
-      <p className="tag is-size-5 is-warning">
-        {label}
-      </p>
+      <span className="tag is-size-5 is-warning">{label}</span>
+      <span className="tag is-size-5 is-light">
+        {answerForBoth ? 'Answer for both' : 'Single answer'}
+      </span>
     </motion.div>
   );
 }
@@ -163,11 +164,13 @@ function BinaryChoiceGrid() {
 function VariantContext({
   variant,
   options,
-  questionText
+  questionText,
+  answerForBoth
 }: {
   variant: RoundVariant;
   options: string[] | null;
   questionText: string;
+  answerForBoth?: boolean;
 }) {
   const [isBlurred, setIsBlurred] = useState(true);
 
@@ -180,7 +183,7 @@ function VariantContext({
   if (variant === 'open_ended' || variant === 'pool_selection') {
     return (
       <>
-        <QuestionTypeTag variant={variant} />
+        <QuestionTypeTags variant={variant} answerForBoth={answerForBoth} />
         <BlurredQuestion questionText={questionText} isBlurred={isBlurred} />
       </>
     );
@@ -190,7 +193,7 @@ function VariantContext({
   if (variant === 'multiple_choice' && options) {
     return (
       <>
-        <QuestionTypeTag variant={variant} />
+        <QuestionTypeTags variant={variant} answerForBoth={answerForBoth} />
         <BlurredQuestion questionText={questionText} isBlurred={isBlurred} />
         <MultipleChoiceGrid options={options} />
       </>
@@ -201,7 +204,7 @@ function VariantContext({
   if (variant === 'binary') {
     return (
       <>
-        <QuestionTypeTag variant={variant} />
+        <QuestionTypeTags variant={variant} answerForBoth={answerForBoth} />
         <BlurredQuestion questionText={questionText} isBlurred={isBlurred} />
         <BinaryChoiceGrid />
       </>
@@ -270,6 +273,7 @@ export function QuestionReveal({
               variant={variant}
               options={question.options ?? null}
               questionText={question.question}
+              answerForBoth={question.answerForBoth}
             />
             <motion.div
               className="mt-4"

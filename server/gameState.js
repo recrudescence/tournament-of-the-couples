@@ -656,7 +656,7 @@ function setImportedQuestions(roomCode, questionSet) {
 
   gameState.importedQuestions = questionSet;
   gameState.questionCursor = null; // Reset cursor when new questions are imported
-  log(`Imported ${questionSet.chapters.reduce((t, c) => t + c.questions.length, 0)} questions for ${roomCode}`);
+  log(`Imported ${getTotalQuestions(questionSet.chapters)} questions for ${roomCode}`);
 }
 
 // Clear imported questions
@@ -669,6 +669,20 @@ function clearImportedQuestions(roomCode) {
   gameState.importedQuestions = null;
   gameState.questionCursor = null;
   log(`Cleared imported questions for ${roomCode}`);
+}
+
+// Helper: compute total questions across all chapters
+function getTotalQuestions(chapters) {
+  return chapters.reduce((t, c) => t + c.questions.length, 0);
+}
+
+// Helper: compute 1-based flat question number from cursor position
+function getQuestionNumber(chapters, chapterIndex, questionIndex) {
+  let count = 0;
+  for (let i = 0; i < chapterIndex; i++) {
+    count += chapters[i].questions.length;
+  }
+  return count + questionIndex + 1;
 }
 
 // Advance cursor to next question
@@ -707,7 +721,9 @@ function advanceCursor(roomCode) {
     }
   }
 
-  gameState.questionCursor = cursor;
+  const questionNumber = getQuestionNumber(chapters, cursor.chapterIndex, cursor.questionIndex);
+  const totalQ = getTotalQuestions(chapters);
+  gameState.questionCursor = { ...cursor, questionNumber, totalQuestions: totalQ };
 
   const chapter = chapters[cursor.chapterIndex];
   const question = chapter.questions[cursor.questionIndex];
@@ -717,7 +733,7 @@ function advanceCursor(roomCode) {
   const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
   const isLastQuestion = isLastChapter && isLastQuestionInChapter;
 
-  log(`Advanced to Chapter ${cursor.chapterIndex + 1}, Question ${cursor.questionIndex + 1} (${isNewChapter ? 'new chapter' : 'same chapter'})`);
+  log(`Advanced to Chapter ${cursor.chapterIndex + 1}, Question ${questionNumber} of ${totalQ} (${isNewChapter ? 'new chapter' : 'same chapter'})`);
 
   return {
     chapterIndex: cursor.chapterIndex,
@@ -1027,7 +1043,9 @@ function retreatCursor(roomCode) {
     return null;
   }
 
-  gameState.questionCursor = cursor;
+  const questionNumber = getQuestionNumber(chapters, cursor.chapterIndex, cursor.questionIndex);
+  const totalQ = getTotalQuestions(chapters);
+  gameState.questionCursor = { ...cursor, questionNumber, totalQuestions: totalQ };
 
   const chapter = chapters[cursor.chapterIndex];
   const question = chapter.questions[cursor.questionIndex];
@@ -1037,7 +1055,7 @@ function retreatCursor(roomCode) {
   const isLastQuestionInChapter = cursor.questionIndex === chapter.questions.length - 1;
   const isLastQuestion = isLastChapter && isLastQuestionInChapter;
 
-  log(`Retreated to Chapter ${cursor.chapterIndex + 1}, Question ${cursor.questionIndex + 1}`);
+  log(`Retreated to Chapter ${cursor.chapterIndex + 1}, Question ${questionNumber} of ${totalQ}`);
 
   return {
     chapterIndex: cursor.chapterIndex,
@@ -1075,7 +1093,9 @@ function setCursor(roomCode, chapterIndex, questionIndex) {
   const oldCursor = gameState.questionCursor;
   const isNewChapter = !oldCursor || oldCursor.chapterIndex !== chapterIndex;
 
-  gameState.questionCursor = { chapterIndex, questionIndex };
+  const qNum = getQuestionNumber(chapters, chapterIndex, questionIndex);
+  const totalQ = getTotalQuestions(chapters);
+  gameState.questionCursor = { chapterIndex, questionIndex, questionNumber: qNum, totalQuestions: totalQ };
 
   const question = chapter.questions[questionIndex];
 
@@ -1084,7 +1104,7 @@ function setCursor(roomCode, chapterIndex, questionIndex) {
   const isLastQuestionInChapter = questionIndex === chapter.questions.length - 1;
   const isLastQuestion = isLastChapter && isLastQuestionInChapter;
 
-  log(`Set cursor to Chapter ${chapterIndex + 1}, Question ${questionIndex + 1}`);
+  log(`Set cursor to Chapter ${chapterIndex + 1}, Question ${qNum} of ${totalQ}`);
 
   return {
     chapterIndex,
